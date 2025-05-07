@@ -1,4 +1,6 @@
 from celery import Celery
+from redbeat import RedBeatSchedulerEntry
+from celery.schedules import crontab
 
 from bisheng.interface.utils import setup_llm_caching
 

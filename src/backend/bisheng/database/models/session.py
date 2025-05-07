@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Optional, List
 
 from pydantic import validator
+from sqlalchemy.dialects import mysql
 from sqlmodel import Field, Column, DateTime, text, select, update, func
 
 from bisheng.database.base import session_getter
@@ -93,7 +94,7 @@ class MessageSessionDao(MessageSessionBase):
         if exclude_chats:
             statement = statement.where(MessageSession.chat_id.not_in(exclude_chats))
         if start_date:
-            statement = statement.where(MessageSession.create_time >= start_date)
+            statement = statement.where(MessageSession.update_time >= start_date)
         if end_date:
             statement = statement.where(MessageSession.create_time <= end_date)
         if review_status:
@@ -144,8 +145,9 @@ class MessageSessionDao(MessageSessionBase):
                                                           feedback, start_date, end_date, include_delete, exclude_chats)
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
-        statement = statement.order_by(MessageSession.create_time.desc())
+        statement = statement.order_by(MessageSession.update_time.desc())
         with session_getter() as session:
+            print("filter_session Compiled SQL:",statement.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
             return session.exec(statement).all()
 
     @classmethod
