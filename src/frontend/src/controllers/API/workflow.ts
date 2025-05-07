@@ -198,6 +198,14 @@ const workflowTemplate = [
                         "tab": "dialog_input"
                     },
                     {
+                        "key": "enable_upload",
+                        "label": "允许上传文件",
+                        "type": "switch",
+                        "tab": "dialog_input",
+                        // "help": "控制会话中曲别针展示",
+                        "value": true
+                    },
+                    {
                         "key": "dialog_files_content_size",
                         "label": "文件内容长度上限",
                         "type": "number",

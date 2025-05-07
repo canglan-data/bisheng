@@ -282,6 +282,8 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
             data.message.msg = data.message.guide_word
         } else if (data.category === 'input') {
             const { node_id, input_schema } = data.message
+            console.log('data', data);
+            
             inputNodeIdRef.current = node_id
             messageIdRef.current = data.message_id
             // 待用户输入
@@ -441,6 +443,8 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
     // 文件上传状态
     const { fileUploading, getFileIds, loadingChange } = useFileLoading(inputLock.locked)
 
+    console.log('inputForm', inputForm);
+    
 
     return <div className="absolute bottom-0 w-full pt-1 bg-[#fff] dark:bg-[#1B1B1B]">
         <div className={`relative pr-4 ${clear && 'pl-9'}`}>
@@ -473,6 +477,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
                 }
             </div>
             {/* 附件 */}
+            {/* TODO: 附件根据配置的参数判断是否展示 */}
             {!inputLock.locked && <ChatFiles v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} />}
             {/* send */}
             <div className="flex gap-2 absolute right-7 top-4 z-10">
