@@ -46,6 +46,8 @@ async def get_all_group(login_user: UserPayload = Depends(get_login_user),
             raise HTTPException(status_code=500, detail='无查看权限')
 
     groups_res = RoleGroupService().get_group_list(groups)
+    # page = 0
+    # page_size = 0
     if page and page_size:
         groups_res = groups_res[(page-1) * page_size:page * page_size]
     if keyword:
