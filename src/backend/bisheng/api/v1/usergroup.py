@@ -27,7 +27,7 @@ router = APIRouter(prefix='/group', tags=['Group'], dependencies=[Depends(get_lo
 @router.get('/list', response_model=UnifiedResponseModel[List[GroupRead]])
 async def get_all_group(login_user: UserPayload = Depends(get_login_user),
                         page: Optional[int] = Query(default=1, description='页码'),
-                        page_size: Optional[int] = Query(default=10, description='每页条数'),
+                        page_size: Optional[int] = Query(default=None, description='每页条数'),
                         keyword: Optional[str] = Query(default=None,description='匹配关键字')):
     """
     获取所有分组
@@ -55,7 +55,7 @@ async def get_all_group(login_user: UserPayload = Depends(get_login_user),
 @router.get('/list_v2', response_model=UnifiedResponseModel[List[GroupRead]])
 async def get_all_group2(login_user: UserPayload = Depends(get_login_user),
                         page: Optional[int] = Query(default=1, description='页码'),
-                        page_size: Optional[int] = Query(default=10, description='每页条数'),
+                        page_size: Optional[int] = Query(default=None, description='每页条数'),
                         keyword: Optional[str] = Query(default=None,description='匹配关键字')):
     """
     获取所有分组
