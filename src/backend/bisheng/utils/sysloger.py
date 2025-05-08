@@ -1,3 +1,4 @@
+import json
 import logging
 import logging.handlers
 import socket
@@ -61,6 +62,18 @@ class SyslogClient:
             self.critical(message)
         else:
             self.info(f"[未知级别]{message}")
+
+    def log_message_session(self, message):
+        message = json.dumps(message)
+        self.info("MessageSession\t"+ message)
+
+    def log_audit_log(self,message):
+        message = json.dumps(message)
+        self.info("AuditLog\t"+ message)
+
+    def log_chat_message(self,message):
+        message = json.dumps(message)
+        self.info("ChatMessage\t"+ message)
 
 
 syslog_client = SyslogClient(settings.syslog_conf)
