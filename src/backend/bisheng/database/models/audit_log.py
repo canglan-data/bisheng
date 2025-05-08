@@ -127,11 +127,12 @@ class AuditLogDao(AuditLogBase):
     @classmethod
     def insert_audit_logs(cls, audit_logs: List[AuditLog]):
         with session_getter() as session:
+            syslog_data = [one.to_dict() for one in audit_logs]
             session.add_all(audit_logs)
             session.commit()
-        # 将用户的操作记录写入syslog
-        for audit_log in audit_logs:
-            syslog_client.log_audit_log(audit_log.to_dict())
+            # 将用户的操作记录写入syslog
+            for massage in syslog_data:
+                syslog_client.log_audit_log(massage)
 
     @classmethod
     def get_all_operators(cls, group_ids: List[int]):
