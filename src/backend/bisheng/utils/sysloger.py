@@ -38,13 +38,13 @@ class RawSyslogClient:
     def critical(self, message): self._send("critical", message)
 
     def log_message_session(self, message):
-        self.info("MessageSession-" + json.dumps(message))
+        self.info("MessageSession-" + json.dumps(message,ensure_ascii=False))
 
     def log_audit_log(self, message):
-        self.info("AuditLog-" + json.dumps(message))
+        self.info("AuditLog-" + json.dumps(message,ensure_ascii=False))
 
     def log_chat_message(self, message):
-        self.info("ChatMessage-" + json.dumps(message))
+        self.info("ChatMessage-" + json.dumps(message,ensure_ascii=False))
 
 
 syslog_client = RawSyslogClient(settings.syslog_conf)
