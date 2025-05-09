@@ -98,6 +98,7 @@ export const copyReportTemplate = async (nodeData): Promise<any> => {
     return Promise.resolve('ok')
 }
 
+// TODO
 /**
  * 工作流节点模板
  */
@@ -247,6 +248,108 @@ const workflowTemplate = [
                             "value": ""
                         },
                         "options": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "tts_xxx",
+        "name": "语音转文字",
+        "description": "调用大模型进行语音转文字。",
+        "type": "tts",
+        "v": "1",
+        "group_params": [
+            {
+                "params": [
+                    {
+                        "key": "batch_variable",
+                        "label": "批处理变量",
+                        "global": "self",
+                        "type": "user_question",
+                        "test": "var",
+                        "value": [],
+                        "required": true,
+                        "linkage": "output",
+                        "placeholder": "请选择批处理变量",
+                        "help": "选择需要批处理的变量，将会多次运行本节点，每次运行时从选择的变量中取一项赋值给batch_variable进行处理。",
+                    }
+                ]
+            },
+            {
+                "name": "模型设置",
+                "params": [
+                    {
+                        "key": "model_id",
+                        "label": "模型",
+                        "type": "bisheng_model",
+                        "value": "",
+                        "required": true,
+                        "placeholder": "请选择模型"
+                    },
+                ]
+            },
+            {
+                "name": "输出",
+                "params": [
+                    {
+                        "key": "output",
+                        "global": "code:value.map(el => ({ label: el.label, value: el.key }))",
+                        "label": "输出变量",
+                        "help": "模型输出内容将会存储在该变量中。",
+                        "type": "var",
+                        "value": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "stt_xxx",
+        "name": "文字转语音",
+        "description": "调用大模型进行文字转语音。",
+        "type": "stt",
+        "v": "1",
+        "group_params": [
+            {
+                "params": [
+                    {
+                        "key": "batch_variable",
+                        "label": "批处理变量",
+                        "global": "self",
+                        "type": "user_question",
+                        "test": "var",
+                        "value": [],
+                        "required": true,
+                        "linkage": "output",
+                        "placeholder": "请选择批处理变量",
+                        "help": "选择需要批处理的变量，将会多次运行本节点，每次运行时从选择的变量中取一项赋值给batch_variable进行处理。",
+                    }
+                ]
+            },
+            {
+                "name": "模型设置",
+                "params": [
+                    {
+                        "key": "model_id",
+                        "label": "模型",
+                        "type": "bisheng_model",
+                        "value": "",
+                        "required": true,
+                        "placeholder": "请选择模型"
+                    },
+                ]
+            },
+            {
+                "name": "输出",
+                "params": [
+                    {
+                        "key": "output",
+                        "global": "code:value.map(el => ({ label: el.label, value: el.key }))",
+                        "label": "输出变量",
+                        "help": "模型输出内容将会存储在该变量中。",
+                        "type": "var",
+                        "value": []
                     }
                 ]
             }

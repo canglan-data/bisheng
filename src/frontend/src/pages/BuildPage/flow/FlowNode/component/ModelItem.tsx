@@ -41,6 +41,8 @@ export default function ModelItem({ agent = false, data, onChange, onValidate })
         !agent && getLlmDefaultModel().then(res => {
             res && !data.value && onChange(res.model_id)
         })
+        console.log('更新默认值');
+        
     }, [])
 
 
