@@ -250,6 +250,9 @@ def instantiate_output_parser(node_type, class_object, params):
 def instantiate_stt(node_type, class_object, params):
     return class_object(**params)
 
+def instantiate_tts(node_type, class_object, params):
+    return class_object(**params)
+
 def instantiate_llm(node_type, class_object, params: Dict, user_llm_request: bool = True):
     # This is a workaround so JinaChat works until streaming is implemented
     # if "openai_api_base" in params and "jina" in params["openai_api_base"]:

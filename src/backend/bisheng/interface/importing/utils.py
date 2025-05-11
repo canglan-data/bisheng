@@ -57,6 +57,7 @@ def import_by_type(_type: str, name: str) -> Any:
         'input_output': import_inputoutput,
         'custom_components': import_custom_component,
         'stt': import_stt,
+        'tts': import_tts,
     }
     if _type == 'llms':
         key = 'contribute' if name in chat_models.__all__ else 'chat' if 'chat' in name.lower(
@@ -195,6 +196,11 @@ def import_stt(stt: str) -> Any:
     from bisheng.interface.stts.base import stt_creator
     return next(x for x in stt_creator.type_to_loader_dict.values()
                 if x.__name__ == stt)
+
+def import_tts(tts: str) -> Any:
+    from bisheng.interface.ttss.base import tts_creator
+    return next(x for x in tts_creator.type_to_loader_dict.values()
+                if x.__name__ == tts)
 
 
 def import_vectorstore(vectorstore: str) -> Any:

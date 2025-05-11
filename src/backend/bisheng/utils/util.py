@@ -3,7 +3,7 @@ import inspect
 import re
 from functools import wraps
 from typing import Dict, Optional
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 from bisheng.template.frontend_node.constants import FORCE_SHOW_FIELDS
 from bisheng.utils import constants
@@ -336,3 +336,29 @@ def _is_valid_url(url: str) -> bool:
     """Check if the url is valid."""
     parsed = urlparse(url)
     return bool(parsed.netloc) and bool(parsed.scheme)
+
+
+def replace_domain(url: str, new_domain: str) -> str:
+    """
+    替换URL中的域名（包括子域名和端口）
+
+    参数:
+        url (str): 原始URL
+        new_domain (str): 新域名（可包含端口，如 "example.com:8080"）
+
+    返回:
+        str: 替换域名后的新URL
+    """
+    # 解析URL
+    parsed = urlparse(url)
+
+    # 提取协议和路径等其他部分
+    scheme = parsed.scheme
+    path = parsed.path
+    params = parsed.params
+    query = parsed.query
+    fragment = parsed.fragment
+    netloc = new_domain
+
+    # 构建新URL
+    return urlunparse((scheme, netloc, path, params, query, fragment))

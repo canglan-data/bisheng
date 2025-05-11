@@ -95,6 +95,10 @@ class SYSLogConf(BaseModel):
     date_format: str = Field(default='%b %d %H:%M:%S', description="日期的格式")
 
 
+class DoMain(BaseModel):
+    web_domain: str = Field(default='127.0.0.1', description="网站的域名")
+
+
 class Settings(BaseModel):
     class Config:
         validate_assignment = True
@@ -141,6 +145,7 @@ class Settings(BaseModel):
     object_storage: ObjectStore = {}
     workflow_conf: WorkflowConf = WorkflowConf()
     syslog_conf: SYSLogConf = SYSLogConf()
+    domain: DoMain = DoMain()
 
     @validator('database_url', pre=True)
     def set_database_url(cls, value):
