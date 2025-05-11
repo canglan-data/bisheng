@@ -30,7 +30,7 @@ class BishengSTT:
 
     def __init__(self, **kwargs):
         self.model_id = kwargs.get('model_id')
-        self.model_name = kwargs.get('model_name')
+        self.model_name = kwargs.get('model_name',"")
         self.streaming = kwargs.get('streaming', True)
         self.temperature = kwargs.get('temperature', 0.3)
         self.top_p = kwargs.get('top_p', 1)
@@ -90,3 +90,7 @@ class BishengSTT:
         """更新模型状态"""
         # todo 接入到异步任务模块
         LLMDao.update_model_status(self.model_id, status, remark)
+
+CUSTOM_STT = {
+    'BishengSTT': BishengSTT,
+}

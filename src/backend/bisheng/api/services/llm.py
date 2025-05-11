@@ -9,11 +9,13 @@ from bisheng.api.v1.schemas import LLMServerInfo, LLMModelInfo, KnowledgeLLMConf
 from bisheng.database.models.config import ConfigDao, ConfigKeyEnum, Config
 from bisheng.database.models.llm_server import LLMDao, LLMServer, LLMModel, LLMModelType
 from bisheng.interface.importing import import_by_type
-from bisheng.interface.initialize.loading import instantiate_llm, instantiate_embedding
+from bisheng.interface.initialize.loading import instantiate_llm, instantiate_embedding, instantiate_stt
 from fastapi import Request
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseChatModel
 from loguru import logger
+
+from bisheng.interface.stts.custom import BishengSTT
 
 
 class LLMService:
@@ -323,6 +325,12 @@ class LLMService:
         """ 获取评测功能的默认模型配置 """
         class_object = import_by_type(_type='llms', name='BishengLLM')
         return instantiate_llm('BishengLLM', class_object, kwargs)
+
+    @classmethod
+    def get_bisheng_stt(cls, **kwargs) -> BishengSTT:
+        """ 获取评测功能的默认模型配置 """
+        class_object = import_by_type(_type='stt', name='BishengSTT')
+        return instantiate_stt('BishengSTT', class_object, kwargs)
 
     @classmethod
     def get_bisheng_embedding(cls, **kwargs) -> Embeddings:
