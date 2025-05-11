@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional
@@ -6,6 +7,8 @@ from bisheng.database.base import session_getter, generate_uuid
 from bisheng.database.models.base import SQLModelSerializable
 from sqlalchemy import Column, DateTime, delete, text, update, Text, func, or_, JSON
 from sqlmodel import Field, select
+
+from bisheng.utils.sysloger import syslog_client
 
 
 # 系统模块枚举
@@ -124,8 +127,12 @@ class AuditLogDao(AuditLogBase):
     @classmethod
     def insert_audit_logs(cls, audit_logs: List[AuditLog]):
         with session_getter() as session:
+            syslog_data = [one.to_dict() for one in audit_logs]
             session.add_all(audit_logs)
             session.commit()
+            # 将用户的操作记录写入syslog
+            for massage in syslog_data:
+                syslog_client.log_audit_log(massage)
 
     @classmethod
     def get_all_operators(cls, group_ids: List[int]):

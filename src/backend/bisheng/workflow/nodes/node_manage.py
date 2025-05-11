@@ -10,6 +10,7 @@ from bisheng.workflow.nodes.qa_retriever.qa_retriever import QARetrieverNode
 from bisheng.workflow.nodes.rag.rag import RagNode
 from bisheng.workflow.nodes.report.report import ReportNode
 from bisheng.workflow.nodes.start.start import StartNode
+from bisheng.workflow.nodes.stt.stt import STTNode
 from bisheng.workflow.nodes.tool.tool import ToolNode
 
 NODE_CLASS_MAP = {
@@ -24,7 +25,8 @@ NODE_CLASS_MAP = {
     NodeType.CONDITION.value: ConditionNode,
     NodeType.AGENT.value: AgentNode,
     NodeType.CODE.value: CodeNode,
-    NodeType.LLM.value: LLMNode
+    NodeType.LLM.value: LLMNode,
+    NodeType.STT.value: STTNode,
 }
 
 

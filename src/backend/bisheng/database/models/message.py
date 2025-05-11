@@ -13,6 +13,7 @@ from bisheng.database.models.base import SQLModelSerializable
 from bisheng.database.models.session import ReviewStatus
 from bisheng.database.models.user_group import UserGroup
 from bisheng.database.models.session import MessageSession
+from bisheng.utils.sysloger import syslog_client
 
 
 class ChatMessageType(Enum):
@@ -286,6 +287,7 @@ class ChatMessageDao(MessageBase):
             session.add(message)
             session.commit()
             session.refresh(message)
+            syslog_client.log_chat_message(message.to_dict())
         return message
 
     @classmethod
@@ -297,7 +299,10 @@ class ChatMessageDao(MessageBase):
         with session_getter() as session:
             session.execute(statement)
             session.add_all(messages)
+            syslog_data = [one.to_dict() for one in messages]
             session.commit()
+            for message in syslog_data:
+                syslog_client.log_chat_message(message)
 
     @classmethod
     def get_message_by_id(cls, message_id: int) -> Optional[ChatMessage]:
