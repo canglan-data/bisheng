@@ -400,6 +400,102 @@ class ChatMessageDao(MessageBase):
         return res, total
 
     @classmethod
+    def get_chat_id_by_time(cls, flow_ids: List[str]=None, start_time: datetime=None, end_time: datetime=None):
+        statement = select(func.distinct(ChatMessage.chat_id))
+        if flow_ids:
+            statement = statement.where(ChatMessage.flow_id.in_(flow_ids))
+        if start_time:
+            statement = statement.where(ChatMessage.create_time >= start_time)
+        if end_time:
+            statement = statement.where(ChatMessage.create_time <= end_time)
+        from sqlalchemy.dialects import mysql
+        print("get_chat_id_by_time Compiled SQL:",
+              statement.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
+        with session_getter() as session:
+            res = session.exec(statement).all()
+            return res
+
+    @classmethod
+    def get_chat_like_num(self, flow_id: str, chat_id: str, start_time: datetime = None, end_time: datetime = None):
+        # 构建统计查询，使用 count 函数统计 liked=1 的记录数
+        statement = select(func.count()).where(
+            ChatMessage.flow_id == flow_id,
+            ChatMessage.chat_id == chat_id,
+            ChatMessage.liked == 1  # 筛选 liked 为 1 的记录
+        )
+
+        # 添加时间范围筛选条件
+        if start_time:
+            statement = statement.where(ChatMessage.create_time >= start_time)
+        if end_time:
+            statement = statement.where(ChatMessage.create_time <= end_time)
+
+        # 执行查询并返回统计结果
+        with session_getter() as session:
+            count = session.exec(statement).one()
+            return count
+
+    @classmethod
+    def get_chat_dislike_num(self, flow_id: str, chat_id: str, start_time: datetime = None, end_time: datetime = None):
+        # 构建统计查询，使用 count 函数统计 liked=1 的记录数
+        statement = select(func.count()).where(
+            ChatMessage.flow_id == flow_id,
+            ChatMessage.chat_id == chat_id,
+            ChatMessage.liked == 2
+        )
+
+        # 添加时间范围筛选条件
+        if start_time:
+            statement = statement.where(ChatMessage.create_time >= start_time)
+        if end_time:
+            statement = statement.where(ChatMessage.create_time <= end_time)
+
+        # 执行查询并返回统计结果
+        with session_getter() as session:
+            count = session.exec(statement).one()
+            return count
+
+    @classmethod
+    def get_chat_not_dislike_num(self, flow_id: str, chat_id: str, start_time: datetime = None, end_time: datetime = None):
+        # 构建统计查询，使用 count 函数统计 liked=1 的记录数
+        statement = select(func.count()).where(
+            ChatMessage.flow_id == flow_id,
+            ChatMessage.chat_id == chat_id,
+            ChatMessage.liked != 2
+        )
+
+        # 添加时间范围筛选条件
+        if start_time:
+            statement = statement.where(ChatMessage.create_time >= start_time)
+        if end_time:
+            statement = statement.where(ChatMessage.create_time <= end_time)
+
+        # 执行查询并返回统计结果
+        with session_getter() as session:
+            count = session.exec(statement).one()
+            return count
+
+    @classmethod
+    def get_chat_copied_num(self, flow_id: str, chat_id: str, start_time: datetime = None, end_time: datetime = None):
+        # 构建统计查询，使用 count 函数统计 liked=1 的记录数
+        statement = select(func.count()).where(
+            ChatMessage.flow_id == flow_id,
+            ChatMessage.chat_id == chat_id,
+            ChatMessage.copied == 1
+        )
+
+        # 添加时间范围筛选条件
+        if start_time:
+            statement = statement.where(ChatMessage.create_time >= start_time)
+        if end_time:
+            statement = statement.where(ChatMessage.create_time <= end_time)
+
+        # 执行查询并返回统计结果
+        with session_getter() as session:
+            count = session.exec(statement).one()
+            return count
+
+    @classmethod
     def get_chat_info_group(cls, flow_ids: List[str], start_date: datetime, end_date: datetime, order_field: str,
                                    order_type: str, page: int, page_size: int,user_ids: List[str]=None):
         """ 获取会话的一些信息，根据技能来聚合 """
