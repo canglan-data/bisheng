@@ -12,6 +12,7 @@ from loguru import logger
 from bisheng.cache.utils import save_uploaded_file
 import io
 import re
+from bisheng.settings import settings
 
 
 class TTSNode(BaseNode):
@@ -60,6 +61,5 @@ class TTSNode(BaseNode):
         audio = self._tts.synthesize_and_save(text)
         file_name = f"{time.time()}.mp3"
         url = save_uploaded_file(io.BytesIO(audio), 'bisheng', file_name)
-        host = "123.57.174.112:3001"
-        url = replace_domain(url, host)
+        url = replace_domain(url, settings.domain.web_domain)
         return url
