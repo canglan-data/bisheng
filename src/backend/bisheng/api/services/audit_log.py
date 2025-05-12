@@ -556,9 +556,11 @@ class AuditLogService:
 
     @classmethod
     def session_export(cls, all_session: list[AppChatList]):
-        excel_data = [["会话ID","应用名称","会话创建时间","用户名称","消息角色","组织架构",
-                       "消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈","复制","是否命中安全审查",
-                       "消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈","复制","是否命中安全审查"]] # 获取用户名
+        excel_data = [["会话ID", "应用名称", "会话创建时间", "用户名称", "消息角色", "组织架构",
+                       "消息发送时间", "用户消息文本内容", "消息角色", "点赞", "点踩", "点踩反馈", "复制",
+                       "是否命中安全审查",
+                       "消息发送时间", "用户消息文本内容", "消息角色", "点赞", "点踩", "点踩反馈", "复制",
+                       "是否命中安全审查"]]  # 获取用户名
         for session in all_session:
             flow_id = str(session.flow_id).replace("-", '')
             chat_id = session.chat_id
@@ -567,30 +569,38 @@ class AuditLogService:
                 db_message = query_session.exec(where.order_by(ChatMessage.id.asc())).all()
                 c_qa = []
                 for msg in db_message:
-                    if msg.category not in {"question", "stream_msg","output_msg"}:
+                    if msg.category not in {"question", "stream_msg", "output_msg", "answer"}:
                         continue
                     if msg.category == "question":
                         if len(c_qa) != 0:
+                            while len(c_qa) > len(excel_data[0]):
+                                excel_data[0].extend(
+                                    ["消息发送时间", "用户消息文本内容", "消息角色", "点赞", "点踩", "点踩反馈",
+                                     "复制", "是否命中安全审查"])
                             excel_data.append(c_qa)
                         c_qa = [session.chat_id,
                                 session.flow_name,
                                 session.create_time,
                                 session.user_name,
-                                "系统",session.user_groups[-1]["name"]]
+                                "系统", session.user_groups[-1]["name"]]
                     if len(c_qa) == 0:
                         continue
-                    c_qa.append(msg.create_time) #会话ID
+                    c_qa.append(msg.create_time)  # 会话ID
                     c_qa.append(msg.message)
                     c_qa.append("用户" if msg.category == "question" else "AI")
                     c_qa.append("是" if msg.liked == 1 else "否")
                     c_qa.append("是" if msg.liked == 2 else "否")
                     c_qa.append(msg.remark)
                     c_qa.append("是" if msg.copied == 1 else "否")
-                    if msg.review_status in {0,1,2,3}:
-                        c_qa.append(["未审查","通过","违规","审查失败"][msg.review_status])
+                    if msg.review_status in {0, 1, 2, 3}:
+                        c_qa.append(["未审查", "通过", "违规", "审查失败"][msg.review_status])
                     else:
                         c_qa.append("未审查")
                 if len(c_qa) != 0:
+                    while len(c_qa) > len(excel_data[0]):
+                        excel_data[0].extend(
+                            ["消息发送时间", "用户消息文本内容", "消息角色", "点赞", "点踩", "点踩反馈", "复制",
+                             "是否命中安全审查"])
                     excel_data.append(c_qa)
         wb = Workbook()
         ws = wb.active
