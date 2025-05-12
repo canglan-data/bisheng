@@ -589,8 +589,8 @@ class AuditLogService:
                     c_qa.append("是" if msg.liked == 2 else "否")
                     c_qa.append(msg.remark)
                     c_qa.append("是" if msg.copied == 1 else "否")
-                    if msg.review_status in {0,1,2,3}:
-                        c_qa.append(["未审查","通过","违规","审查失败"][msg.review_status])
+                    if msg.review_status in {0, 1, 2, 3, 4}:
+                        c_qa.append(["", "未审查", "通过", "违规", "审查失败"][msg.review_status])
                     else:
                         c_qa.append("未审查")
                 if len(c_qa) != 0:
