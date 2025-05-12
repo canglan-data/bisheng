@@ -517,7 +517,7 @@ class AuditLogService:
                 ChatMessage.message.like(f'%{keyword2}%')
                 ),ChatMessage.category == 'question')
             if filter_flow_ids:
-                where = select(ChatMessage).where(ChatMessage.flow_id.in_(filter_flow_ids))
+                where = where.where(ChatMessage.flow_id.in_(filter_flow_ids))
             from sqlalchemy.dialects import mysql
             print("get_session_list Compiled SQL:",where.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
             with session_getter() as session:
