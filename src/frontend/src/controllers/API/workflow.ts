@@ -255,8 +255,8 @@ const workflowTemplate = [
     },
     {
         "id": "tts_xxx",
-        "name": "语音转文字",
-        "description": "调用大模型进行语音转文字。",
+        "name": "文字转语音",
+        "description": "调用大模型进行文字转语音。",
         "type": "tts",
         "v": "1",
         "group_params": [
@@ -306,8 +306,8 @@ const workflowTemplate = [
     },
     {
         "id": "stt_xxx",
-        "name": "文字转语音",
-        "description": "调用大模型进行文字转语音。",
+        "name": "语音转文字",
+        "description": "调用大模型进行语音转文字。",
         "type": "stt",
         "v": "1",
         "group_params": [
