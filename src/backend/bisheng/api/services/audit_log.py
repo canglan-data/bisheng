@@ -567,10 +567,13 @@ class AuditLogService:
                 db_message = query_session.exec(where.order_by(ChatMessage.id.asc())).all()
                 c_qa = []
                 for msg in db_message:
-                    if msg.category not in {"question", "stream_msg","output_msg"}:
+                    if msg.category not in {"question", "stream_msg","output_msg","answer"}:
                         continue
                     if msg.category == "question":
                         if len(c_qa) != 0:
+                            while len(c_qa) > len(excel_data[0]):
+                                excel_data[0].extend(["消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈",
+                                                      "复制","是否命中安全审查"])
                             excel_data.append(c_qa)
                         c_qa = [session.chat_id,
                                 session.flow_name,
@@ -591,6 +594,10 @@ class AuditLogService:
                     else:
                         c_qa.append("未审查")
                 if len(c_qa) != 0:
+                    while len(c_qa) > len(excel_data[0]):
+                        excel_data[0].extend(
+                            ["消息发送时间", "用户消息文本内容", "消息角色", "点赞", "点踩", "点踩反馈", "复制",
+                             "是否命中安全审查"])
                     excel_data.append(c_qa)
         wb = Workbook()
         ws = wb.active
