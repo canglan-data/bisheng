@@ -789,6 +789,13 @@ const workflowTemplate = [
                         "help": "一般在问答等场景开启，文档审核、报告生成等场景可关闭。"
                     },
                     {
+                        "key": "show_source",
+                        "label": "展示参考来源",
+                        "type": "switch",
+                        "value": true,
+                        "help": "关闭后在会话页面不展示消息参考来源"
+                    },
+                    {
                         "key": "output_user_input",
                         "label": "输出变量",
                         "type": "var",
