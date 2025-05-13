@@ -489,11 +489,19 @@ class AuditLogService:
         return True, filter_flow_ids
 
     @classmethod
+    def get_filter_chat_ids_by_time(cls,flow_ids:List[str], start_date: datetime = None, end_date: datetime = None):
+        chat_ids = ChatMessageDao.get_chat_id_by_time(flow_ids, start_date, end_date)
+        if len(chat_ids) == 0:
+            chat_ids = [""]
+        return chat_ids
+
+    @classmethod
     def get_session_list(cls, user: UserPayload, flow_ids, user_ids, group_ids, start_date, end_date,
                          feedback, review_status, page, page_size, keyword=None) -> (list, int):
         # flag, filter_flow_ids = cls.get_filter_flow_ids(user, flow_ids, group_ids)
         # if not flag:
         #     return [], 0
+
         filter_flow_ids = flow_ids
         for one in flow_ids:
             if one != one.replace("-",""):
@@ -509,7 +517,9 @@ class AuditLogService:
         if len(user_ids) == 0:
             return  [],0
         logger.info(f"get_session_list user_ids {user_ids} | group_ids {group_ids}")
-        chat_ids = None
+        chat_ids = []
+        if start_date or end_date:
+            chat_ids = cls.get_filter_chat_ids_by_time(flow_ids, start_date, end_date)
         if keyword:
             keyword2 = keyword.encode("unicode_escape").decode().replace("\\u","%")
             where = select(ChatMessage).where(or_(
@@ -517,12 +527,12 @@ class AuditLogService:
                 ChatMessage.message.like(f'%{keyword2}%')
                 ),ChatMessage.category == 'question')
             if filter_flow_ids:
-                where = select(ChatMessage).where(ChatMessage.flow_id.in_(filter_flow_ids))
+                where = where.where(ChatMessage.flow_id.in_(filter_flow_ids))
             from sqlalchemy.dialects import mysql
             print("get_session_list Compiled SQL:",where.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
             with session_getter() as session:
                 chat_res = session.exec(where).all()
-                chat_ids = [one.chat_id for one in chat_res]
+                chat_ids = set(chat_ids) & set([one.chat_id for one in chat_res])
                 if len(chat_ids) == 0:
                     chat_ids = [""]
                 chat_ids = list(set(chat_ids))
@@ -533,6 +543,10 @@ class AuditLogService:
         res_users = []
         for one in res:
             res_users.append(one.user_id)
+            if start_date or end_date:
+                one.like = ChatMessageDao.get_chat_like_num(one.flow_id,one.chat_id,start_date, end_date)
+                one.copied = ChatMessageDao.get_chat_copied_num(one.flow_id,one.chat_id,start_date, end_date)
+                one.dislike = ChatMessageDao.get_chat_dislike_num(one.flow_id,one.chat_id,start_date, end_date)
         user_list = UserDao.get_user_by_ids(res_users)
         user_map = {user.user_id: user.user_name for user in user_list}
 
@@ -567,10 +581,13 @@ class AuditLogService:
                 db_message = query_session.exec(where.order_by(ChatMessage.id.asc())).all()
                 c_qa = []
                 for msg in db_message:
-                    if msg.category not in {"question", "stream_msg","output_msg"}:
+                    if msg.category not in {"question", "stream_msg","output_msg","answer"}:
                         continue
                     if msg.category == "question":
                         if len(c_qa) != 0:
+                            while len(c_qa) > len(excel_data[0]):
+                                excel_data[0].extend(["消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈",
+                                                      "复制","是否命中安全审查"])
                             excel_data.append(c_qa)
                         c_qa = [session.chat_id,
                                 session.flow_name,
@@ -586,11 +603,15 @@ class AuditLogService:
                     c_qa.append("是" if msg.liked == 2 else "否")
                     c_qa.append(msg.remark)
                     c_qa.append("是" if msg.copied == 1 else "否")
-                    if msg.review_status in {0,1,2,3}:
-                        c_qa.append(["未审查","通过","违规","审查失败"][msg.review_status])
+                    if msg.review_status in {0, 1, 2, 3, 4}:
+                        c_qa.append(["", "未审查", "通过", "违规", "审查失败"][msg.review_status])
                     else:
                         c_qa.append("未审查")
                 if len(c_qa) != 0:
+                    while len(c_qa) > len(excel_data[0]):
+                        excel_data[0].extend(
+                            ["消息发送时间", "用户消息文本内容", "消息角色", "点赞", "点踩", "点踩反馈", "复制",
+                             "是否命中安全审查"])
                     excel_data.append(c_qa)
         wb = Workbook()
         ws = wb.active

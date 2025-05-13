@@ -87,3 +87,7 @@ class BishengTTS:
         """更新模型状态"""
         # todo 接入到异步任务模块
         LLMDao.update_model_status(self.model_id, status, remark)
+
+CUSTOM_TTS = {
+    'BishengTTS': BishengTTS,
+}

@@ -87,6 +87,18 @@ class WorkflowConf(BaseModel):
     timeout: int = Field(default=720, description="节点超时时间（min）")
 
 
+class SYSLogConf(BaseModel):
+    host: str = Field(default='127.0.0.1', description="Syslog服务器的主机地址")
+    port: int = Field(default=514, description="Syslog服务器的端口号")
+    name: str = Field(default='bisheng-backend', description="日志前缀")
+    log_format: str = Field(default='%(asctime)s %(levelname)s %(name)s: %(message)s', description="日志的格式")
+    date_format: str = Field(default='%b %d %H:%M:%S', description="日期的格式")
+
+
+class DoMain(BaseModel):
+    web_domain: str = Field(default='127.0.0.1', description="网站的域名")
+
+
 class Settings(BaseModel):
     class Config:
         validate_assignment = True
@@ -132,6 +144,8 @@ class Settings(BaseModel):
     vector_stores: VectorStores = {}
     object_storage: ObjectStore = {}
     workflow_conf: WorkflowConf = WorkflowConf()
+    syslog_conf: SYSLogConf = SYSLogConf()
+    domain: DoMain = DoMain()
 
     @validator('database_url', pre=True)
     def set_database_url(cls, value):

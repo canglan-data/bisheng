@@ -204,3 +204,24 @@ export function getFileExtension(filename) {
     const match = basename.match(/\.([^.]+)$/);
     return match ? match[1] : '';
   }
+
+
+// 校验合法json
+export function isValidJSON(str) {
+    if (typeof str !== 'string') return false;
+
+    // 简单的前置检查
+    str = str.trim();
+    if (!(str.startsWith('{') && str.endsWith('}')) &&
+        !(str.startsWith('[') && str.endsWith(']'))) {
+        return false;
+    }
+
+    // 完整解析验证
+    try {
+        JSON.parse(str);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
