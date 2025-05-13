@@ -517,7 +517,7 @@ class AuditLogService:
                 ChatMessage.message.like(f'%{keyword2}%')
                 ),ChatMessage.category == 'question')
             if filter_flow_ids:
-                where = select(ChatMessage).where(ChatMessage.flow_id.in_(filter_flow_ids))
+                where = where.where(ChatMessage.flow_id.in_(filter_flow_ids))
             from sqlalchemy.dialects import mysql
             print("get_session_list Compiled SQL:",where.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
             with session_getter() as session:
@@ -567,10 +567,13 @@ class AuditLogService:
                 db_message = query_session.exec(where.order_by(ChatMessage.id.asc())).all()
                 c_qa = []
                 for msg in db_message:
-                    if msg.category not in {"question", "stream_msg","output_msg"}:
+                    if msg.category not in {"question", "stream_msg","output_msg","answer"}:
                         continue
                     if msg.category == "question":
                         if len(c_qa) != 0:
+                            while len(c_qa) > len(excel_data[0]):
+                                excel_data[0].extend(["消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈",
+                                                      "复制","是否命中安全审查"])
                             excel_data.append(c_qa)
                         c_qa = [session.chat_id,
                                 session.flow_name,
@@ -586,11 +589,15 @@ class AuditLogService:
                     c_qa.append("是" if msg.liked == 2 else "否")
                     c_qa.append(msg.remark)
                     c_qa.append("是" if msg.copied == 1 else "否")
-                    if msg.review_status in {0,1,2,3}:
-                        c_qa.append(["未审查","通过","违规","审查失败"][msg.review_status])
+                    if msg.review_status in {0, 1, 2, 3, 4}:
+                        c_qa.append(["", "未审查", "通过", "违规", "审查失败"][msg.review_status])
                     else:
                         c_qa.append("未审查")
                 if len(c_qa) != 0:
+                    while len(c_qa) > len(excel_data[0]):
+                        excel_data[0].extend(
+                            ["消息发送时间", "用户消息文本内容", "消息角色", "点赞", "点踩", "点踩反馈", "复制",
+                             "是否命中安全审查"])
                     excel_data.append(c_qa)
         wb = Workbook()
         ws = wb.active
