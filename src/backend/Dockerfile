@@ -5,6 +5,7 @@ WORKDIR /app
 COPY ./ ./
 
 RUN poetry config virtualenvs.create false
+RUN pip install bisheng_langchain=="1.1.1"
 # RUN poetry update --without dev
 
 CMD ["sh entrypoint.sh"]
