@@ -72,6 +72,10 @@ export default function Parameter({ node, nodeId, item, onOutPutChange, onStatus
             return <ModelItem data={item} onChange={handleOnNewValue} onValidate={bindValidate} />
         case 'agent_model':
             return <ModelItem agent data={item} onChange={handleOnNewValue} onValidate={bindValidate} />
+        case 'tts_model':
+            return <ModelItem data={item} onChange={handleOnNewValue} onValidate={bindValidate} type='tts' />
+        case 'stt_model':
+            return <ModelItem data={item} onChange={handleOnNewValue} onValidate={bindValidate} type='stt' />
         case 'slide':
             return <SliderItem data={item} onChange={handleOnNewValue} />
         case 'slide_switch':

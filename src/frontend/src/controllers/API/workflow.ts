@@ -282,7 +282,7 @@ const workflowTemplate = [
                     {
                         "key": "model_id",
                         "label": "模型",
-                        "type": "bisheng_model",
+                        "type": "tts_model",
                         "value": "",
                         "required": true,
                         "placeholder": "请选择模型"
@@ -333,7 +333,7 @@ const workflowTemplate = [
                     {
                         "key": "model_id",
                         "label": "模型",
-                        "type": "bisheng_model",
+                        "type": "stt_model",
                         "value": "",
                         "required": true,
                         "placeholder": "请选择模型"
