@@ -19,6 +19,8 @@ class NodeType(Enum):
     RAG = "rag"
     REPORT = "report"
     TOOL = "tool"
+    STT = "stt"
+    TTS = "tts"
 
 
 class NodeParams(BaseModel):
