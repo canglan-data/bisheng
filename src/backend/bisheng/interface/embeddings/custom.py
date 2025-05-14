@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import numpy as np
 from bisheng.database.models.llm_server import (LLMDao, LLMModel, LLMModelType, LLMServer,
@@ -6,9 +6,8 @@ from bisheng.database.models.llm_server import (LLMDao, LLMModel, LLMModelType, 
 from bisheng.interface.importing import import_by_type
 from bisheng.interface.utils import wrapper_bisheng_model_limit_check
 from langchain.embeddings.base import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
 from loguru import logger
-from pydantic import Field
+from pydantic import ConfigDict, Field, BaseModel
 
 
 class OpenAIProxyEmbedding(Embeddings):
@@ -57,7 +56,7 @@ class BishengEmbedding(BaseModel, Embeddings):
     model_kwargs: dict = Field(default={}, description='embedding模型调用参数')
 
     embeddings: Optional[Embeddings] = Field(default=None)
-    llm_node_type = {
+    llm_node_type: Dict = {
         # 开源推理框架
         LLMServerType.OLLAMA.value: 'OllamaEmbeddings',
         LLMServerType.XINFERENCE.value: 'OpenAIEmbeddings',
@@ -72,17 +71,12 @@ class BishengEmbedding(BaseModel, Embeddings):
         LLMServerType.QIAN_FAN.value: 'QianfanEmbeddingsEndpoint',
         LLMServerType.MINIMAX.value: 'OpenAIEmbeddings',
         LLMServerType.ZHIPU.value: 'OpenAIEmbeddings',
-        LLMServerType.TENCENT.value: 'OpenAIEmbeddings',
     }
 
     # bisheng强相关的业务参数
     model_info: Optional[LLMModel] = Field(default=None)
     server_info: Optional[LLMServer] = Field(default=None)
-
-    class Config:
-        """Configuration for this pydantic object."""
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(validate_by_name=True, arbitrary_types_allowed=True)
 
     def __init__(self, **kwargs):
         from bisheng.interface.initialize.loading import instantiate_embedding
@@ -112,6 +106,8 @@ class BishengEmbedding(BaseModel, Embeddings):
         class_object = self._get_embedding_class(server_info.type)
         params = self._get_embedding_params(server_info, model_info)
         try:
+            if server_info.type == LLMServerType.OLLAMA.value:
+                params['query_instruction'] = 'passage: '
             self.embeddings = instantiate_embedding(class_object, params)
         except Exception as e:
             logger.exception('init_bisheng_embedding error')
@@ -120,7 +116,7 @@ class BishengEmbedding(BaseModel, Embeddings):
     def _get_embedding_class(self, server_type: str) -> Embeddings:
         node_type = self.llm_node_type.get(server_type)
         if not node_type:
-            raise Exception(f'{server_type}类型的模型接口格式暂不支持embedding')
+            raise Exception(f'{server_type}类型的服务提供方暂不支持embedding')
         class_object = import_by_type(_type='embeddings', name=node_type)
         return class_object
 
@@ -149,10 +145,6 @@ class BishengEmbedding(BaseModel, Embeddings):
                 LLMServerType.VLLM.value
         ]:
             params['openai_api_key'] = params.pop('openai_api_key', None) or 'EMPTY'
-        elif server_info.type == LLMServerType.TENCENT.value:
-            params['check_embedding_ctx_length'] = False
-        elif server_info.type == LLMServerType.OLLAMA.value:
-            params['query_instruction'] = 'passage: '
         return params
 
     @wrapper_bisheng_model_limit_check
