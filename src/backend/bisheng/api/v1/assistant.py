@@ -11,6 +11,7 @@ from fastapi import status as http_status
 from fastapi.responses import StreamingResponse
 from fastapi_jwt_auth import AuthJWT
 
+from bisheng.api.services.tool import ToolServices
 from bisheng.api.services.assistant import AssistantService
 from bisheng.api.services.openapi import OpenApiSchema
 from bisheng.api.services.user_service import UserPayload, get_admin_user, get_login_user
@@ -24,6 +25,8 @@ from bisheng.chat.types import WorkType
 from bisheng.database.models.assistant import Assistant
 from bisheng.database.models.gpts_tools import GptsTools, GptsToolsTypeRead
 from bisheng.utils.logger import logger
+from bisheng.mcp_manage.constant import McpClientType
+from bisheng.mcp_manage.manager import ClientManager
 
 router = APIRouter(prefix='/assistant', tags=['Assistant'])
 chat_manager = ChatManager()
@@ -301,3 +304,38 @@ async def test_tool_type(*, login_user: UserPayload = Depends(get_login_user), r
     except Exception as e:
         logger.exception('tool_test error')
         return resp_500(message=f'测试请求出错：{str(e)}')
+
+@router.post('/mcp/tool_schema')
+async def get_mcp_tool_schema(request: Request, login_user: UserPayload = Depends(get_login_user),
+                              file_content: Optional[str] = Body(default=None, embed=True,
+                                                                 description='mcp服务配置内容')):
+    """ 解析mcp的工具配置文件 """
+    services = ToolServices(request=request, login_user=login_user)
+    tool_type = await services.parse_mcp_schema(file_content)
+    return resp_200(data=tool_type)
+
+
+@router.post('/mcp/tool_test')
+async def mcp_tool_run(login_user: UserPayload = Depends(get_login_user),
+                       req: TestToolReq = None):
+    """ 测试mcp服务的工具 """
+    try:
+        # 实例化mcp服务对象，获取工具列表
+        client = await ClientManager.connect_mcp_from_json(req.openapi_schema)
+        extra = json.loads(req.extra)
+        tool_name = extra.get('name')
+        resp = await client.call_tool(tool_name, req.request_params)
+        return resp_200(data=resp)
+    except Exception as e:
+        logger.exception('mcp_tool_run error')
+        return resp_500(message=f'测试请求出错：{str(e)}')
+
+
+@router.post('/mcp/refresh')
+async def refresh_all_mcp_tools(request: Request, login_user: UserPayload = Depends(get_login_user)):
+    """ 刷新用户当前所有的mcp工具列表 """
+    services = ToolServices(request=request, login_user=login_user)
+    error_msg = await services.refresh_all_mcp()
+    if error_msg:
+        return resp_500(message=error_msg)
+    return resp_200(message='刷新成功')
