@@ -134,6 +134,13 @@ const workflowTemplate = [
                 "name": "全局变量",
                 "params": [
                     {
+                        "key": "user_info",
+                        "global": "key",
+                        "label": "用户信息",
+                        "type": "var",
+                        "value": ""
+                    },
+                    {
                         "key": "current_time",
                         "global": "key",
                         "label": "当前时间",
@@ -203,7 +210,7 @@ const workflowTemplate = [
                         "label": "允许上传文件",
                         "type": "switch",
                         "tab": "dialog_input",
-                        // "help": "控制会话中曲别针展示",
+                        "help": "控制会话中是否允许上传文件",
                         "value": true
                     },
                     {
