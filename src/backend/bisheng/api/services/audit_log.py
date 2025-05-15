@@ -593,10 +593,10 @@ class AuditLogService:
                                 session.flow_name,
                                 session.create_time,
                                 session.user_name,
-                                "系统",session.user_groups[-1]["name"]]
+                                "系统", session.user_groups[-1]["name"]]
                     if len(c_qa) == 0:
                         continue
-                    c_qa.append(msg.create_time) #会话ID
+                    c_qa.append(msg.create_time)  # 会话ID
                     c_qa.append(msg.message)
                     c_qa.append("用户" if msg.category == "question" else "AI")
                     c_qa.append("是" if msg.liked == 1 else "否")
