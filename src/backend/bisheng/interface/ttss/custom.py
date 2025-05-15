@@ -1,6 +1,10 @@
+import io
 import json
+import time
 from typing import List, Optional, Any, Sequence, Union, Dict, Type, Callable
-
+from bisheng.api.utils import md5_hash, tts_text_md5_hash, format_text_for_tts
+from bisheng.api.services.tts_cache import TTSCacheService
+from bisheng.cache.utils import save_uploaded_file
 from bisheng.database.models.llm_server import LLMDao, LLMModelType, LLMServerType, LLMModel, LLMServer
 from bisheng.interface.importing import import_by_type
 from bisheng.interface.initialize.loading import instantiate_llm
@@ -57,17 +61,52 @@ class BishengTTS:
             self.tts = class_object(**params)
             logger.debug(f'init_bisheng_tts: {self.tts.__dir__()}')
         except Exception as e:
-            logger.exception('init bisheng llm error')
-            raise Exception(f'初始化llm失败，请检查配置或联系管理员。错误信息：{e}')
+            logger.exception('init bisheng tts error')
+            raise Exception(f'初始化tts失败，请检查配置或联系管理员。错误信息：{e}')
 
-    def synthesize_and_save(self, text, out_file=None):
+    def synthesize(self,text):
         try:
-            audio = self.tts.synthesize_and_save(text, out_file)
+            text = format_text_for_tts(text)
+            audio = self.tts.synthesize(text)
             self._update_model_status(0)
             return audio
         except Exception as e:
             self._update_model_status(1, str(e))
             raise e
+
+    def synthesize_and_save(self, text, out_file=None):
+        try:
+            text = format_text_for_tts(text)
+            audio = self.tts.synthesize(text)
+            # 将音频保存至本地
+            if out_file:
+                with open(out_file, 'wb') as f:
+                    f.write(audio)
+            self._update_model_status(0)
+            return audio
+        except Exception as e:
+            self._update_model_status(1, str(e))
+            raise e
+
+    def synthesize_and_upload(self, text,cache=True):
+        try:
+            text = format_text_for_tts(text)
+            text_md5 = md5_hash(text)
+            if cache:
+                tts_cache = TTSCacheService.get_cache(md5=text_md5,model_id=self.model_id,after_time=self.model_info.update_time)
+                if tts_cache:
+                    return tts_cache.voice_url
+            audio = self.tts.synthesize(text)
+            file_name = f"{time.time()}.mp3"
+            url = save_uploaded_file(io.BytesIO(audio), 'bisheng', file_name)
+            if cache:
+                TTSCacheService.create_cache(text=text, md5=text_md5, model_id=self.model_id,voice_url=url)
+            self._update_model_status(0)
+            return url
+        except Exception as e:
+            self._update_model_status(1, str(e))
+            raise e
+
 
     def _get_tts_class(self, server_type: str) -> BaseLanguageModel:
         node_type = self.tts_node_type[server_type]
