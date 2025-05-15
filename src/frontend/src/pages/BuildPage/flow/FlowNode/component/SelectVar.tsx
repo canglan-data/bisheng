@@ -96,7 +96,7 @@ const SelectVar = forwardRef(({ nodeId, itemKey, multip = false, value = [], chi
             let newParams = cloneDeep(group.params);
             //  特殊处理输入
             if (item.type === 'input') {
-                const enableUpload = group.params.find(item => item.key === 'is_allow_upload_files')?.value;
+                const enableUpload = group.params.find(item => item.key === 'is_allow_upload')?.value;
 
                 // 如果不允许上传文件 则组件引用不许选择文件 这里使用严格等于 用来兼容之前的组件
                 if (enableUpload === false) {
