@@ -58,8 +58,6 @@ class TTSNode(BaseNode):
                   unique_id: str = None,
                   output_key: str = None) -> str:
         text = self.graph_state.get_variable_by_str(input_variable)
-        audio = self._tts.synthesize_and_save(text)
-        file_name = f"{time.time()}.mp3"
-        url = save_uploaded_file(io.BytesIO(audio), 'bisheng', file_name)
+        url = self._tts.synthesize_and_upload(text,cache=True)
         url = replace_domain(url, settings.domain.web_domain)
         return url

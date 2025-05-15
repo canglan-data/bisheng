@@ -33,5 +33,18 @@ class QwenTTS:
                     f.write(audio)
             return audio
         except Exception as e:
-            logger.exception('init bisheng llm error')
-            raise Exception(f'初始化llm失败，请检查配置或联系管理员。错误信息：{e}')
+            logger.exception('init bisheng tts error')
+            raise Exception(f'初始化tts失败，请检查配置或联系管理员。错误信息：{e}')
+
+    def synthesize(self, text):
+        """
+        合成文本并将音频保存到指定文件路径
+        :param text: 待合成的文本
+        :param file_path: 保存音频的文件路径
+        """
+        try:
+            audio = self.synthesizer.call(text)
+            return audio
+        except Exception as e:
+            logger.exception('init bisheng tts error')
+            raise Exception(f'初始化tts失败，请检查配置或联系管理员。错误信息：{e}')
