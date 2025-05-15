@@ -156,7 +156,9 @@ export default function MessageBs({operation, audit, mark = false, logo, data, o
                             </div>} */}
                         {message || data.files.length ?
                             <div ref={messageRef} className="text-sm max-w-[calc(100%-24px)]">
-                                {message && (richText || mkdown)}
+                                {/* 20250515 还原代码 */}
+                                {message && mkdown}
+                                {/* {message && (richText || mkdown)} */}
                                 {data.files.length > 0 && data.files.map(file => <ChatFile key={file.path} fileName={file.name} filePath={file.path} />)}
                                 {/* @user */}
                                 {data.receiver && <p className="text-blue-500 text-sm">@ {data.receiver.user_name}</p>}

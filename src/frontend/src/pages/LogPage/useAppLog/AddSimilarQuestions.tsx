@@ -129,7 +129,9 @@ const AddSimilarQuestions = forwardRef(({ onMarked }, ref) => {
                                             </TableCell>
                                             <TableCell className="font-medium whitespace-nowrap text-ellipsis overflow-hidden">
                                                 <div className="max-w-[360px] whitespace-nowrap text-ellipsis overflow-hidden">
-                                                    <RichText msg={el.answers}/>
+                                                    {/* <RichText msg={el.answers}/> */}
+                                                    {/* 20250515 还原代码 */}
+                                                    {el.answers}
                                                 </div>
                                             </TableCell>
                                         </TableRow>

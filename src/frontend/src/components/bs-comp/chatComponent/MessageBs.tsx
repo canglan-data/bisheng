@@ -128,7 +128,9 @@ export default function MessageBs({ operation = false, mark = false, audit = fal
                         </div>} */}
                     {data.message.toString() ?
                         <div ref={messageRef} className="text-sm max-w-[calc(100%-24px)]">
-                            {richText || mkdown}
+                            {/* 20250515 还原代码 */}
+                            {mkdown}
+                            {/* {richText || mkdown} */}
                             {/* @user */}
                             {data.receiver && <p className="text-blue-500 text-sm">@ {data.receiver.user_name}</p>}
                             {/* 光标 */}

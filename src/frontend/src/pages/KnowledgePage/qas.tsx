@@ -66,7 +66,9 @@ function QaTable({ dataList }) {
                                 {mainQuestion}
                             </TableCell>
                             <TableCell className="font-medium">
-                                <RichText msg={answer}/>
+                                {/* 20250515 还原代码 */}
+                                {answer}
+                                {/* <RichText msg={answer}/> */}
                             </TableCell>
                             <TableCell className="font-medium cursor-pointer text-primary">
                                 <Button variant="link" className="px-1" onClick={() => {
@@ -452,17 +454,18 @@ const EditQa = forwardRef(function ({ knowlageId, onChange }, ref) {
                         <label htmlFor="answer" className="bisheng-label">
                             <span className="text-red-500">*</span>{t('answer')}
                         </label>
-                        {/* <Textarea
+                        <Textarea
                             name="answer"
                             className={`col-span-3 h-36 ${error.answer && 'border-red-400'}`}
                             value={form.answer}
                             onChange={handleInputChange}
-                        /> */}
-                        <RichInput
+                        />
+                        {/* 20250515 还原代码 */}
+                        {/* <RichInput
                             className={`col-span-3 h-36 ${error.answer && 'border-red-400'}`}
                             value={form.answer}
                             onChange={handleAnswerChange}
-                        />
+                        /> */}
                     </div>
                 </div>
                 <DialogFooter>
@@ -709,7 +712,8 @@ export default function QasPage() {
                                 </TableCell>
                                 <TableCell className="font-medium">
                                     <div className="max-h-48 overflow-y-auto scrollbar-hide">
-                                        <RichText msg={el.answers}/>
+                                        {/* <RichText msg={el.answers}/> */}
+                                        {el.answers}
                                     </div>
                                 </TableCell>
                                 <TableCell>{[t('unknown'), t('manualCreation'), t('APIImport'), t('bulkImport') , t('bulkImport')][el.source]}</TableCell>

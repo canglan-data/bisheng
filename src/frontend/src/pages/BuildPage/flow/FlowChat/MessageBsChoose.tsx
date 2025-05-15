@@ -147,7 +147,8 @@ export default function MessageBsChoose({ type = 'choose', logo, data, flow = {i
                         </div>} */}
                     <div className="text-sm max-w-[calc(100%-24px)]">
                         {/* message */}
-                        <div>{richText || mkdown}</div>
+                        {/* <div>{richText || mkdown}</div> */}
+                        <div>{mkdown}</div>
                         {/* files */}
                         <div>
                             {data.files?.map((file) => <div
