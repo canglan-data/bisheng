@@ -103,14 +103,14 @@ const TabTools = ({ select = null, onSelect }: TabToolsProps) => {
                             <Star />
                             <span>{t("tools.customTools")}</span>
                         </div>
-                        <div
+                        {/* <div
                             className={`mt-1 flex cursor-pointer items-center gap-2 rounded-md px-4 py-2 transition-all duration-200 hover:bg-muted-foreground/10 ${type === "mcp" && "bg-muted-foreground/10"
                                 }`}
                             onClick={() => setType("mcp")}
                         >
                             <CpuIcon />
                             <span>MCP工具</span>
-                        </div>
+                        </div> */}
                     </div>
                     <div className="absolute bottom-0 left-0 flex h-16 w-full items-center justify-betwee px-2">
                         <p className="text-sm text-muted-foreground break-all">
