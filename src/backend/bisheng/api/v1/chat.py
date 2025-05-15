@@ -72,9 +72,7 @@ async def chat_completions(request: APIChatCompletion, Authorize: AuthJWT = Depe
                              media_type='text/event-stream')
 
 
-@router.get('/chat/app/list',
-            response_model=UnifiedResponseModel[PageList[AppChatList]],
-            status_code=200)
+@router.get('/chat/app/list')
 def get_app_chat_list(*,
                       keyword: Optional[str] = None,
                       mark_user: Optional[str] = None,
@@ -176,9 +174,7 @@ def get_app_chat_list(*,
     return resp_200(PageList(list=result, total=total))
 
 
-@router.get('/chat/history',
-            response_model=UnifiedResponseModel[List[ChatMessageRead]],
-            status_code=200)
+@router.get('/chat/history')
 def get_chatmessage(*,
                     chat_id: str,
                     flow_id: str,
