@@ -21,11 +21,11 @@ class TTSCacheService:
             return None
 
     @classmethod
-    def create_cache(cls, text: str, md5: str, model_id: int, voice_url: Optional[str] = None) -> TTSCache:
+    def create_cache(cls, text: str, md5: str, model_id: int, voice_url: str) -> TTSCache:
         """创建一条新的 TTS 缓存记录"""
         try:
             new_cache = TTSCache(
-                text=text,
+                msg=text,
                 md5=md5,
                 model_id=model_id,
                 voice_url=voice_url

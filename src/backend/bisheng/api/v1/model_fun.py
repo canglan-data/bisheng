@@ -11,9 +11,8 @@ router = APIRouter(prefix='/model_fun', dependencies=[Depends(get_login_user)])
 
 @router.post('/tts', response_model=UnifiedResponseModel)
 async def tts(*,
-              text: UUID = Body(description='需要转成语音的文字'),
-              model_id: int = Body(description='用户使用的模型id',default=0),
-              login_user: UserPayload = Depends(get_login_user)):
+              text: str = Body(description='需要转成语音的文字'),
+              model_id: int = Body(description='用户使用的模型id',default=0)):
     try:
         if not model_id:
             model_id = LLMService.get_default_tts_model_id()

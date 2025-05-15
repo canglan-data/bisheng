@@ -444,6 +444,7 @@ def format_text_for_tts(text):
     text = text.lower()
     punctuation_pattern = r'[^\w\s]'
     text = re.sub(punctuation_pattern, ' ', text,flags=re.U)
+    text = re.sub(r'\s+', ' ', text).strip()
     return text
 
 def tts_text_md5_hash(text: str):

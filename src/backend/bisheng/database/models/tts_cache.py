@@ -1,18 +1,21 @@
-from datetime import datetime
-from typing import Optional, Dict, List
+from typing import List
+from typing import Optional
 from uuid import UUID, uuid4
+from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Text, text
-from sqlmodel import Field, SQLModel, select
+from sqlalchemy import Column, DateTime, Text
+from sqlmodel import Field
+from sqlmodel import select
+from sqlalchemy import JSON, Column, DateTime, Text, and_, func, or_, text
 from bisheng.database.base import session_getter
 from bisheng.database.models.base import SQLModelSerializable
 
 
 class TTSCacheBase(SQLModelSerializable):
-    text: str = Field(sa_column=Column(Text), description="原始文本")
+    msg: str = Field(sa_column=Column(Text), description="原始文本")
     model_id: int = Field(index=True, description="模型ID")
     md5: str = Field(index=True, description="文本的MD5值")
-    voice_url: Optional[str] = Field(default=None, max_length=255, description="生成的语音URL")
+    voice_url: str = Field(sa_column=Column(Text), description="生成的语音URL")
     create_time: Optional[datetime] = Field(sa_column=Column(
         DateTime, nullable=False, index=True, server_default=text('CURRENT_TIMESTAMP')))
     update_time: Optional[datetime] = Field(
