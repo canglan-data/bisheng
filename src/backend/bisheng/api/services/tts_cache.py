@@ -9,9 +9,9 @@ from loguru import logger
 class TTSCacheService:
     @classmethod
     def get_cache(cls, md5: str, model_id: int, after_time: Optional[datetime] = None) -> Optional[TTSCache]:
-        """根据 md5 + model_id 查询缓存，默认查 30 天内的，早于也会截断"""
+        """根据 md5 + model_id 查询缓存，默认查 7 天内的，早于也会截断"""
         try:
-            min_time = datetime.now() - timedelta(days=30)
+            min_time = datetime.now() - timedelta(days=7)
             if after_time is None or after_time < min_time:
                 after_time = min_time
 
