@@ -199,7 +199,7 @@ const workflowTemplate = [
                         "tab": "dialog_input"
                     },
                     {
-                        "key": "enable_upload",
+                        "key": "is_allow_upload_files",
                         "label": "允许上传文件",
                         "type": "switch",
                         "tab": "dialog_input",
