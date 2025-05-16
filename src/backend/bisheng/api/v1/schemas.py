@@ -13,8 +13,7 @@ from bisheng.database.models.message import ChatMessageRead
 from bisheng.database.models.tag import Tag
 from langchain.docstore.document import Document
 from orjson import orjson
-from pydantic import BaseModel, Field, validator, model_validator
-
+from pydantic import BaseModel, Field, root_validator, validator
 
 
 class CaptchaInput(BaseModel):
@@ -68,7 +67,7 @@ class UpdateTemplateRequest(BaseModel):
 DataT = TypeVar('DataT')
 
 
-class UnifiedResponseModel(BaseModel,Generic[DataT]):
+class UnifiedResponseModel(Generic[DataT], BaseModel):
     """统一响应模型"""
     status_code: int
     status_message: str
@@ -409,6 +408,18 @@ class LLMServerInfo(LLMServerBase):
     id: Optional[int]
     models: List[LLMModelInfo] = Field(default=[], description='模型列表')
 
+    @root_validator
+    def hide_secret_field(cls, values):
+        if not values['config']:
+            return values
+        cls.hide_one_filed(values['config'], 'openai_api_key')
+        cls.hide_one_filed(values['config'], 'anthropic_api_key')
+        cls.hide_one_filed(values['config'], 'api_key')
+        cls.hide_one_filed(values['config'], 'api_secret')
+        cls.hide_one_filed(values['config'], 'wenxin_api_key')
+        cls.hide_one_filed(values['config'], 'wenxin_secret_key')
+        return values
+
     @staticmethod
     def hide_one_filed(values: dict, field_key: str):
         if values.get(field_key):
@@ -454,8 +465,7 @@ class FileProcessBase(BaseModel):
     chunk_size: Optional[int] = Field(default=1000, description='切分文本长度，不传则为默认')
     chunk_overlap: Optional[int] = Field(default=100, description='切分文本重叠长度，不传则为默认')
 
-    @model_validator(mode='before')
-    @classmethod
+    @root_validator
     def check_separator_rule(cls, values):
         if values['separator'] is None:
             values['separator'] = ['\n\n', '\n']
