@@ -34,13 +34,13 @@ async def tts(*,
         return resp_500(message=f'{str(e)}')
 
 @router.post('/stt', response_model=UnifiedResponseModel)
-async def tts(*,
+async def stt(*,
               url: str = Body(description='需要转成文字的语音'),
               model_id: int = Body(description='用户使用的模型id',default=0)):
     try:
 
         if not model_id:
-            model_id = LLMService.get_default_tts_model_id()
+            model_id = LLMService.get_default_stt_model_id()
         if not url:
             return resp_500(message=f'url 不能为空')
         url_md5 = md5_hash(url)
@@ -49,6 +49,6 @@ async def tts(*,
             return resp_500(message=f'转化中，请稍后再试')
         url = BishengSTT(model_id=model_id).transcribe(url)
         redis_client.delete(key)
-        return resp_200(data={"url": url})
+        return resp_200(data={"text": url})
     except Exception as e:
         return resp_500(message=f'{str(e)}')
