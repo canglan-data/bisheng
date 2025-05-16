@@ -48,7 +48,7 @@ class BishengSTT:
         if not server_info:
             raise Exception('服务提供方配置已被删除，请重新配置stt模型')
         if model_info.model_type != LLMModelType.STT.value:
-            raise Exception(f'只支持LLM类型的模型，不支持{model_info.model_type}类型的模型')
+            raise Exception(f'只支持{LLMModelType.STT.value}类型的模型，不支持{model_info.model_type}类型的模型')
         if not ignore_online and not model_info.online:
             raise Exception(f'{server_info.name}下的{model_info.model_name}模型已下线，请联系管理员上线对应的模型')
         logger.debug(f'init_bisheng_stt: server_id: {server_info.id}, model_id: {model_info.id}')
