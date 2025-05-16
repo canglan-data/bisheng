@@ -54,7 +54,7 @@ class FlowVersionRead(FlowVersionBase):
     pass
 
 
-class FlowVersionDao(FlowVersionBase):
+class FlowVersionDao(FlowVersion):
 
     @classmethod
     def create_version(cls, version: FlowVersion) -> FlowVersion:

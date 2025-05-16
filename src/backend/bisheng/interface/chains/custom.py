@@ -168,7 +168,7 @@ prompt_default = PromptTemplate(
     {image_desc}""")
 
 
-class DalleGeneratorChain(CustomChain):
+class DalleGeneratorChain(CustomChain, BaseModel):
     """Implementation of dall-e generate images"""
     dalle: DallEAPIWrapper
     llm: Optional[BaseLanguageModel]
