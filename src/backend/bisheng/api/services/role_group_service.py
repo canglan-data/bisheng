@@ -643,18 +643,38 @@ class RoleGroupService():
                 res.append(tmp)
         return res
 
-    def sync_third_groups(self, data: List[Dict]):
+    def get_department_third_id(self, dept: Dict):
+        return dept.get("thirdId", dept.get("id"))
+
+    def sync_third_groups(self, data: List[Dict], target_group_id):
         """ 同步第三方部门数据 """
-        logger.debug('sync_third_groups start')
-        root_group = data[0]
+        logger.debug(f'sync_third_groups start target_group_id:{target_group_id}')
+
+        if not target_group_id:
+            raise Exception("invalid sync_target_group_id")
+
+        if not data:
+            raise Exception("empty data")
+
+        root_department = data[0]
         # 更新根用户组的信息
-        default_group = GroupDao.get_user_group(DefaultGroup)
-        if default_group.group_name != root_group['name']:
-            default_group.group_name = root_group['name']
-            default_group.third_id = root_group['id']
-            GroupDao.update_group(default_group)
+        root_group = GroupDao.get_user_group(target_group_id)
+        if not root_group:
+            raise Exception(f"根节点在数据库中不存在，sync_target_group_id:{target_group_id}")
+
+        if root_group.level is None or root_group.level > 0:
+            raise Exception(f"根节点level必须为0，当前level:{root_group.level}")
+
+        if root_group.parent_id is None or root_group.parent_id > 0:
+            raise Exception(f"根节点parent_id必须为0，当前parent_id:{root_group.parent_id}")
+
+        if root_group:
+            # 这里必须要确保third_id被更新，name会在sync_one_group中会更新（唯一性处理）
+            root_group.third_id = self.get_department_third_id(root_department)
+            GroupDao.update_group(root_group)
+
         logger.debug("start sync update group info")
-        user_groups = self.sync_one_group(root_group, None)
+        user_groups = self.sync_one_group(root_department, None)
         logger.debug("start sync user group change")
         for user_id, new_group_ids in user_groups.items():
             # 获取用户所属的用户组
@@ -676,8 +696,13 @@ class RoleGroupService():
         department: 第三方的部门数据， 目前指企微
         group: 对应的毕昇里的用户组
          """
+        # 更新当前部门的信息，移除不属于新直系部门的用户角色授权）
         group = self.update_group_data(department, parent_group)
 
+        """
+        1、将wx的用户创建到BS
+        2、将每一个user与group的关系表返回
+        """
         # user_id: [group is list]
         user_groups = {}
         self.update_department_user(department, group, user_groups)
@@ -695,10 +720,11 @@ class RoleGroupService():
 
     def update_department_user(self, department: Dict, group: Group, user_group: Dict):
         for one in department['users']:
-            user = UserDao.get_user_by_username(one['userId'])
+            wx_user_id = one['userId']
+            user = UserDao.get_user_by_username(wx_user_id)
             if not user:
                 user = UserDao.create_user(User(
-                    user_name=one['userId'],
+                    user_name=wx_user_id,
                     password=''
                 ))
             if user.user_id not in user_group:
@@ -707,12 +733,13 @@ class RoleGroupService():
 
     def update_group_data(self, department: Dict, parent_group: Group = None):
         """ 跟新分组的数据 """
-        group = GroupDao.get_group_by_third_id(department['id'])
+        third_id = self.get_department_third_id(department)
+        group = GroupDao.get_group_by_third_id(third_id)
         # 没有对应的group先新建
         if not group:
             group = Group(
                 group_name=department['name'],
-                third_id=department['id'],
+                third_id=third_id,
                 create_user=1,
             )
             if parent_group:
@@ -721,7 +748,7 @@ class RoleGroupService():
                 group = GroupDao.insert_group(group)
             except:
                 logger.error(f'insert group error: {group}')
-                group.group_name = f'{group.group_name}（部门ID：{group.third_id}）'
+                group.group_name = f"{department['name']}（部门ID：{third_id}）"
                 group = GroupDao.insert_group(group)
             return group
         else:
@@ -732,9 +759,9 @@ class RoleGroupService():
                     group = GroupDao.update_group(group)
                 except:
                     logger.error(f'update group error: {group}')
-                    group.group_name = f'{group.group_name}（部门ID：{group.third_id}）'
+                    group.group_name = f"{department['name']}（部门ID：{third_id}）"
                     group = GroupDao.update_group(group)
-        # 说明父部门发生变更，修改部门的父部门
+        # 说明父部门发生变更，修改部门的父部门（企微中好像不支持修改部门的上级部门）
         if parent_group and group.parent_id != parent_group.id:
             # 清理组下用户和父部门角色的关系
             old_parent_groups = [one.id for one in GroupDao.get_parent_groups(group.code)]
@@ -753,3 +780,20 @@ class RoleGroupService():
                     UserRoleDao.delete_users_roles(group_all_user, need_remove_roles)
         return group
 
+    def refresh_all_group_code(self):
+        """
+        刷新全部用户组code
+        """
+        count = 0
+        root_groups = GroupDao.get_child_groups_by_id(0)
+        for root_group in root_groups:
+            logger.debug(f"refresh code start root_group[{root_group}]")
+            groups = GroupDao.get_child_groups_by_id(root_group.id)
+            for group in groups:
+                before_code = group.code
+                group = GroupDao.update_parent_group(group, root_group)
+                after_code = group.code
+                logger.debug(f"refresh code id[{group.id}] name[{group.group_name}] before_code[{before_code}] after[{after_code}]")
+                count += 1
+
+        return count

@@ -9,38 +9,52 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger } from "@
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/bs-ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/bs-ui/table"
 import { useToast } from "@/components/bs-ui/toast/use-toast"
+import { QuestionTooltip } from "@/components/bs-ui/tooltip"
+import { userContext } from "@/contexts/userContext"
 import { createTool, deleteTool, downloadToolSchema, testToolApi, updateTool } from "@/controllers/API/tools"
 import { captureAndAlertRequestErrorHoc } from "@/controllers/request"
 import { Plus } from "lucide-react"
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
+import { forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-const TestDialog = forwardRef((props: any, ref) => {
+interface TestDialogProps {
+    tool: any;
+    formState: any;
+}
+
+export const TestDialog = forwardRef<{
+    open: (item, tool, formState) => void
+}, TestDialogProps>((props: any, ref) => {
     const { t } = useTranslation()
     const [testShow, setTestShow] = useState(false)
     const [apiData, setApiData] = useState<any>({})
     const toolRef = useRef<any>({})
-    const formRef = useRef<any>({})
-    const formRuleRef = useRef<any>({})
+
+    const formRef = useRef<{
+        values: Record<string, string>;
+        rules: Record<string, boolean>;
+        state?: any;
+    }>({ values: {}, rules: {} });
 
     useImperativeHandle(ref, () => ({
-        open: (item, tool) => {
+        open: (item, tool, formState) => {
             toolRef.current = tool
+            formRef.current.state = formState
             setResult('')
             setApiData(item)
             setTestShow(true)
             // fill form
             item.api_params.forEach(param => {
-                formRef.current[param.name] = ''
-                formRuleRef.current[param.name] = param.required
+                formRef.current.values[param.name] = ''
+                formRef.current.rules[param.name] = param.required
             });
         }
     }))
     // 重置
     useEffect(() => {
         if (!testShow) {
-            formRef.current = {}
-            formRuleRef.current = {}
+            formRef.current.values = {}
+            formRef.current.rules = {}
         }
     }, [testShow])
 
@@ -50,8 +64,8 @@ const TestDialog = forwardRef((props: any, ref) => {
     const handleTest = async () => {
         // 校验
         const errors = []
-        Object.keys(formRef.current).forEach(key => {
-            if (formRuleRef.current[key] && formRef.current[key] === '') {
+        Object.keys(formRef.current.values).forEach(key => {
+            if (formRef.current.rules[key] && formRef.current.values[key] === '') {
                 errors.push(key + '为必填项')
             }
         })
@@ -69,10 +83,12 @@ const TestDialog = forwardRef((props: any, ref) => {
         await captureAndAlertRequestErrorHoc(testToolApi({
             server_host,
             extra: children.find(el => el.name === apiData.name).extra,
-            auth_method,
-            auth_type,
-            api_key,
-            request_params: formRef.current
+            auth_method: toolRef.current.authMethod === 'apikey' ? 1 : 0,
+            auth_type: toolRef.current.authType,
+            api_key: toolRef.current.apiKey,
+            request_params: formRef.current.values,
+            api_location: toolRef.current.apiLocation,
+            parameter_name: toolRef.current.parameter
         }).then(setResult))
         setLoading(false)
     }
@@ -99,7 +115,7 @@ const TestDialog = forwardRef((props: any, ref) => {
                                         <TableCell>{param.name}{param.required && <span className="text-red-500">*</span>}</TableCell>
                                         <TableCell>
                                             <Input onChange={(e) => {
-                                                formRef.current[param.name] = e.target.value;
+                                                formRef.current.values[param.name] = e.target.value;
                                             }}></Input>
                                         </TableCell>
                                     </TableRow>
@@ -145,7 +161,9 @@ const formData = {
     authType: "basic",
     apiKey: "",
     authMethod: "none",
-    customHeader: ""
+    customHeader: "",
+    apiLocation: "query",
+    parameter: ""
 }
 
 const EditTool = forwardRef((props: any, ref) => {
@@ -163,7 +181,8 @@ const EditTool = forwardRef((props: any, ref) => {
     const schemaUrl = useRef('')
     const [formState, setFormState] = useState({ ...formData });
     const fromDataRef = useRef<any>({}) // 与formState同步，fromDataRef属性更多，透传保存
-
+    const { user } = useContext(userContext);
+    const [isSelf, setIsSelf] = useState(false);
     // 表格数据（api接口列表）
     const [tableData, setTableData] = useApiTableData()
 
@@ -179,8 +198,11 @@ const EditTool = forwardRef((props: any, ref) => {
                 authType: tool.auth_type,
                 apiKey: tool.api_key,
                 authMethod: tool.auth_method === 1 ? 'apikey' : 'none',
-                customHeader: ""
+                customHeader: "",
+                apiLocation: tool.api_location || "query",
+                parameter: tool.parameter_name || ""
             })
+            setIsSelf(tool.user_id === user.user_id);
             setEditShow(true)
             setDelShow(true)
 
@@ -206,7 +228,11 @@ const EditTool = forwardRef((props: any, ref) => {
             const fetchedSchema = res.openapi_schema; // 替换为后端返回的Schema
             setFormState(prevState => ({
                 ...prevState,
-                schemaContent: fetchedSchema
+                schemaContent: fetchedSchema,
+                authMethod: res.auth_method === 1 ? 'apikey' : 'none',
+                authType: res.auth_type,
+                apiLocation: res.api_location,
+                parameter: res.parameter_name
             }))
 
             setTableData(res.children)
@@ -225,7 +251,11 @@ const EditTool = forwardRef((props: any, ref) => {
             const fetchedSchema = res.openapi_schema; // 替换为后端返回的Schema
             setFormState(prevState => ({
                 ...prevState,
-                schemaContent: fetchedSchema
+                schemaContent: fetchedSchema,
+                authMethod: res.auth_method === 1 ? 'apikey' : 'none',
+                authType: res.auth_type,
+                apiLocation: res.api_location,
+                parameter: res.parameter_name
             }));
 
             setTableData(res.children)
@@ -236,24 +266,37 @@ const EditTool = forwardRef((props: any, ref) => {
     // 发送数据给后端保存
     const handleSave = () => {
         // console.log("保存数据:", formState, fromDataRef.current);
+        const errors = [];
+
         if (!formState.toolName) {
-            return message({
-                description: '工具名称不能为空',
-                variant: "warning"
-            })
+            errors.push('工具名称不能为空');
         }
         if (!formState.schemaContent) {
-            return message({
-                description: 'schema不能为空',
-                variant: "warning"
-            })
+            errors.push('schema不能为空');
         }
-        if (formState.authMethod === "apikey" && !formState.apiKey) {
-            return message({
-                description: 'apikey不能为空',
-                variant: "warning"
-            })
+        if (formState.authMethod === "apikey") {
+            if (!formState.apiKey?.trim()) {
+                errors.push('API Key不可为空');
+            } else if (formState.apiKey.length > 1000) {
+                errors.push('API Key不可大于1000字符');
+            }
+
+            if (formState.authType === 'custom') {
+                if (!formState.parameter) {
+                    errors.push('Parameter name 不可为空');
+                } else if (formState.parameter.length > 1000) {
+                    errors.push('Parameter name 不可大于1000字符');
+                }
+            }
         }
+
+        if (errors.length > 0) {
+            return message({
+                description: errors,
+                variant: "warning"
+            });
+        }
+
 
         const fromData = fromDataRef.current
         // 参数合并
@@ -263,7 +306,9 @@ const EditTool = forwardRef((props: any, ref) => {
             auth_method: formState.authMethod === 'apikey' ? 1 : 0,
             auth_type: formState.authType,
             name: formState.toolName,
-            openapi_schema: formState.schemaContent
+            openapi_schema: formState.schemaContent,
+            api_location: formState.apiLocation,
+            parameter_name: formState.parameter
         }
 
         const methodApi = delShow ? updateTool : createTool
@@ -375,7 +420,7 @@ const EditTool = forwardRef((props: any, ref) => {
                             <RadioGroup
                                 id="authMethod"
                                 name="authMethod"
-                                defaultValue={formState.authMethod}
+                                value={formState.authMethod}
                                 className="flex mt-2 gap-4"
                                 onValueChange={(value) => setFormState(prevState => ({ ...prevState, authMethod: value }))}
                             >
@@ -390,23 +435,18 @@ const EditTool = forwardRef((props: any, ref) => {
                             </RadioGroup>
                         </div>
                         {formState.authMethod === "apikey" && (<>
-                            <div className="px-6 mb-4">
-                                <label className="bisheng-label" htmlFor="apiKey">API Key</label>
-                                <Input
-                                    id="apiKey"
-                                    name="apiKey"
-                                    className="mt-2"
-                                    value={formState.apiKey}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-
                             <div className="px-6 mb-4" >
-                                <label htmlFor="open" className="bisheng-label">Auth Type</label>
+                                <Label htmlFor="open" className="bisheng-label flex items-center gap-1">
+                                    Auth Type
+                                    <QuestionTooltip content={<div>
+                                        <p>Basic & Bearer：在 header 中使用 Authorization 传入 API key</p>
+                                        <p>Custom：自定义 API Key的参数名和参数位置</p>
+                                    </div>} />
+                                </Label>
                                 <RadioGroup
                                     id="authType"
                                     name="authType"
-                                    defaultValue={formState.authType}
+                                    value={formState.authType}
                                     className="flex mt-2 gap-4"
                                     onValueChange={(value) => setFormState(prevState => ({ ...prevState, authType: value }))}
                                 >
@@ -418,25 +458,69 @@ const EditTool = forwardRef((props: any, ref) => {
                                         <RadioGroupItem value="bearer" id="r5" />
                                         <Label htmlFor="r5">Bearer</Label>
                                     </div>
-                                    {/* <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="custom" id="r6" />
-                                    <Label htmlFor="r6">Custom</Label>
-                                </div> */}
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="custom" id="r6" />
+                                        <Label htmlFor="r6">Custom</Label>
+                                    </div>
                                 </RadioGroup>
                             </div>
-                        </>)}
-                        {/* {formState.authMethod === "custom" && (
+                            {formState.authType === "custom" && <>
+                                <div className="px-6 mb-4" >
+                                    <Label htmlFor="apiLocation" className="bisheng-label flex items-center gap-1">
+                                        API Key位置
+                                        <QuestionTooltip content={<div>
+                                            <p>header：API Key为请求头中的参数</p>
+                                            <p>query：API Key 为 URL中查询字符串中的参数</p>
+                                        </div>} />
+                                    </Label>
+                                    <RadioGroup
+                                        id="apiLocation"
+                                        name="apiLocation"
+                                        value={formState.apiLocation}
+                                        className="flex mt-2 gap-4"
+                                        onValueChange={(value) => setFormState(prevState => {
+                                            // console.log('prevState :>> ', prevState, value);
+                                            return ({ ...prevState, apiLocation: value })
+                                        }
+                                        )}
+                                    >
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="header" id="r7" />
+                                            <Label htmlFor="r7">header</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="query" id="r8" />
+                                            <Label htmlFor="r8">query</Label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+                                <div className="px-6 mb-4">
+                                    <Label className="bisheng-label" htmlFor="parameter">
+                                        <span className="text-red-500">*</span> Parameter name
+                                    </Label>
+                                    <Input
+                                        id="parameter"
+                                        name="parameter"
+                                        className="mt-2"
+                                        placeholder="请输入自定义 API key 参数名"
+                                        value={formState.parameter}
+                                        onChange={handleInputChange}
+                                    />
+                                </div>
+                            </>}
                             <div className="px-6 mb-4">
-                                <label htmlFor="customHeader">Custom Header Name</label>
+                                <Label className="bisheng-label" htmlFor="apiKey">
+                                    <span className="text-red-500">*</span> API Key</Label>
                                 <Input
-                                    id="customHeader"
-                                    name="customHeader"
+                                    id="apiKey"
+                                    name="apiKey"
                                     className="mt-2"
-                                    value={formState.customHeader}
+                                    placeholder="请输入自定义 API key 参数值"
+                                    value={formState.apiKey}
                                     onChange={handleInputChange}
                                 />
                             </div>
-                        )} */}
+                        </>)}
                     </div>
                     <label htmlFor="open" className="px-6">{t('tools.availableTools')}</label>
                     <div className="px-6 mb-4" >
@@ -463,7 +547,7 @@ const EditTool = forwardRef((props: any, ref) => {
                                                     size="sm"
                                                     variant="outline"
                                                     className="dark:bg-[#666]"
-                                                    onClick={() => testDialogRef.current.open(item, fromDataRef.current)}
+                                                    onClick={() => testDialogRef.current.open(item, fromDataRef.current, formState)}
                                                 >{t('test.test')}</Button>
                                             </TableCell>
                                         </TableRow>
@@ -511,12 +595,14 @@ const EditTool = forwardRef((props: any, ref) => {
                     )}
                 </div>
                 <SheetFooter className="absolute bottom-0 right-0 w-full px-6 py-4">
-                    {delShow && <Button
-                        size="sm"
-                        variant="destructive"
-                        className="absolute left-6"
-                        onClick={handleDelete}
-                    >{t('tools.delete')}</Button>}
+                    {delShow && (user.role === 'admin' || isSelf) && (
+                        <Button
+                            size="sm"
+                            variant="destructive"
+                            className="absolute left-6"
+                            onClick={handleDelete}
+                        >{t('tools.delete')}</Button>
+                    )}
                     <Button size="sm" variant="outline" onClick={() => setEditShow(false)}>{t('tools.cancel')}</Button>
                     <Button size="sm" className="text-[white]" onClick={handleSave}>{t('tools.save')}</Button>
                 </SheetFooter>

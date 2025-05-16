@@ -864,7 +864,9 @@
         "labeled": "已标注",
         "unnecessary": "无需标注",
         "previousChat": "上一条会话",
-        "nextChat": "下一条会话"
+        "nextChat": "下一条会话",
+        "selectPlaceholder": "请选择",
+        "searchAppsPlaceholder": "搜索应用名称"
     },
     "errors": {
         "10400": "助手不存在",

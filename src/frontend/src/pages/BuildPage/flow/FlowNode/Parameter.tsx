@@ -47,6 +47,7 @@ export default function Parameter({ node, nodeId, item, onOutPutChange, onStatus
         onVarEvent(item.key, { param: item, validate })
     }
 
+    // TODO
     // 渲染逻辑根据 `type` 返回不同的组件
     switch (item.type) {
         case 'textarea':
@@ -71,6 +72,10 @@ export default function Parameter({ node, nodeId, item, onOutPutChange, onStatus
             return <ModelItem data={item} onChange={handleOnNewValue} onValidate={bindValidate} />
         case 'agent_model':
             return <ModelItem agent data={item} onChange={handleOnNewValue} onValidate={bindValidate} />
+        case 'tts_model':
+            return <ModelItem data={item} onChange={handleOnNewValue} onValidate={bindValidate} type='tts' />
+        case 'stt_model':
+            return <ModelItem data={item} onChange={handleOnNewValue} onValidate={bindValidate} type='stt' />
         case 'slide':
             return <SliderItem data={item} onChange={handleOnNewValue} />
         case 'slide_switch':

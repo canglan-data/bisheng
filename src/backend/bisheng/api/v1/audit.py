@@ -12,7 +12,7 @@ from bisheng.api.v1.schemas import UnifiedResponseModel, resp_200
 from bisheng.database.models.group import GroupDao
 from bisheng.database.models.session import ReviewStatus
 from bisheng.database.models.user_group import UserGroupDao
-
+from bisheng.utils.util import validate_date_range
 
 router = APIRouter(prefix='/audit', tags=['Audit'])
 
@@ -80,6 +80,7 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
         group_ids = list(set(group_ids) & set(all_group))
     if len(group_ids) == 0:
         return UnAuthorizedError.return_resp()
+    start_date,end_date = validate_date_range(start_date,end_date)
     review_status = [ReviewStatus(review_status)] if review_status else []
     logger.info(f"get_session_list Flow IDs: {flow_ids} | Group IDs: {group_ids} | review_status : {review_status}")
     data, total = AuditLogService.get_session_list(login_user, flow_ids, user_ids, group_ids, start_date, end_date,
@@ -113,6 +114,7 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
         group_ids = list(set(group_ids) & set(all_group))
     if len(group_ids) == 0:
         return UnAuthorizedError.return_resp()
+    start_date, end_date = validate_date_range(start_date, end_date)
     review_status = [ReviewStatus(review_status)] if review_status else []
     logger.info(f"get_session_list Flow IDs: {flow_ids} | Group IDs: {group_ids} | review_status : {review_status}")
     all_session, total = AuditLogService.get_session_list(login_user, flow_ids, user_ids, group_ids, start_date, end_date,
