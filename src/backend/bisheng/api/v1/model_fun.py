@@ -49,6 +49,6 @@ async def stt(*,
             return resp_500(message=f'转化中，请稍后再试')
         url = BishengSTT(model_id=model_id).transcribe(url)
         redis_client.delete(key)
-        return resp_200(data={"url": url})
+        return resp_200(data={"text": url})
     except Exception as e:
         return resp_500(message=f'{str(e)}')
