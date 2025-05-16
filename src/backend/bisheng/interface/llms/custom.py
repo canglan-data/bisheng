@@ -28,7 +28,7 @@ class BishengLLM(BaseChatModel):
     cache: bool = Field(default=True, description="是否使用缓存")
 
     llm: Optional[BaseChatModel] = Field(default=None)
-    llm_node_type :Dict = {
+    llm_node_type = {
         # 开源推理框架
         LLMServerType.OLLAMA.value: 'ChatOllama',
         LLMServerType.XINFERENCE.value: 'ChatOpenAI',
