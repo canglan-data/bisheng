@@ -54,7 +54,8 @@ class RagNode(BaseNode):
 
         # 是否输出结果给用户
         self._output_user = self.node_params.get('output_user', False)
-        self._show_source = self.node_params.get('show_source', True)
+        # self._show_source = self.node_params.get('show_source', True)
+        self._show_source = True
 
         # 运行日志数据
         self._log_source_documents = {}
