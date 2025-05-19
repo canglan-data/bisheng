@@ -54,6 +54,8 @@ class RagNode(BaseNode):
 
         # 是否输出结果给用户
         self._output_user = self.node_params.get('output_user', False)
+        # self._show_source = self.node_params.get('show_source', True)
+        self._show_source = True
 
         # 运行日志数据
         self._log_source_documents = {}
@@ -76,7 +78,7 @@ class RagNode(BaseNode):
             QA_PROMPT=self._qa_prompt,
             max_content=self._max_chunk_size,
             sort_by_source_and_index=self._sort_chunks,
-            return_source_documents=True,
+            return_source_documents=self._show_source,
         )
         user_questions = self.init_user_question()
         ret = {}
@@ -99,18 +101,18 @@ class RagNode(BaseNode):
                                       msg=result['result'],
                                       unique_id=unique_id,
                                       output_key=output_key,
-                                      source_documents=result['source_documents']))
+                                      source_documents=result.get('source_documents', [])))
                 else:
                     # 说明有流式输出，则触发流式结束事件
                     self.callback_manager.on_stream_over(StreamMsgOverData(
                         node_id=self.id,
                         msg=result['result'],
                         unique_id=unique_id,
-                        source_documents=result['source_documents'],
+                        source_documents=result.get('source_documents', []),
                         output_key=output_key,
                     ))
             ret[output_key] = result[retriever.output_key]
-            self._log_source_documents[output_key] = result['source_documents']
+            self._log_source_documents[output_key] = result.get('source_documents', [])
         return ret
 
     def parse_log(self, unique_id: str, result: dict) -> Any:

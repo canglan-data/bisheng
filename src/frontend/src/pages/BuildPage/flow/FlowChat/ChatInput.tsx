@@ -14,7 +14,7 @@ import InputForm from "./InputForm";
 import { useMessageStore } from "./messageStore";
 import ChatFiles from "./ChatFiles";
 
-export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBeforSend, onLoad }) {
+export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBeforSend, onLoad, flow }) {
     const { toast } = useToast()
     const { t } = useTranslation()
     const { appConfig } = useContext(locationContext)
@@ -26,6 +26,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
     const messageIdRef = useRef('') // 当前输入框节点messageId
     const [formShow, setFormShow] = useState(false) // input表单显示
 
+    const [allowUpload, setAllowUpload] = useState(true) // input允许上传文件
     const [showWhenLocked, setShowWhenLocked] = useState(false) // 强制开启表单按钮，不限制于input锁定
     const restartTaskRef = useRef({}) // 重启任务列表
 
@@ -44,6 +45,17 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
      * 记录会话切换状态，等待消息加载完成时，控制表单在新会话自动展开
      */
     const changeChatedRef = useRef(false)
+    useEffect(() => {
+        //根据当前节点 去flow中去寻找allowUpload配置
+        if (!inputNodeIdRef.current) return;
+        const currentNode = (flow?.nodes || []).find(item => item.id === inputNodeIdRef.current);
+        if (!currentNode) return;
+        const params = (currentNode?.data?.group_params?.[0]?.params || []).find(item => item.key === "is_allow_upload");
+        if (params) {
+            setAllowUpload(params.value);
+        }
+    }, [inputNodeIdRef.current, flow])
+
     useEffect(() => {
         // console.log('message msg', messages, form);
 
@@ -282,6 +294,8 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
             data.message.msg = data.message.guide_word
         } else if (data.category === 'input') {
             const { node_id, input_schema } = data.message
+            console.log('data', data);
+            
             inputNodeIdRef.current = node_id
             messageIdRef.current = data.message_id
             // 待用户输入
@@ -441,6 +455,8 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
     // 文件上传状态
     const { fileUploading, getFileIds, loadingChange } = useFileLoading(inputLock.locked)
 
+    console.log('inputForm', inputForm);
+    
 
     return <div className="absolute bottom-0 w-full pt-1 bg-[#fff] dark:bg-[#1B1B1B]">
         <div className={`relative pr-4 ${clear && 'pl-9'}`}>
@@ -473,7 +489,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
                 }
             </div>
             {/* 附件 */}
-            {!inputLock.locked && <ChatFiles v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} />}
+            {!inputLock.locked && allowUpload && <ChatFiles v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} />}
             {/* send */}
             <div className="flex gap-2 absolute right-7 top-4 z-10">
                 <div

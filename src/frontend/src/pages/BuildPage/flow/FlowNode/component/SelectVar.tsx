@@ -93,7 +93,19 @@ const SelectVar = forwardRef(({ nodeId, itemKey, multip = false, value = [], chi
         // agent xxx#0
         let _vars = []
         item.data.forEach(group => {
-            group.params.forEach(param => {
+            let newParams = cloneDeep(group.params);
+            //  特殊处理输入
+            if (item.type === 'input') {
+                const enableUpload = group.params.find(item => item.key === 'is_allow_upload')?.value;
+
+                // 如果不允许上传文件 则组件引用不许选择文件 这里使用严格等于 用来兼容之前的组件
+                if (enableUpload === false) {
+                    newParams = newParams.filter(item => {
+                        return item.key !== 'dialog_files_content';
+                    });
+                }
+            }
+            newParams.forEach(param => {
                 // 过滤不相同tab
                 if (item.tab && param.tab && item.tab !== param.tab) return
                 // 过滤当前节点的output变量
@@ -150,6 +162,8 @@ const SelectVar = forwardRef(({ nodeId, itemKey, multip = false, value = [], chi
 
     const nodeTemps = useMemo(() => {
         if (!flow.nodes || !open) return []
+        console.log('flow.nodes', flow.nodes);
+        //TODO: 这里修改
         return flow.nodes.reduce((list, temp) => {
             const newNode = getNodeDataByTemp(temp.data)
             newNode.data && list.push(newNode)
@@ -274,6 +288,10 @@ const SelectVar = forwardRef(({ nodeId, itemKey, multip = false, value = [], chi
         onCheck(checked, tasks);
     };
 
+    console.log('nodeTemps', nodeTemps);
+    console.log('vars', vars);
+    console.log('questions', questions);
+    
     return <Select open={open} onOpenChange={setOpen}>
         <SelectTrigger
             onClick={() => inputOpenRef.current = false}
