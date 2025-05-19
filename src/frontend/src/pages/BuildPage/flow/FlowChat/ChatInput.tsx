@@ -489,7 +489,6 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
                 }
             </div>
             {/* 附件 */}
-            {/* TODO: 附件根据配置的参数判断是否展示 */}
             {!inputLock.locked && allowUpload && <ChatFiles v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} />}
             {/* send */}
             <div className="flex gap-2 absolute right-7 top-4 z-10">
