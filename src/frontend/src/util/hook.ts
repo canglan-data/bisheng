@@ -4,6 +4,7 @@ import { alertContext } from "../contexts/alertContext";
 import { useTranslation } from "react-i18next";
 import cloneDeep from "lodash-es/cloneDeep";
 import { useReactFlow } from "@xyflow/react";
+import { textToSpeech } from "@/controllers/API/flow";
 
 // 防抖
 export function useDebounce(func: any, wait: number, immediate: boolean, callback?: any,): (any?: any) => any {
@@ -296,3 +297,65 @@ export function useUndoRedo<T>(maxHistorySize = 100) {
         takeSnapshot
     }
 }
+
+export default function useAudioPlayer() {
+    const [currentPlayingId, setCurrentPlayingId] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const audioRef = useRef(null);
+    
+    // 初始化audio实例
+    useEffect(() => {
+      audioRef.current = new Audio();
+      audioRef.current.preload = 'none';
+      
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+      };
+    }, []);
+  
+    // 播放/暂停音频
+    const togglePlay = async (messageId, text) => {
+      // 如果点击的是当前正在播放的消息
+      if (currentPlayingId === messageId) {
+        if (audioRef.current.paused) {
+          await audioRef.current.play();
+        } else {
+          audioRef.current.pause();
+        }
+        return;
+      }
+      
+      // 如果点击的是新消息
+      try {
+        setIsLoading(true);
+        setCurrentPlayingId(messageId);
+        
+        // 先暂停当前播放
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+        
+        // 调用API获取音频URL
+        const audioUrl = await textToSpeech({text});
+        // TODO: format音频URL
+        // 设置新音频源
+        audioRef.current.src = audioUrl;
+        audioRef.current.currentTime = 0;
+        await audioRef.current.play();
+      } catch (error) {
+        console.error('播放失败:', error);
+        setCurrentPlayingId(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    return {
+      currentPlayingId,
+      isLoading,
+      togglePlay,
+    };
+  }

@@ -362,3 +362,17 @@ export async function uploadChatFile(v, file: File, onProgress): Promise<any> {
         }
     });
 }
+
+/** 
+ * 语音转文字接口
+*/
+export async function textToSpeech(data: { text }): Promise<any[]> {
+    return await axios.post(`/api/v1/model_fun/tts`, data);
+}
+
+/** 
+ * 语音转文字接口
+*/
+export async function speechToText(data: { url }): Promise<any[]> {
+    return await axios.post(`/api/v1/model_fun/stt`, data);
+}

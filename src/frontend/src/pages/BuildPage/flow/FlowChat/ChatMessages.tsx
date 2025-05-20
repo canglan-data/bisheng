@@ -15,6 +15,7 @@ import MessageNodeRun from "./MessageNodeRun";
 import { useMessageStore } from "./messageStore";
 import MessageUser from "./MessageUser";
 import MsgVNodeCom from "@/pages/OperationPage/useAppLog/MsgBox";
+import useAudioPlayer from "@/util/hook";
 
 export default function ChatMessages({ operation = false, audit = false, mark = false, logo, useName, disableBtn = false, guideWord, loadMore, onMarkClick, msgVNode, flow }) {
     const { t } = useTranslation()
@@ -27,6 +28,8 @@ export default function ChatMessages({ operation = false, audit = false, mark = 
     const scrollTimeoutRef = useRef(null);
     // 仅第一次加载进行滚动
     const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+    const { currentPlayingId, isLoading, togglePlay } = useAudioPlayer();
 
     // 反馈
     const thumbRef = useRef(null)
@@ -235,6 +238,9 @@ export default function ChatMessages({ operation = false, audit = false, mark = 
                             key={msg.message_id}
                             data={msg}
                             msgVNode={msgVNode}
+                            isPlaying={currentPlayingId === msg.message_id}
+                            isLoading={isLoading && currentPlayingId === msg.message_id}
+                            onTogglePlay={togglePlay}
                             onUnlike={(chatId) => { thumbRef.current?.openModal(chatId) }}
                             onSource={(data) => { sourceRef.current?.openModal(data) }}
                             onMarkClick={() => onMarkClick('answer', msg.message_id, findQa(messagesList, index))}
