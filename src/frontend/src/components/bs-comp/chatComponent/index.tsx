@@ -2,6 +2,8 @@ import ChatInput from "./ChatInput";
 import MessagePanne from "./MessagePanne";
 
 export default function ChatComponent({
+    showUpload = false,
+    assistant = false,
     stop = false,
     logo = '',
     clear = false,
@@ -16,9 +18,8 @@ export default function ChatComponent({
     flow,
     loadMore = () => { }
 }) {
-
     return <div className="relative h-full">
         <MessagePanne flow={flow} logo={logo} useName={useName} guideWord={guideWord} loadMore={loadMore}></MessagePanne>
-        <ChatInput clear={clear} questions={questions} form={form} wsUrl={wsUrl} inputForm={inputForm} onBeforSend={onBeforSend} onClickClear={onClickClear}></ChatInput>
+        <ChatInput showUpload={showUpload} flow={flow} assistant={assistant}  clear={clear} questions={questions} form={form} wsUrl={wsUrl} inputForm={inputForm} onBeforSend={onBeforSend} onClickClear={onClickClear}></ChatInput>
     </div>
 };

@@ -279,6 +279,8 @@ class AssistantService(BaseService, AssistantUtils):
         assistant.temperature = req.temperature
         assistant.update_time = datetime.now()
         assistant.max_token = req.max_token
+        assistant.is_allow_upload = req.is_allow_upload
+        assistant.file_max_size = req.file_max_size
         AssistantDao.update_assistant(assistant)
 
         # 更新助手关联信息

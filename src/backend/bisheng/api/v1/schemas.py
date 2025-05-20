@@ -265,6 +265,8 @@ class AssistantUpdateReq(BaseModel):
     model_name: Optional[str] = Field('', description='选择的模型名， 为空则不更新')
     temperature: Optional[float] = Field(None, description='模型温度， 不传则不更新')
     max_token: Optional[int] = Field(32000, description='最大token数， 不传则不更新')
+    is_allow_upload: Optional[int] = Field(1, description='')
+    file_max_size: Optional[int] = Field(15000, description='文件最大长度限制')
 
     tool_list: List[int] | None = Field(default=None,
                                         description='助手的工具ID列表,空列表则清空绑定的工具，为None则不更新')

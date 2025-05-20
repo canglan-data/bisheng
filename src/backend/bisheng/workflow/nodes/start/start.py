@@ -5,6 +5,9 @@ from bisheng.utils.exceptions import IgnoreException
 from bisheng.workflow.callback.event import GuideQuestionData, GuideWordData
 from bisheng.workflow.nodes.base import BaseNode
 from langchain.memory import ConversationBufferWindowMemory
+from bisheng.database.models.user import UserDao
+from bisheng.database.models.group import GroupDao
+from bisheng.database.models.user_group import UserGroupDao
 
 
 class StartNode(BaseNode):
@@ -14,6 +17,7 @@ class StartNode(BaseNode):
 
         # 初始化当前时间
         self.node_params['current_time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.node_params['user_info'] = self.get_user_info()
         # 初始化聊天历史记录
         self.graph_state.history_memory = ConversationBufferWindowMemory(
             k=self.node_params.get('chat_history', 10))
@@ -35,15 +39,46 @@ class StartNode(BaseNode):
 
         return {
             'current_time': self.node_params['current_time'],
+            'user_info': self.node_params.get('user_info', ''),
             'chat_history': '',
             'preset_question': new_preset_question
         }
+
+    def get_user_info(self):
+        user_id = int(self.user_id)
+        user = UserDao.get_user(int(self.user_id))
+        if user:
+            user_groups = UserGroupDao.get_user_group(user_id)
+            all_groups = []
+            if user_groups:
+                for user_group in user_groups:
+                    group = GroupDao.get_user_group(user_group.group_id)
+                    if group:
+                        sub_groups = []
+                        parent_groups = GroupDao.get_parent_groups(group.code)
+                        if parent_groups:
+                            for parent_group in parent_groups:
+                                sub_groups.append(parent_group.group_name)
+                        sub_groups.append(group.group_name)
+                        all_groups.append("/".join(sub_groups))
+
+            group_str = ";".join(all_groups)
+
+            return f"<user_info>\n用户名：{user.user_name}\n用户职位：{user.position}\n用户组织架构：{group_str}\n</user_info>"
+        else:
+            return f"<user_info></user_info>"
+
 
     def parse_log(self, unique_id: str, result: dict) -> Any:
         return [
             {
                 "key": "current_time",
                 "value": result['current_time'],
+                "type": "params"
+            },
+            {
+                "key": "user_info",
+                "value": result.get('user_info', ''),
                 "type": "params"
             },
             {

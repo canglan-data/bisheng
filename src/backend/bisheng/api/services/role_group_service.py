@@ -721,12 +721,19 @@ class RoleGroupService():
     def update_department_user(self, department: Dict, group: Group, user_group: Dict):
         for one in department['users']:
             wx_user_id = one['userId']
+            position = one.get('position', '')
             user = UserDao.get_user_by_username(wx_user_id)
             if not user:
                 user = UserDao.create_user(User(
                     user_name=wx_user_id,
+                    position=position,
                     password=''
                 ))
+
+            if user and user.position != position:
+                user.position = position
+                UserDao.update_user(user)
+
             if user.user_id not in user_group:
                 user_group[user.user_id] = set()
             user_group[user.user_id].add(group.id)

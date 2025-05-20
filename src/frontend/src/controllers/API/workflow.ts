@@ -134,6 +134,13 @@ const workflowTemplate = [
                 "name": "全局变量",
                 "params": [
                     {
+                        "key": "user_info",
+                        "global": "key",
+                        "label": "用户信息",
+                        "type": "var",
+                        "value": ""
+                    },
+                    {
                         "key": "current_time",
                         "global": "key",
                         "label": "当前时间",
@@ -197,6 +204,14 @@ const workflowTemplate = [
                         "label": "上传文件内容",
                         "type": "var",
                         "tab": "dialog_input"
+                    },
+                    {
+                        "key": "is_allow_upload",
+                        "label": "允许上传文件",
+                        "type": "switch",
+                        "tab": "dialog_input",
+                        "help": "控制会话中是否允许上传文件",
+                        "value": true
                     },
                     {
                         "key": "dialog_files_content_size",
@@ -780,6 +795,13 @@ const workflowTemplate = [
                         "value": true,
                         "help": "一般在问答等场景开启，文档审核、报告生成等场景可关闭。"
                     },
+                    // {
+                    //     "key": "show_source",
+                    //     "label": "展示参考来源",
+                    //     "type": "switch",
+                    //     "value": true,
+                    //     "help": "关闭后在会话页面不展示消息参考来源"
+                    // },
                     {
                         "key": "output_user_input",
                         "label": "输出变量",

@@ -506,6 +506,12 @@
         "forBetter": "为了更好的助手效果，描述需要大于20 个字",
         "forExample": "例如助手的身份、完成任务的具体方法和步骤、回答问题时的语气以及应该注意什么问题等",
         "contentSecurityR": "内容安全审查",
+        "fileSetting": "文件上传配置",
+        "fileSettingDesc": "配置助手会话上传文件的规则",
+        "allowUploadFile": "允许上传文件",
+        "allowUploadFileDesc": "通过开关控制是否允许助手上传文件",
+        "fileContextMax": "文件内容长度限制",
+        "fileContextMaxDesc": "文件最大解析长度",
         "errors": {
             "selectAtLeastOneWordType": "词表至少需要选择一个",
             "autoReplyNotEmpty": "自动回复内容不可为空"
