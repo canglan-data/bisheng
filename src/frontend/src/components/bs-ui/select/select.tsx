@@ -31,7 +31,7 @@ const _SelectSearch: React.FC<SelectSearchProps> = ({
         <SelectTrigger className={selectClass}>
             <SelectValue placeholder={selectPlaceholder} />
         </SelectTrigger>
-        <SelectContent className={contentClass} headNode= {
+        <SelectContent className={contentClass} headNode={
             <SearchInput inputClassName="h-8 mb-2 dark:border-gray-700" placeholder={inputPlaceholder}
                 onChange={(e) => onChange(e)} onKeyDown={e => e.stopPropagation()} iconClassName="w-4 h-4" />
         }>
