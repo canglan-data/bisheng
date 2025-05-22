@@ -104,6 +104,7 @@ async def get_all_group(*,login_user: UserPayload = Depends(get_login_user),
     groups_res = RoleGroupService().get_group_list(groups)
     if keyword:
         groups_res = [one for one in groups_res if keyword in one.group_name]
+        groups_res = sorted(groups_res, key=lambda group: group.name.index(keyword))
     return resp_200({'data': groups_res,'total': len(groups_res)})
 
 @router.get('/list_audit', response_model=UnifiedResponseModel[List[GroupRead]])
@@ -126,6 +127,7 @@ async def get_all_group(*,login_user: UserPayload = Depends(get_login_user),
     groups_res = RoleGroupService().get_group_list(groups)
     if keyword:
         groups_res = [one for one in groups_res if keyword in one.group_name]
+        groups_res = sorted(groups_res, key=lambda group: group.name.index(keyword))
     return resp_200({'data': groups_res,'total': len(groups_res)})
 
 

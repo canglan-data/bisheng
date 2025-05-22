@@ -356,7 +356,10 @@ class FlowDao(FlowBase):
                 count_statement = count_statement.where(sub_query.c.user_id == user_id)
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
-        statement = statement.order_by(sub_query.c.update_time.desc())
+        if name:
+            statement = statement.order_by(func.instr(sub_query.c.name, name))
+        else:
+            statement = statement.order_by(sub_query.c.update_time.desc())
         with (session_getter() as session):
             ret = session.exec(statement).all()
             total = session.scalar(count_statement)
