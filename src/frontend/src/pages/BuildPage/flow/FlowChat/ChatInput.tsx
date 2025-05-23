@@ -14,6 +14,11 @@ import InputForm from "./InputForm";
 import { useMessageStore } from "./messageStore";
 import ChatFiles from "./ChatFiles";
 
+export const FileTypes = {
+    IMAGE: ['.PNG', '.JPEG', '.JPG', '.BMP'],
+    FILE: ['.PDF', '.TXT', '.MD', '.HTML', '.XLS', '.XLSX', '.DOC', '.DOCX', '.PPT', '.PPTX'],
+}
+
 export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBeforSend, onLoad, flow }) {
     const { toast } = useToast()
     const { t } = useTranslation()
@@ -25,6 +30,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
     const [inputForm, setInputForm] = useState(null) // input表单
     const messageIdRef = useRef('') // 当前输入框节点messageId
     const [formShow, setFormShow] = useState(false) // input表单显示
+    const [accepts, setAccepts] = useState('*') // 接受文件类型
 
     const [allowUpload, setAllowUpload] = useState(true) // input允许上传文件
     const [showWhenLocked, setShowWhenLocked] = useState(false) // 强制开启表单按钮，不限制于input锁定
@@ -110,13 +116,15 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
         // formShow && setFormShow(false)
         // setFormShow(false)
 
-        const [fileIds, fileNames] = getFileIds().reduce((acc, cur) => {
-            acc[0].push(cur.id)
+        const [filePath, fileNames] = getFileIds().reduce((acc, cur) => {
+            acc[0].push(cur.path)
             acc[1].push(cur.name)
             return acc
         }, [[], []])
+        console.log('filePath', filePath, fileNames);
+        
         const _value = inputRef.current.value
-        if (_value.trim() === '' && fileIds.length === 0) return
+        if (_value.trim() === '' && filePath.length === 0) return
         const value = fileNames.length > 0 ? fileNames.join('\n') + '\n' + _value : _value;
 
         const event = new Event('input', { bubbles: true, cancelable: true });
@@ -127,7 +135,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
         const wsMsg = onBeforSend('input', {
             nodeId: inputNodeIdRef.current,
             msg: value,
-            files: fileIds,
+            files: filePath,
             category: "question",
             extra: '',
             message_id: messageIdRef.current,
@@ -272,6 +280,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
 
     // 接受 ws 消息
     const handleWsMessage = (data) => {
+        console.log('xxxxxhandleWsMessagedata', data);
         if (data.category === 'error') {
             const { code, message } = data.message
             if (10527 === code) {
@@ -294,10 +303,21 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
             data.message.msg = data.message.guide_word
         } else if (data.category === 'input') {
             const { node_id, input_schema } = data.message
-            console.log('data', data);
-            
+
             inputNodeIdRef.current = node_id
             messageIdRef.current = data.message_id
+            // 限制文件类型
+            if (input_schema.tab === 'dialog_input') {
+                const schemaItem = input_schema.value?.find(el => el.key === 'dialog_file_accept')
+                const fileAccept = schemaItem?.value
+                if (fileAccept === 'image') {
+                    setAccepts(FileTypes.IMAGE.join(','))
+                } else if (fileAccept === 'file') {
+                    setAccepts(FileTypes.FILE.join(','))
+                } else {
+                    setAccepts(FileTypes.IMAGE.join(',') + ',' + FileTypes.FILE.join(','))
+                }
+            }
             // 待用户输入
             input_schema.tab === 'form_input'
                 ? (setInputForm(input_schema), setFormShow(true))
@@ -308,6 +328,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
         } else if (data.category === 'stream_msg') {
             streamWsMsg(data)
         }
+
 
         if (data.type === 'close') {
             //本轮会话已结束
@@ -489,7 +510,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
                 }
             </div>
             {/* 附件 */}
-            {!inputLock.locked && allowUpload && <ChatFiles v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} />}
+            {!inputLock.locked && allowUpload && <ChatFiles accepts={accepts} v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} />}
             {/* send */}
             <div className="flex gap-2 absolute right-7 top-4 z-10">
                 <div
@@ -544,6 +565,8 @@ const useFileLoading = (locked) => {
         fileUploading: loading,
         getFileIds: () => filesRef.current,
         loadingChange(files: string[] | null) {
+            console.log('filesfiles, files', files);
+            
             if (files) {
                 setLoading(false)
                 filesRef.current = files
