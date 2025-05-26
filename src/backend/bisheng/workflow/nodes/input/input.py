@@ -40,6 +40,7 @@ class InputNode(BaseNode):
 
         self.node_params = new_node_params
         self._image_ext = ['png', 'jpg', 'jpeg', 'bmp']
+        self._audio_ext = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'opus', 'amr', 'weba', 'wma','speex']
 
         self._embedding = None
         self._vector_client = None
@@ -47,8 +48,8 @@ class InputNode(BaseNode):
 
     def is_dialog_input(self):
         """ 是否是对话形式的输入 """
-        if self.node_data.v < self._current_v:
-            raise IgnoreException(f'{self.name} -- workflow node is update')
+        # if str(self.node_data.v) < str(self._current_v):
+        #     raise IgnoreException(f'{self.name} -- workflow node is update')
 
         if self._tab == 'dialog_input':
             return True
@@ -72,11 +73,12 @@ class InputNode(BaseNode):
     def _run(self, unique_id: str):
         if self.is_dialog_input():
             # 对话框形式的输入
-            dislog_files_content, self._dialog_images_files = self.parse_dialog_files()
+            dislog_files_content, self._dialog_images_files,dialog_audio_files = self.parse_dialog_files()
             res = {
                 'user_input': self.node_params['user_input'],
                 'dialog_files_content': dislog_files_content,
-                'dialog_image_files': self._dialog_images_files
+                'dialog_image_files': self._dialog_images_files,
+                'dialog_audio_files': dialog_audio_files
             }
             self.graph_state.save_context(content=f'{res["dialog_files_content"]}\n{res["user_input"]}',
                                           msg_sender='human')
@@ -106,14 +108,16 @@ class InputNode(BaseNode):
         file_length = 0
         dialog_files_content = ""
         image_files_path = []
+        audio_files_path = []
         if not self.node_params.get('dialog_files_content'):
-            return dialog_files_content, image_files_path
+            return dialog_files_content, image_files_path,audio_files_path
         for file_id in self.node_params['dialog_files_content']:
-            file_name, file_path, chunks, metadatas = self.get_upload_file_path_content(file_id)
+            file_name, file_path, chunks, _ = self.get_upload_file_path_content(file_id)
             file_ext = file_name.split('.')[-1].lower()
             if file_ext in self._image_ext:
                 image_files_path.append(file_path)
-
+            if file_ext in self._audio_ext:
+                audio_files_path.append(file_path)
             if file_length >= self._dialog_files_length:
                 continue
             file_content = "\n".join(chunks)
@@ -121,7 +125,7 @@ class InputNode(BaseNode):
             file_length += len(file_content)
 
             dialog_files_content += f"[file name]: {file_name}\n[file content begin]\n{file_content}\n[file content end]\n"
-        return dialog_files_content, image_files_path
+        return dialog_files_content, image_files_path, audio_files_path
 
     def get_upload_file_path_content(self, file_url: str) -> (str, str, list, list):
         """
@@ -155,6 +159,11 @@ class InputNode(BaseNode):
         shutil.copyfile(filepath, original_file_path)
         texts = []
         metadatas = []
+        file_extension_name = file_name.split(".")[-1].lower()
+        if file_extension_name in self._audio_ext:
+            texts = [file_name]
+            metadatas = [{'file_id': file_id, 'knowledge_id': self.workflow_id, 'extra': '', 'bbox': ''}]
+            return file_name, original_file_path, texts, metadatas
         try:
             texts, metadatas, _, _ = read_chunk_text(filepath, file_name,
                                                      ['\n\n', '\n'],
@@ -186,7 +195,8 @@ class InputNode(BaseNode):
                 key_info['key']: None,
                 key_info['file_content']: None,
                 key_info['file_path']: None,
-                key_info['image_file']: None
+                key_info['image_file']: None,
+                key_info['audio_file']: None
             }
 
         # 解析文件
@@ -195,6 +205,7 @@ class InputNode(BaseNode):
         original_file_path = []
         file_id = md5_hash(f'{key}:{value[0]}')
         image_files_path = []
+        audio_files_path = []
         file_content_max_size = int(key_info.get('file_content_size', 15000))
         file_content_length = 0
         for one_file_url in value:
@@ -203,6 +214,8 @@ class InputNode(BaseNode):
             file_ext = file_name.split('.')[-1].lower()
             if file_ext in self._image_ext:
                 image_files_path.append(file_path)
+            if file_ext in self._audio_ext:
+                audio_files_path.append(file_path)
 
             if file_content_length < file_content_max_size:
                 file_content = "\n".join(texts)
@@ -238,5 +251,6 @@ class InputNode(BaseNode):
             key_info['key']: all_metadata,
             key_info['file_content']: all_file_content,
             key_info['file_path']: original_file_path,
-            key_info['image_file']: image_files_path
+            key_info['image_file']: image_files_path,
+            key_info['audio_file']: audio_files_path
         }

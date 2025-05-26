@@ -2,6 +2,14 @@ from http import HTTPStatus
 import dashscope
 import json
 import requests
+import os
+from dashscope.audio.asr import Recognition
+from http import HTTPStatus
+import dashscope
+import json
+import requests
+from dashscope.audio.asr import Recognition
+import soundfile as sf
 
 
 class QwenSTT:
@@ -13,30 +21,61 @@ class QwenSTT:
         self.api_key = kwargs.get('api_key')
         self.model = kwargs.get('model')
 
-    def transcribe(self, file_url):
+    def get_format(self, file_path):
+        """
+        :param file_path: 音频文件 路径
+        :return: pcm、wav、mp3、opus、speex、aac、amr 或 None
+        """
+        # 定义支持的音频格式及其对应的扩展名
+        format_mapping = {
+            '.pcm': 'pcm',
+            '.wav': 'wav',
+            '.mp3': 'mp3',
+            '.opus': 'opus',
+            '.speex': 'speex',
+            '.aac': 'aac',
+            '.amr': 'amr'
+        }
+        # 从文件路径中提取扩展名并转换为小写
+
+        file_extension = os.path.splitext(file_path)[1].lower()
+        # 根据扩展名查找对应的音频格式
+        return format_mapping.get(file_extension)
+
+    def get_sample_rate(self, file_path):
+        """
+        :param file_path: 音频文件 路径
+        :return: 8000,16000 或 None
+        """
+        try:
+            # 读取音频文件的采样率
+            _, sample_rate = sf.read(file_path, dtype='float32', always_2d=True)
+            return sample_rate
+        except Exception as e:
+            print(f"读取音频文件 {file_path} 失败: {e}")
+            return None
+
+    def transcribe(self, file_path):
         """
         执行语音转录
-        :param file_urls: 要转录的音频文件 URL 列表
-        :param language_hints: 语言提示列表，默认为中文
-        :param model: 要使用的模型，默认为 paraformer - v2
+        :param file_path: 要转录的音频文件 路径
         :return: 转录结果或错误信息
         """
         try:
             dashscope.api_key = self.api_key
-            task_response = dashscope.audio.asr.Transcription.async_call(
-                model=self.model,
-                file_urls=[file_url],
-                language_hints=["zh",'en'],
-                api_key=self.api_key
-            )
-            transcribe_response = dashscope.audio.asr.Transcription.wait(task=task_response.output.task_id)
-            if transcribe_response.status_code == HTTPStatus.OK:
-                json_file = transcribe_response.output["results"][0]["transcription_url"]
-                real_result = json.loads(requests.get(json_file).text)
-                all_text = [r["text"] for r in real_result["transcripts"]]
-                text = " ".join(all_text)
-                return text
-            else:
-                raise Exception(f'transcription error! {transcribe_response.status_code}')
+            recognition = Recognition(model=self.model,
+                                      format=self.get_format(file_path),
+                                      sample_rate=self.get_sample_rate(file_path),
+                                      # “language_hints”只支持paraformer-realtime-v2模型
+                                      language_hints=['zh', 'en'],
+                                      callback=None)
+            # 在这个地方需要判断，如果是一个url则需要将url保存在本地
+            result = recognition.call(file_path)  # 修改为 audio 参数
+            if result.status_code == HTTPStatus.OK:
+                data = result.get_sentence()
+                result = ""
+                for t in data:
+                    result += t["text"]
+                return result
         except Exception as e:
             raise Exception(f"An error occurred during transcription {e}")
