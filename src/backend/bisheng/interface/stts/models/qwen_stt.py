@@ -18,8 +18,8 @@ class QwenSTT:
         初始化 STT 类
         :param api_key: 用于调用 API 的密钥
         """
-        self.api_key = "sk-56b29d1c8a6b4ad4b7b6e9e465828ea7"
-        self.model = "paraformer-realtime-v2"
+        self.api_key = kwargs.get('api_key')
+        self.model = kwargs.get('model')
 
     def get_format(self, file_path):
         """
