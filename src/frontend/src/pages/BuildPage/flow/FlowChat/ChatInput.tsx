@@ -310,16 +310,18 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
             // 限制文件类型
             if (input_schema.tab === 'dialog_input') {
                 const schemaItem = input_schema.value?.find(el => el.key === 'dialog_file_accept')
-                const fileAccept = schemaItem?.value
-                if (fileAccept.include('image')) {
-                    setAccepts(FileTypes.IMAGE.join(','));
+                const fileAccept: string[] = schemaItem?.value
+                const filesTypes = [];
+                if (fileAccept.includes('image')) {
+                    filesTypes.push(...FileTypes.IMAGE);
                 }
-                if (fileAccept.include('file')) {
-                    setAccepts(FileTypes.FILE.join(','));
+                if (fileAccept.includes('file')) {
+                    filesTypes.push(...FileTypes.FILE);
                 } 
-                if (fileAccept.include('audio')) {
-                    setAccepts(FileTypes.AUDIO.join(','));
+                if (fileAccept.includes('audio')) {
+                    filesTypes.push(...FileTypes.AUDIO);
                 }
+                setAccepts(filesTypes.join(','));
             }
             // 待用户输入
             input_schema.tab === 'form_input'
