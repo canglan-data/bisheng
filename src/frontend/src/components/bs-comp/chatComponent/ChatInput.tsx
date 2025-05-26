@@ -13,6 +13,7 @@ import { useMessageStore } from "./messageStore";
 import { CirclePause } from "lucide-react";
 import ChatFiles from "@/pages/BuildPage/flow/FlowChat/ChatFiles";
 
+// 未来助手可能会支持 多模态 + 语音识别
 export const FileTypes = {
     IMAGE: ['.PNG', '.JPEG', '.JPG', '.BMP'],
     FILE: ['.PDF', '.TXT', '.MD', '.HTML', '.XLS', '.XLSX', '.DOC', '.DOCX', '.PPT', '.PPTX'],
@@ -94,14 +95,14 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
         // formShow && setFormShow(false)
         setFormShow(false)
 
-        const [filePath, fileNames] = getFileIds().reduce((acc, cur) => {
+        const [fileIds, fileNames] = getFileIds().reduce((acc, cur) => {
             acc[0].push(cur.id)
             acc[1].push(cur.name)
             return acc
         }, [[], []])
 
         const _value = inputRef.current.value
-        if (_value.trim() === '' && filePath.length === 0) return
+        if (_value.trim() === '' && fileIds.length === 0) return
         const value = fileNames.length > 0 ? fileNames.join('\n') + '\n' + _value : _value;
 
         const event = new Event('input', { bubbles: true, cancelable: true });
@@ -110,7 +111,7 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
         const contunue = continueRef.current ? 'continue' : ''
         continueRef.current = false
 
-        const [wsMsg, inputKey] = onBeforSend(contunue, value, filePath)
+        const [wsMsg, inputKey] = onBeforSend(contunue, value, fileIds)
         // msg to store
         createSendMsg(wsMsg.inputs, inputKey)
         // 锁定 input
@@ -337,7 +338,7 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
                     ><FormIcon className={!showWhenLocked && inputLock.locked ? 'text-muted-foreground' : 'text-foreground'}></FormIcon></div>
                 }
             </div>
-            {!inputLock.locked && assistant && (flow?.is_allow_upload || showUpload) && <ChatFiles v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} />}
+            {!inputLock.locked && assistant && (flow?.is_allow_upload || showUpload) && <ChatFiles v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} preParsing/>}
             {/* send */}
             <div className="flex gap-2 absolute right-3 top-4 z-10">
                 {stop.show ?
@@ -400,8 +401,6 @@ const useFileLoading = (locked) => {
         fileUploading: loading,
         getFileIds: () => filesRef.current,
         loadingChange(files: string[] | null) {
-            console.log('files', files);
-            
             if (files) {
                 setLoading(false)
                 filesRef.current = files

@@ -8,7 +8,7 @@ import { FileIcon, PaperclipIcon, X } from "lucide-react";
 import { useContext, useMemo, useRef, useState } from "react";
 
 // @accepts '.png,.jpg'
-export default function ChatFiles({ v, accepts, onChange }) {
+export default function ChatFiles({ v, accepts, onChange, preParsing }) {
     const [files, setFiles] = useState([]);
     const filesRef = useRef([]);
     const remainingUploadsRef = useRef(0);
@@ -83,7 +83,7 @@ export default function ChatFiles({ v, accepts, onChange }) {
                     filesRef.current = updatedFiles;
                     return updatedFiles;
                 });
-            }).then(response => {
+            }, preParsing, v).then(response => {
                 console.log('repose', response);
                 
                 const filePath = response.file_path; // Assuming the response contains the file ID

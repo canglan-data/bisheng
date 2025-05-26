@@ -23,7 +23,6 @@ export default function TestChat({ assisId, guideQuestion, onClear }) {
 
     // send 前获取参数用来做 params to send ws
     const getWsParamData = (action, msg, data) => {
-        console.log('textCHat', action, msg, data);
         const inputKey = 'input';
         const msgData = {
             chatHistory: messages,

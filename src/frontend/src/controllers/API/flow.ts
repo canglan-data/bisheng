@@ -346,10 +346,10 @@ export async function runTestCase(data: { question_list, version_list, node_id, 
 /**
  * 聊天窗上传文件
  */
-export async function uploadChatFile(file: File, onProgress): Promise<any> {
+export async function uploadChatFile(file: File, onProgress, preParsing, v = 1): Promise<any> {
     const formData = new FormData();
     formData.append("file", file);
-    return await axios.post(`/api/v1/knowledge/upload`, formData, {
+    return await axios.post(preParsing ? `/api/${v}/workflow/input/file` : `/api/v1/knowledge/upload`, formData, {
         headers: {
             "Content-Type": "multipart/form-data"
         },
