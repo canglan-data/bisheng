@@ -1,4 +1,8 @@
 import json
+import time
+
+import requests
+from pathlib import Path
 from typing import List, Optional, Any, Sequence, Union, Dict, Type, Callable
 
 from bisheng.database.models.llm_server import LLMDao, LLMModelType, LLMServerType, LLMModel, LLMServer
@@ -14,6 +18,9 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from loguru import logger
 from pydantic import Field
+from platformdirs import user_cache_dir
+
+CACHE_DIR = user_cache_dir('bisheng', 'bisheng')
 
 
 class BishengSTT:
@@ -30,7 +37,7 @@ class BishengSTT:
 
     def __init__(self, **kwargs):
         self.model_id = kwargs.get('model_id')
-        self.model_name = kwargs.get('model_name',"")
+        self.model_name = kwargs.get('model_name', "")
         self.streaming = kwargs.get('streaming', True)
         self.temperature = kwargs.get('temperature', 0.3)
         self.top_p = kwargs.get('top_p', 1)
@@ -77,12 +84,41 @@ class BishengSTT:
             params["model"] = model_info.model_name
         return params
 
-    def transcribe(self,file_url):
+    def url_to_localpath(self, file_url):
+        cache_path = Path(CACHE_DIR)
+        folder_path = cache_path / "BishengSTT"
+        # 创建缓存文件夹
+        folder_path.mkdir(parents=True, exist_ok=True)
+
+        # 从 URL 中提取文件名
+        file_name = str(time.time()) + "_" + file_url.split("/")[-1]
+        local_file_path = folder_path /  file_name
+
+        # 下载文件到本地
+        if not local_file_path.exists():
+            logger.info(f"Downloading file from {file_url} to {local_file_path}")
+            response = requests.get(file_url, stream=True)
+            response.raise_for_status()
+
+            with open(local_file_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            logger.info(f"File downloaded to {local_file_path}")
+        else:
+            logger.info(f"Using cached file at {local_file_path}")
+
+        file_path = str(local_file_path)
+        return file_path
+
+    def transcribe(self, file_path):
         try:
-            ret = self.stt.transcribe(file_url)
+            if file_path.startswith('http'):
+                file_path = self.url_to_localpath(file_path)
+            ret = self.stt.transcribe(file_path)
             self._update_model_status(0)
         except Exception as e:
-            self._update_model_status(1,str(e))
+            self._update_model_status(1, str(e))
             raise e
         return ret
 
@@ -90,6 +126,7 @@ class BishengSTT:
         """更新模型状态"""
         # todo 接入到异步任务模块
         LLMDao.update_model_status(self.model_id, status, remark)
+
 
 CUSTOM_STT = {
     'BishengSTT': BishengSTT,
