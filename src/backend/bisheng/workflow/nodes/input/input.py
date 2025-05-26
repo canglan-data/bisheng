@@ -110,7 +110,7 @@ class InputNode(BaseNode):
         image_files_path = []
         audio_files_path = []
         if not self.node_params.get('dialog_files_content'):
-            return dialog_files_content, image_files_path
+            return dialog_files_content, image_files_path,audio_files_path
         for file_id in self.node_params['dialog_files_content']:
             file_name, file_path, chunks, _ = self.get_upload_file_path_content(file_id)
             file_ext = file_name.split('.')[-1].lower()
