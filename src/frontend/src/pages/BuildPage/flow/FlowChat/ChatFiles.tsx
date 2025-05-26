@@ -189,7 +189,7 @@ export default function ChatFiles({ v, accepts, onChange, preParsing }) {
             </div>}
 
             {/* File Upload Button */}
-            <div className="absolute right-10 top-5 cursor-pointer" onClick={() => fileInputRef.current.click()}>
+            <div className="absolute right-20 top-5 cursor-pointer" onClick={() => fileInputRef.current.click()}>
                 <PaperclipIcon size={18} />
             </div>
 

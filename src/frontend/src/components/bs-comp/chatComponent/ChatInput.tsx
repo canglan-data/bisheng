@@ -12,6 +12,7 @@ import GuideQuestions from "./GuideQuestions";
 import { useMessageStore } from "./messageStore";
 import { CirclePause } from "lucide-react";
 import ChatFiles from "@/pages/BuildPage/flow/FlowChat/ChatFiles";
+import SpeechToTextComponent from "@/components/SpeechToTextComponent";
 
 // 未来助手可能会支持 多模态 + 语音识别
 export const FileTypes = {
@@ -338,6 +339,7 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
                     ><FormIcon className={!showWhenLocked && inputLock.locked ? 'text-muted-foreground' : 'text-foreground'}></FormIcon></div>
                 }
             </div>
+            {!inputLock.locked && <SpeechToTextComponent onChange={(text) => {console.log('text');}}/>}
             {!inputLock.locked && assistant && (flow?.is_allow_upload || showUpload) && <ChatFiles v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} preParsing/>}
             {/* send */}
             <div className="flex gap-2 absolute right-3 top-4 z-10">
@@ -377,7 +379,7 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
                 disabled={inputLock.locked}
                 onInput={handleTextAreaHeight}
                 placeholder={inputLock.locked ? inputLock.reason : t('chat.inputPlaceholder')}
-                className={"resize-none py-4 pr-10 text-md min-h-6 max-h-[200px] scrollbar-hide dark:bg-[#2A2B2E] text-gray-800" + (form && ' pl-10')}
+                className={"resize-none py-4 pr-20 text-md min-h-6 max-h-[200px] scrollbar-hide dark:bg-[#2A2B2E] text-gray-800" + (form && ' pl-10')}
                 onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();

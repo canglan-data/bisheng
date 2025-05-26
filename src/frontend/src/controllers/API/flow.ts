@@ -343,12 +343,11 @@ export async function runTestCase(data: { question_list, version_list, node_id, 
     return await axios.post(`/api/v1/flows/compare`, data);
 }
 
-/**
+/** 
  * 聊天窗上传文件
  */
 export async function uploadChatFile(file: File, onProgress, preParsing, v = 1): Promise<any> {
     const formData = new FormData();
-    formData.append("file", file);
     return await axios.post(preParsing ? `/api/${v}/workflow/input/file` : `/api/v1/knowledge/upload`, formData, {
         headers: {
             "Content-Type": "multipart/form-data"
@@ -375,4 +374,25 @@ export async function textToSpeech(data: { text }): Promise<any[]> {
 */
 export async function speechToText(data: { url }): Promise<any[]> {
     return await axios.post(`/api/v1/model_fun/stt`, data);
+}
+
+
+/**
+ * 语音转文字组件接口
+ */
+export async function uploadAndStt(file: File, onProgress): Promise<any> {
+    const formData = new FormData();
+    formData.append("file", file, 'recording.wav');
+    return await axios.post(`/api/v1/model_fun/upload_and_stt`, formData, {
+        headers: {
+            "Content-Type": "multipart/form-data"
+        },
+        onUploadProgress: (progressEvent) => {
+            // Calculate progress percentage
+            if (progressEvent.total) {
+                const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                onProgress(progress);
+            }
+        }
+    });
 }

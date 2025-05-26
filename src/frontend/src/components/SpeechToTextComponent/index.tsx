@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Mic, Square } from 'lucide-react';
+import { Mic, Square, Loader } from 'lucide-react';
 import i18next from "i18next";
-import { speechToText, textToSpeech, uploadChatFile } from '@/controllers/API/flow';
+import { speechToText, textToSpeech, uploadAndStt, uploadChatFile } from '@/controllers/API/flow';
 import { captureAndAlertRequestErrorHoc } from '@/controllers/request';
 import { useToast } from "@/components/bs-ui/toast/use-toast";
 const SpeechToTextComponent = ({ onChange }) => {
@@ -45,6 +45,7 @@ const SpeechToTextComponent = ({ onChange }) => {
 
   // 停止录音
   const stopRecording = () => {
+    if (isProcessing) return;
     if (mediaRecorderRef.current && isRecording) {
       setIsProcessing(true);
       mediaRecorderRef.current.stop();
@@ -55,13 +56,10 @@ const SpeechToTextComponent = ({ onChange }) => {
   // 调用语音转文字API
   const convertSpeechToText = async (audioBlob) => {
     try {
-      // 这里替换为你实际的语音转文字API调用
-      const data = await uploadChatFile(audioBlob, (progress) => {})
-      
-      console.log("data", data.file_path);
-      const res = await captureAndAlertRequestErrorHoc(speechToText({
-        url: data.file_path,
-      }));
+      // 语音转文字API调用
+      console.log('audioBlob', audioBlob);
+      // uploadChatFile(audioBlob, (progress) => {});
+      const res = await captureAndAlertRequestErrorHoc(uploadAndStt(audioBlob, (progress) => {}));
 
       // TODO： 修改正确返回
       const mockTranscript = '这是一个语音转文字的模拟结果。实际项目中请替换为真实API调用。';
@@ -78,22 +76,18 @@ const SpeechToTextComponent = ({ onChange }) => {
   };
 
   return (
-    <div className="speech-to-text">
-      <button
-        onClick={isRecording ? stopRecording : startRecording}
-        disabled={isProcessing}
-        className={`icon-button ${isRecording ? 'recording' : ''} ${isProcessing ? 'processing' : ''}`}
-        aria-label={isRecording ? '停止录音' : '开始录音'}
-      >
-        {isProcessing ? (
-          <div className="spinner"></div>
-        ) : isRecording ? (
-          <Square size={24} className="stop-icon" />
-        ) : (
-          <Mic size={24} className="mic-icon" />
+    <div className="relative z-10">
+      <div className="absolute right-12 top-5 cursor-pointer">
+        {isProcessing && (
+          <Loader size={18} />
         )}
-      </button>
-      
+        {!isProcessing && isRecording && (
+          <Square size={18} onClick={stopRecording}/>
+        )}
+        {!isProcessing && !isRecording && (
+          <Mic size={18} onClick={startRecording}/>
+        )}
+      </div>
       {isRecording && <div className="pulse-ring"></div>}
     </div>
   );
