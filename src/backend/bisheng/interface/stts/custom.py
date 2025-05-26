@@ -91,7 +91,7 @@ class BishengSTT:
         folder_path.mkdir(parents=True, exist_ok=True)
 
         # 从 URL 中提取文件名
-        file_name = str(time.time()) + "_" + file_url.split("/")[-1]
+        file_name = str(time.time()) + "_" + file_url.split("/")[-1].split("?")[0]
         local_file_path = folder_path /  file_name
 
         # 下载文件到本地
