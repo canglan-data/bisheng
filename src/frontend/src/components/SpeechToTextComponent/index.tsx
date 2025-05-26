@@ -1,9 +1,12 @@
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Mic, Square } from 'lucide-react';
+import i18next from "i18next";
 import { speechToText, textToSpeech, uploadChatFile } from '@/controllers/API/flow';
-
+import { captureAndAlertRequestErrorHoc } from '@/controllers/request';
+import { useToast } from "@/components/bs-ui/toast/use-toast";
 const SpeechToTextComponent = ({ onChange }) => {
+  const { toast } = useToast()
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -32,8 +35,11 @@ const SpeechToTextComponent = ({ onChange }) => {
       mediaRecorderRef.current.start();
       setIsRecording(true);
     } catch (err) {
-      setError('无法访问麦克风: ' + err.message);
-      console.error('录音错误:', err);
+      toast({
+        title: `${i18next.t('prompt')}`,
+        variant: 'error',
+        description: '麦克风未授权'
+      });
     }
   };
 
@@ -50,23 +56,22 @@ const SpeechToTextComponent = ({ onChange }) => {
   const convertSpeechToText = async (audioBlob) => {
     try {
       // 这里替换为你实际的语音转文字API调用
-      console.log('调用语音转文字API...', audioBlob);
       const data = await uploadChatFile(audioBlob, (progress) => {})
       
-      console.log("data", data);
-      const res = await speechToText({
-        url: "",
-      });
-      
-      // 模拟API调用延迟
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // 模拟返回的识别结果
+      console.log("data", data.file_path);
+      const res = await captureAndAlertRequestErrorHoc(speechToText({
+        url: data.file_path,
+      }));
+
+      // TODO： 修改正确返回
       const mockTranscript = '这是一个语音转文字的模拟结果。实际项目中请替换为真实API调用。';
       onChange(mockTranscript);
     } catch (err) {
-      setError('语音识别失败: ' + err.message);
-      console.error('语音识别错误:', err);
+      toast({
+        title: `${i18next.t('prompt')}`,
+        variant: 'error',
+        description: '语音识别失败'
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -90,7 +95,6 @@ const SpeechToTextComponent = ({ onChange }) => {
       </button>
       
       {isRecording && <div className="pulse-ring"></div>}
-      {error && <div className="error">{error}</div>}
     </div>
   );
 };

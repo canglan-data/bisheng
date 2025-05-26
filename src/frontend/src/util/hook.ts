@@ -339,7 +339,7 @@ export default function useAudioPlayer() {
         }
         
         // 调用API获取音频URL
-        const audioUrl = await textToSpeech({text});
+        const audioUrl = await textToSpeech({ text });
         // TODO: format音频URL
         // 设置新音频源
         audioRef.current.src = audioUrl;
