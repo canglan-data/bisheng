@@ -346,7 +346,7 @@ export async function runTestCase(data: { question_list, version_list, node_id, 
 /**
  * 聊天窗上传文件
  */
-export async function uploadChatFile(v, file: File, onProgress): Promise<any> {
+export async function uploadChatFile(file: File, onProgress): Promise<any> {
     const formData = new FormData();
     formData.append("file", file);
     return await axios.post(`/api/v1/knowledge/upload`, formData, {
@@ -364,7 +364,7 @@ export async function uploadChatFile(v, file: File, onProgress): Promise<any> {
 }
 
 /** 
- * 语音转文字接口
+ * 文字转语音接口
 */
 export async function textToSpeech(data: { text }): Promise<any[]> {
     return await axios.post(`/api/v1/model_fun/tts`, data);

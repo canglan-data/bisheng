@@ -224,7 +224,7 @@ const workflowTemplate = [
                         "key": "dialog_file_accept",
                         "label": "上传文件类型",
                         "type": "select_fileaccept",
-                        "value": "all",
+                        "value": ['file', 'audio', 'image'],
                         "tab": "dialog_input"
                     },
                     {
@@ -234,6 +234,15 @@ const workflowTemplate = [
                         "type": "var",
                         "tab": "dialog_input",
                         "help": "提取上传文件中的图片文件，当助手或大模型节点使用多模态大模型时，可传入此图片。"
+                    },
+                    
+                    {
+                        "key": "dialog_audio_files",
+                        "global": "key",
+                        "label": "上传音频文件",
+                        "type": "var",
+                        "tab": "dialog_input",
+                        "help": "提取上传文件中的音频文件，当助手或大模型节点使用多模态大模型时，可传入此图片。"
                     },
                     {
                         "key": "form_input",

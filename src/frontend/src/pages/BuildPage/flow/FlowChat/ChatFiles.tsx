@@ -13,7 +13,7 @@ export default function ChatFiles({ v, accepts, onChange }) {
     const filesRef = useRef([]);
     const remainingUploadsRef = useRef(0);
     const { appConfig } = useContext(locationContext);
-    // const fileAccepts = useMemo(() => appConfig.libAccepts.map((ext) => `.${ext}`), [appConfig.libAccepts]);
+    const fileAccepts = useMemo(() => appConfig.libAccepts.map((ext) => `.${ext}`), [appConfig.libAccepts]);
     const { toast } = useToast();
 
     const fileInputRef = useRef(null);
@@ -71,7 +71,7 @@ export default function ChatFiles({ v, accepts, onChange }) {
 
         // Create an array of promises to handle multiple file uploads concurrently
         const uploadPromises = validFiles.map(({ file, id }) => {
-            return uploadChatFile(v, file, (progress) => {
+            return uploadChatFile(file, (progress) => {
                 // Update progress for each file individually
                 setFiles((prevFiles) => {
                     const updatedFiles = prevFiles.map(f => {
@@ -198,7 +198,7 @@ export default function ChatFiles({ v, accepts, onChange }) {
                 type="file"
                 ref={fileInputRef}
                 multiple
-                accept={accepts}
+                accept={accepts || fileAccepts.join(',')}
                 onChange={handleFileChange}
                 className="hidden"
             />

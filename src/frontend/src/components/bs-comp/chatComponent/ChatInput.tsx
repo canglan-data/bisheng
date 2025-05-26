@@ -13,10 +13,17 @@ import { useMessageStore } from "./messageStore";
 import { CirclePause } from "lucide-react";
 import ChatFiles from "@/pages/BuildPage/flow/FlowChat/ChatFiles";
 
+export const FileTypes = {
+    IMAGE: ['.PNG', '.JPEG', '.JPG', '.BMP'],
+    FILE: ['.PDF', '.TXT', '.MD', '.HTML', '.XLS', '.XLSX', '.DOC', '.DOCX', '.PPT', '.PPTX'],
+    AUDIO: ['.MP3'],
+}
+
 export default function ChatInput({flow, assistant, clear, form, questions, inputForm, wsUrl, onBeforSend, onClickClear, showUpload }) {
     const { toast } = useToast()
     const { t } = useTranslation()
     const { appConfig } = useContext(locationContext)
+    const [accepts, setAccepts] = useState('*') // 接受文件类型
 
     const [formShow, setFormShow] = useState(false)
     const [showWhenLocked, setShowWhenLocked] = useState(false) // 强制开启表单按钮，不限制于input锁定

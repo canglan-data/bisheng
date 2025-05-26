@@ -17,6 +17,7 @@ import ChatFiles from "./ChatFiles";
 export const FileTypes = {
     IMAGE: ['.PNG', '.JPEG', '.JPG', '.BMP'],
     FILE: ['.PDF', '.TXT', '.MD', '.HTML', '.XLS', '.XLSX', '.DOC', '.DOCX', '.PPT', '.PPTX'],
+    AUDIO: ['.MP3'],
 }
 
 export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBeforSend, onLoad, flow }) {
@@ -310,12 +311,14 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
             if (input_schema.tab === 'dialog_input') {
                 const schemaItem = input_schema.value?.find(el => el.key === 'dialog_file_accept')
                 const fileAccept = schemaItem?.value
-                if (fileAccept === 'image') {
-                    setAccepts(FileTypes.IMAGE.join(','))
-                } else if (fileAccept === 'file') {
-                    setAccepts(FileTypes.FILE.join(','))
-                } else {
-                    setAccepts(FileTypes.IMAGE.join(',') + ',' + FileTypes.FILE.join(','))
+                if (fileAccept.include('image')) {
+                    setAccepts(FileTypes.IMAGE.join(','));
+                }
+                if (fileAccept.include('file')) {
+                    setAccepts(FileTypes.FILE.join(','));
+                } 
+                if (fileAccept.include('audio')) {
+                    setAccepts(FileTypes.AUDIO.join(','));
                 }
             }
             // 待用户输入
