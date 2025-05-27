@@ -1,6 +1,7 @@
 import { ReactFlowJsonObject } from "@xyflow/react";
 import { FlowStyleType, FlowType, FlowVersionItem } from "../../types/flow";
 import axios from "../request";
+import { webmToWav } from "@/util/utils";
 
 /**
  * 保存组件 variables 变量
@@ -379,11 +380,12 @@ export async function speechToText(data: { url }): Promise<any[]> {
 
 
 /**
- * 语音转文字组件接口
+ * 语音转文字组件接口 传入webm文件
  */
 export async function uploadAndStt(file: File, onProgress): Promise<any> {
     const formData = new FormData();
-    formData.append("file", file, 'recording.wav');
+    const newNewFile = await webmToWav(file);
+    formData.append("file", newNewFile, 'recording.wav');
     return await axios.post(`/api/v1/model_fun/upload_and_stt`, formData, {
         headers: {
             "Content-Type": "multipart/form-data"

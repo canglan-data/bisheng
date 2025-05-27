@@ -339,7 +339,7 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
                     ><FormIcon className={!showWhenLocked && inputLock.locked ? 'text-muted-foreground' : 'text-foreground'}></FormIcon></div>
                 }
             </div>
-            {!inputLock.locked && <SpeechToTextComponent onChange={(text) => {console.log('text');}}/>}
+            {!inputLock.locked && <SpeechToTextComponent onChange={(text) => {inputRef.current.value += text}} />}
             {!inputLock.locked && assistant && (flow?.is_allow_upload || showUpload) && <ChatFiles v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} preParsing/>}
             {/* send */}
             <div className="flex gap-2 absolute right-3 top-4 z-10">

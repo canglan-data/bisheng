@@ -512,7 +512,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
                     ><FormIcon></FormIcon></div>
                 }
             </div>
-            {!inputLock.locked && <SpeechToTextComponent onChange={(text) => {console.log('text');}}/>}
+            {!inputLock.locked && <SpeechToTextComponent onChange={(text) => {inputRef.current.value += text}}/>}
             {/* 附件 */}
             {!inputLock.locked && allowUpload && <ChatFiles accepts={accepts} v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} preParsing={false} />}
             {/* send */}
