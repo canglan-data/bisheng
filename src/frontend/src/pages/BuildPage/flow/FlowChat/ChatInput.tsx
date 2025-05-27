@@ -13,6 +13,7 @@ import GuideQuestions from "./GuideQuestions";
 import InputForm from "./InputForm";
 import { useMessageStore } from "./messageStore";
 import ChatFiles from "./ChatFiles";
+import SpeechToTextComponent from "@/components/SpeechToTextComponent";
 
 export const FileTypes = {
     IMAGE: ['.PNG', '.JPEG', '.JPG', '.BMP'],
@@ -514,6 +515,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
                     ><FormIcon></FormIcon></div>
                 }
             </div>
+            {!inputLock.locked && <SpeechToTextComponent onChange={(text) => {console.log('text');}}/>}
             {/* 附件 */}
             {!inputLock.locked && allowUpload && <ChatFiles accepts={accepts} v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} preParsing={false} />}
             {/* send */}
