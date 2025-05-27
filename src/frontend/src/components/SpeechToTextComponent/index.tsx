@@ -57,11 +57,7 @@ const SpeechToTextComponent = ({ onChange }) => {
   const convertSpeechToText = async (audioBlob) => {
     try {
       // 语音转文字API调用
-      console.log('audioBlob', audioBlob);
-      // uploadChatFile(audioBlob, (progress) => {});
       const res = await captureAndAlertRequestErrorHoc(uploadAndStt(audioBlob, (progress) => {}));
-
-      // TODO： 修改正确返回
       const mockTranscript = '这是一个语音转文字的模拟结果。实际项目中请替换为真实API调用。';
       onChange(mockTranscript);
     } catch (err) {
