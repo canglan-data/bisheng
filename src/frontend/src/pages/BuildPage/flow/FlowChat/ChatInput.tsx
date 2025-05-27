@@ -310,8 +310,10 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
             messageIdRef.current = data.message_id
             // 限制文件类型
             if (input_schema.tab === 'dialog_input') {
-                const schemaItem = input_schema.value?.find(el => el.key === 'dialog_file_accept')
-                const fileAccept: string[] = schemaItem?.value
+                // 以下两行兼容了旧逻辑，旧逻辑中没有dialog_file_accept
+                const schemaItem = input_schema.value?.find(el => el?.key === 'dialog_file_accept')
+                const fileAccept: string[] = schemaItem?.value || ['image', 'file', 'audio'];
+
                 const filesTypes = [];
                 if (fileAccept.includes('image')) {
                     filesTypes.push(...FileTypes.IMAGE);
