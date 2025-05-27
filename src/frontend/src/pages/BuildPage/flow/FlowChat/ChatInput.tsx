@@ -482,9 +482,6 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
     // 文件上传状态
     const { fileUploading, getFileIds, loadingChange } = useFileLoading(inputLock.locked)
 
-    console.log('inputForm', inputForm);
-    
-
     return <div className="absolute bottom-0 w-full pt-1 bg-[#fff] dark:bg-[#1B1B1B]">
         <div className={`relative pr-4 ${clear && 'pl-9'}`}>
             {/* form */}
