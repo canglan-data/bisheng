@@ -66,10 +66,8 @@ class QwenSTT:
             recognition = Recognition(model=self.model,
                                       format=self.get_format(file_path),
                                       sample_rate=self.get_sample_rate(file_path),
-                                      # “language_hints”只支持paraformer-realtime-v2模型
                                       language_hints=['zh', 'en'],
                                       callback=None)
-            # 在这个地方需要判断，如果是一个url则需要将url保存在本地
             result = recognition.call(file_path)  # 修改为 audio 参数
             if result.status_code == HTTPStatus.OK:
                 data = result.get_sentence()

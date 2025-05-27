@@ -62,6 +62,8 @@ class InputNode(BaseNode):
         raise IgnoreException(f'{self.name} -- workflow node is update')
 
     def get_input_schema(self) -> Any:
+        if self.old_input:
+            return self.old_input.get_input_schema()
         if self.is_dialog_input():
             user_input_info = self.node_data.get_variable_info('user_input')
             user_input_info.value = [
