@@ -27,7 +27,7 @@ const SpeechToTextComponent = ({ onChange }) => {
       };
       
       mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         await convertSpeechToText(audioBlob);
         stream.getTracks().forEach(track => track.stop());
       };
@@ -57,8 +57,10 @@ const SpeechToTextComponent = ({ onChange }) => {
   const convertSpeechToText = async (audioBlob) => {
     try {
       // 语音转文字API调用
+      console.log('文件', audioBlob);
+      uploadChatFile(audioBlob, () => {})
       const res = await captureAndAlertRequestErrorHoc(uploadAndStt(audioBlob, (progress) => {}));
-      const mockTranscript = '这是一个语音转文字的模拟结果。实际项目中请替换为真实API调用。';
+      const mockTranscript = res?.text || '';
       onChange(mockTranscript);
     } catch (err) {
       toast({
