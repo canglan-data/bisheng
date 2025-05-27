@@ -5,6 +5,7 @@ import { Mic, Square, Loader } from 'lucide-react';
 import { textToSpeech } from '@/controllers/API/flow';
 import { checkSassUrl } from '../bs-comp/FileView';
 import { ThunmbIcon } from '../bs-icons';
+import { formatTTSText } from '@/util/utils';
 
 interface AudioPlayButtonProps {
   messageId: string;
@@ -24,7 +25,7 @@ export const AudioPlayComponent = ({ messageId, msg }: AudioPlayButtonProps) => 
   } = useAudioPlayerStore();
 
   const getAudioUrl = async (msg: string) => {
-    const res = await textToSpeech({ text: msg });
+    const res = await textToSpeech({ text: formatTTSText(msg) });
     return checkSassUrl(res.url);
   }
 
