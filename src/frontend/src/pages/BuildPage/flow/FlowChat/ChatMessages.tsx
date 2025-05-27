@@ -29,8 +29,6 @@ export default function ChatMessages({ operation = false, audit = false, mark = 
     // 仅第一次加载进行滚动
     const [isFirstLoad, setIsFirstLoad] = useState(true);
 
-    const { currentPlayingId, isLoading, togglePlay } = useAudioPlayer();
-
     // 反馈
     const thumbRef = useRef(null)
     // 溯源
@@ -238,9 +236,6 @@ export default function ChatMessages({ operation = false, audit = false, mark = 
                             key={msg.message_id}
                             data={msg}
                             msgVNode={msgVNode}
-                            isPlaying={currentPlayingId === msg.message_id}
-                            isLoading={isLoading && currentPlayingId === msg.message_id}
-                            onTogglePlay={togglePlay}
                             onUnlike={(chatId) => { thumbRef.current?.openModal(chatId) }}
                             onSource={(data) => { sourceRef.current?.openModal(data) }}
                             onMarkClick={() => onMarkClick('answer', msg.message_id, findQa(messagesList, index))}

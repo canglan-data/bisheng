@@ -65,7 +65,7 @@ const ReasoningLog = ({ loading, msg = '' }) => {
         </div>
     </div>
 }
-export default function MessageBs({operation, audit, mark = false, logo, data, onUnlike = () => { }, onSource, disableBtn = false, onMarkClick, flow, isPlaying, isLoading, onTogglePlay }: { logo: string, data: WorkflowMessage, onUnlike?: any, onSource?: any }) {
+export default function MessageBs({operation, audit, mark = false, logo, data, onUnlike = () => { }, onSource, disableBtn = false, onMarkClick, flow }: { logo: string, data: WorkflowMessage, onUnlike?: any, onSource?: any }) {
     const avatarColor = colorList[
         (data.sender?.split('').reduce((num, s) => num + s.charCodeAt(), 0) || 0) % colorList.length
     ]
@@ -187,7 +187,9 @@ export default function MessageBs({operation, audit, mark = false, logo, data, o
                     {!disableBtn && <MessageButtons
                         onlyRead={(audit || operation)}
                         mark={mark}
+                        msg={message}
                         id={data.id || data.message_id}
+                        chatId={chatId + data.id}
                         data={data.liked}
                         // 审计 & 运营页面展示差评
                         msgVNode={(audit || operation) && data.remark && <MsgVNodeCom message={data.remark} />}
