@@ -225,3 +225,63 @@ export function isValidJSON(str) {
         return false;
     }
 }
+
+export async function webmToWav(webmBlob) {
+    const audioCtx = new AudioContext();
+    const buffer = await audioCtx.decodeAudioData(await webmBlob.arrayBuffer());
+    const wavBlob = bufferToWav(buffer); // 实现 WAV 编码
+    return wavBlob;
+  }
+
+function bufferToWav(buffer, options = {}) {
+  const numChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const format = options.float32 ? 3 : 1; // 1: PCM, 3: Float32
+  const bitDepth = options.float32 ? 32 : 16;
+  const bytesPerSample = bitDepth / 8;
+  const blockAlign = numChannels * bytesPerSample;
+
+  // 计算数据大小
+  const dataSize = buffer.length * blockAlign;
+  const bufferSize = 44 + dataSize;
+  const arrayBuffer = new ArrayBuffer(bufferSize);
+  const view = new DataView(arrayBuffer);
+
+  // 写入 WAV 头部信息
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, bufferSize - 8, true); // RIFF 块大小
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true); // fmt 子块大小
+  view.setUint16(20, format, true); // 音频格式（1: PCM）
+  view.setUint16(22, numChannels, true); // 声道数
+  view.setUint32(24, sampleRate, true); // 采样率
+  view.setUint32(28, sampleRate * blockAlign, true); // 字节率
+  view.setUint16(32, blockAlign, true); // 块对齐
+  view.setUint16(34, bitDepth, true); // 位深度
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataSize, true); // 数据块大小
+
+  // 写入 PCM 数据
+  let offset = 44;
+  for (let i = 0; i < buffer.length; i++) {
+    for (let ch = 0; ch < numChannels; ch++) {
+      const sample = buffer.getChannelData(ch)[i];
+      if (format === 1) { // PCM
+        view.setInt16(offset, sample * (0x7fff), true);
+      } else { // Float32
+        view.setFloat32(offset, sample, true);
+      }
+      offset += bytesPerSample;
+    }
+  }
+
+  return new Blob([view], { type: 'audio/wav' });
+}
+
+// 辅助函数：写入字符串到 DataView
+function writeString(view, offset, string) {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
