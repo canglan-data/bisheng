@@ -1,10 +1,11 @@
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FlagIcon } from "@/components/bs-icons";
 import { ThunmbIcon } from "@/components/bs-icons/thumbs";
 import { Button } from "@/components/bs-ui/button";
 import { useToast } from "@/components/bs-ui/toast/use-toast";
 import { copyTrackingApi, disLikeCommentApi, likeChatApi } from "@/controllers/API";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { AudioPlayComponent } from "@/components/AudioPlayComponent";
 
 
 const enum ThumbsState {
@@ -13,7 +14,7 @@ const enum ThumbsState {
     ThumbsDown
 }
 
-export default function MessageButtons({ mark = false, id, onCopy, data, onUnlike, onMarkClick, msgVNode, onlyRead = false }) {
+export default function MessageButtons({ mark = false, id, onCopy, data, onUnlike, onMarkClick, msgVNode, onlyRead = false, chatId, msg = '' }) {
     const { t } = useTranslation()
     const [state, setState] = useState<ThumbsState>(data)
     const [copied, setCopied] = useState(false)
@@ -54,6 +55,10 @@ export default function MessageButtons({ mark = false, id, onCopy, data, onUnlik
             <FlagIcon width={12} height={12} className={`${!onlyRead && 'cursor-pointer'}`} />
             <span>{t('addQa')}</span>
         </Button>}
+        <AudioPlayComponent
+            messageId={chatId}
+            msg={msg}
+        />
         <ThunmbIcon
             type='copy'
             className={`${!onlyRead && 'cursor-pointer'} ${copied && 'text-primary hover:text-primary'}`}
