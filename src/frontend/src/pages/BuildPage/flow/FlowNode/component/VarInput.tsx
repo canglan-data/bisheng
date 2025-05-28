@@ -56,10 +56,8 @@ export default function VarInput({
     itemKey,
     placeholder = '',
     flowNode,
-    label = undefined,
     full = false,
     value,
-    mini = false,
     error = false,
     children = null,
     onUpload = undefined,
@@ -76,8 +74,6 @@ export default function VarInput({
     // 校验变量是否可用
     const validateVarAvailble = () => {
         const value = valueRef.current;
-        if (!value.trim()) return Promise.resolve('');
-
         const [html, error] = parseToHTML(value || '', true);
         textareaRef.current.innerHTML = html;
         return Promise.resolve(error);
@@ -86,7 +82,7 @@ export default function VarInput({
     useEffect(() => {
         onVarEvent && onVarEvent(validateVarAvailble);
         return () => onVarEvent && onVarEvent(() => { });
-    }, [flowNode]);
+    }, [flowNode, flow]);
 
     const printPyRef = useRef(false); // 正在输入pyin
     const handleInput = () => {
@@ -123,13 +119,8 @@ export default function VarInput({
         handleFocus();
 
         const selection = window.getSelection();
-        if (!selection.rangeCount) {
-            // 没有选区时创建默认选区（可选）
-            const range = document.createRange();
-            range.selectNodeContents(textareaRef.current); // 或选择特定位置
-            selection.addRange(range);
-        }
         let range = selection.getRangeAt(0);
+        if (!selection.rangeCount) return;
 
         if (!textareaRef.current.contains(range.commonAncestorContainer)) {
             range = document.createRange();
@@ -185,65 +176,59 @@ export default function VarInput({
         document.execCommand('insertText', false, text);
     };
     // resize
-    const heightClass = mini ? 'max-h-64' : full ? 'min-h-64' : 'max-h-64 min-h-[80px]';
-    const { height, handleMouseDown } = useResize(textareaRef, mini ? 40 : 80, 40);
+    const { height, handleMouseDown } = useResize(textareaRef, 80, 40);
 
     return (
         <div
             className={`nodrag mt-2 flex flex-col w-full relative rounded-md border bg-search-input text-sm shadow-sm ${error ? 'border-red-500' : 'border-input'
                 }`}
         >
-            {mini ?
-                <div className="absolute top-2 right-2 flex gap-1">
+            <div className="flex justify-between gap-1 border-b dark:border-gray-600 px-2 py-1" onClick={() => textareaRef.current.focus()}>
+                <Label className="bisheng-label text-xs" onClick={validateVarAvailble}>
+                    {flowNode.required && <span className="text-red-500">*</span>}
+                    {flowNode.label}
+                </Label>
+                <div className="flex gap-2">
                     <SelectVar ref={selectVarRef} nodeId={nodeId} itemKey={itemKey} onSelect={handleInsertVariable}>
                         <span className="text-muted-foreground hover:text-gray-800 text-xs"  >{"{x}"}</span>
+                        {/* <Variable size={16} className="text-muted-foreground hover:text-gray-800" /> */}
                     </SelectVar>
-                </div>
-                : <div className="flex justify-between gap-1 border-b dark:border-gray-600 px-2 py-1" onClick={() => textareaRef.current.focus()}>
-                    <Label className="bisheng-label text-xs" onClick={validateVarAvailble}>
-                        {flowNode.required && <span className="text-red-500">*</span>}
-                        {label ?? flowNode.label}
-                    </Label>
-                    <div className="flex gap-2">
-                        <SelectVar ref={selectVarRef} nodeId={nodeId} itemKey={itemKey} onSelect={handleInsertVariable}>
-                            <span className="text-muted-foreground hover:text-gray-800 text-xs"  >{"{x}"}</span>
-                        </SelectVar>
-                        {onUpload && (
-                            <Button variant="ghost" className="p-0 h-4 text-muted-foreground" onClick={onUpload}>
-                                <UploadCloud size={16} />
-                            </Button>
-                        )}
-                        {!full && <Dialog >
-                            <DialogTrigger asChild>
-                                <Button className="text-muted-foreground absolute right-2 top-6 size-5" size="icon" variant="ghost"><Expand size={14} /></Button>
-                            </DialogTrigger>
-                            <DialogContent className="lg:max-w-[800px]">
-                                {/* <DialogHeader>
+                    {onUpload && (
+                        <Button variant="ghost" className="p-0 h-4 text-muted-foreground" onClick={onUpload}>
+                            <UploadCloud size={16} />
+                        </Button>
+                    )}
+                    {!full && <Dialog >
+                        <DialogTrigger asChild>
+                            <Button className="text-muted-foreground absolute right-2 top-6 size-5" size="icon" variant="ghost"><Expand size={14} /></Button>
+                        </DialogTrigger>
+                        <DialogContent className="lg:max-w-[800px]">
+                            {/* <DialogHeader>
                                 <DialogTitle className="flex items-center"></DialogTitle>
                             </DialogHeader> */}
-                                <div>
-                                    <VarInput
-                                        full
-                                        nodeId={nodeId}
-                                        itemKey={itemKey}
-                                        placeholder={placeholder}
-                                        flowNode={flowNode}
-                                        value={fullVarInputValue}
-                                        error={error}
-                                        children={children}
-                                        onUpload={onUpload}
-                                        onChange={(val) => {
-                                            textareaRef.current.innerHTML = parseToHTML(val || '')[0];
-                                            handleBlur();
-                                            handleInput();
-                                        }}
-                                    >
-                                    </VarInput>
-                                </div>
-                            </DialogContent>
-                        </Dialog>}
-                    </div>
-                </div>}
+                            <div>
+                                <VarInput
+                                    full
+                                    nodeId={nodeId}
+                                    itemKey={itemKey}
+                                    placeholder={placeholder}
+                                    flowNode={flowNode}
+                                    value={fullVarInputValue}
+                                    error={error}
+                                    children={children}
+                                    onUpload={onUpload}
+                                    onChange={(val) => {
+                                        textareaRef.current.innerHTML = parseToHTML(val || '')[0];
+                                        handleBlur();
+                                        handleInput();
+                                    }}
+                                >
+                                </VarInput>
+                            </div>
+                        </DialogContent>
+                    </Dialog>}
+                </div>
+            </div>
             <div
                 ref={textareaRef}
                 contentEditable
@@ -279,12 +264,11 @@ export default function VarInput({
                     }
                     e.stopPropagation()
                 }}
-                className={`${heightClass} nowheel bisheng-richtext px-3 py-2 cursor-text whitespace-pre-line overflow-y-auto overflow-x-hidden border-none outline-none bg-search-input rounded-md dark:text-gray-50 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50`}
+                className={`${full ? 'min-h-64' : 'max-h-64 min-h-[80px]'} nowheel bisheng-richtext px-3 py-2 cursor-text whitespace-pre-line overflow-y-auto overflow-x-hidden border-none outline-none bg-search-input rounded-md dark:text-gray-50 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50`}
             ></div>
             {children}
-            {/* drag size */}
             <div
-                className="resize-handle w-4 h-4 text-transparent absolute cursor-ns-resize right-0 bottom-0 rounded-ee-md overflow-hidden select-none"
+                className="resize-handle w-4 h-4 text-transparent absolute cursor-ns-resize right-0 bottom-0 rounded-ee-md overflow-hidden"
                 onMouseDown={handleMouseDown}
             ><RbDragIcon /></div>
         </div>
@@ -336,7 +320,6 @@ function usePlaceholder(placeholder) {
         if (divRef.current && divRef.current.innerHTML.trim() === placeholder) {
             divRef.current.innerHTML = "";
             divRef.current.classList.remove("placeholder");
-            divRef.current.focus();
         }
     };
 

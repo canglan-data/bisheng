@@ -1,6 +1,5 @@
 import { generateUUID } from "@/components/bs-ui/utils";
 
-//TODO：历史处理脚本待增加
 // 历史版本工作流转换脚本(最新v1)
 export const flowVersionCompatible = (flow) => {
 

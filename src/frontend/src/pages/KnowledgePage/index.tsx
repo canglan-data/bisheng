@@ -8,7 +8,6 @@ import {
 import { useTranslation } from "react-i18next";
 import KnowledgeFile from "./KnowledgeFile";
 import KnowledgeQa from "./KnowledgeQa";
-import SpeechToTextComponent from "@/components/SpeechToTextComponent";
 
 
 export default function index() {
