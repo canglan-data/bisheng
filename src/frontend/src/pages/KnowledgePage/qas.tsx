@@ -4,16 +4,15 @@ import { Checkbox } from "@/components/bs-ui/checkBox";
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/bs-ui/dialog";
 import { Switch } from "@/components/bs-ui/switch";
 import { message, useToast } from "@/components/bs-ui/toast/use-toast";
-import { ArrowLeft, Computer, SquarePen } from "lucide-react";
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback } from "react";
-import ReactQuill from 'react-quill';
+import { ArrowLeft, SquarePen } from "lucide-react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import 'react-quill/dist/quill.snow.css';
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { Label } from "@/components/bs-ui/label";
 import ShadTooltip from "../../components/ShadTooltipComponent";
 import { Button, LoadButton } from "../../components/bs-ui/button";
-import { Input, InputList, SearchInput, Textarea } from "../../components/bs-ui/input";
+import { Input, InputList, SearchInput } from "../../components/bs-ui/input";
 import AutoPagination from "../../components/bs-ui/pagination/autoPagination";
 import * as XLSX from 'xlsx';
 import {
@@ -29,7 +28,7 @@ import { captureAndAlertRequestErrorHoc } from "../../controllers/request";
 import { useTable } from "../../util/hook";
 import { LoadingIcon } from "@/components/bs-icons/loading";
 import KnowledgeBaseSettingsDialog from "./components/EditKnowledgeDialog";
-import { downloadFile } from "@/util/utils";
+import { downloadFile, processImageUrlsSafely } from "@/util/utils";
 import SimpleUpload from "@/components/bs-ui/upload/simple";
 import { checkSassUrl } from "@/components/bs-comp/FileView";
 import { generateUUID } from "@/components/bs-ui/utils";
@@ -460,7 +459,7 @@ const EditQa = forwardRef(function ({ knowlageId, onChange }, ref) {
                         /> */}
                         <RichInput
                             className={`col-span-3 h-36 ${error.answer && 'border-red-400'}`}
-                            value={form.answer}
+                            value={processImageUrlsSafely(form.answer, __APP_ENV__.BASE_URL)}
                             onChange={handleAnswerChange}
                         />
                     </div>
