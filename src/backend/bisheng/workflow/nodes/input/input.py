@@ -11,16 +11,20 @@ from bisheng.api.utils import md5_hash
 from bisheng.cache.utils import file_download
 from bisheng.chat.types import IgnoreException
 from bisheng.workflow.nodes.base import BaseNode
+from bisheng.workflow.nodes.input.input_old import InputNodeOld
 
 
 class InputNode(BaseNode):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.old_input = None
         # 节点当前版本
-        self._current_v = 2
+        self._current_v = "2"
         # 记录是对话还是表单
         self._tab = self.node_data.tab['value']
+        if self.node_data.v != "2":
+            self.old_input = InputNodeOld(*args, **kwargs)
 
         # 记录这个变量是什么类型的
         self._node_params_map = {}
@@ -58,6 +62,8 @@ class InputNode(BaseNode):
         raise IgnoreException(f'{self.name} -- workflow node is update')
 
     def get_input_schema(self) -> Any:
+        if self.old_input:
+            return self.old_input.get_input_schema()
         if self.is_dialog_input():
             user_input_info = self.node_data.get_variable_info('user_input')
             user_input_info.value = [
@@ -71,6 +77,8 @@ class InputNode(BaseNode):
         return form_input_info
 
     def _run(self, unique_id: str):
+        if self.old_input:
+            return self.old_input._run(unique_id)
         if self.is_dialog_input():
             # 对话框形式的输入
             dislog_files_content, self._dialog_images_files,dialog_audio_files = self.parse_dialog_files()
