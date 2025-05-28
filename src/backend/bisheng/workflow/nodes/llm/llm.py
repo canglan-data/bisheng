@@ -29,9 +29,11 @@ class LLMNode(BaseNode):
 
         self._batch_variable_list = {}
 
+        self._enable_web_search = self.node_params.get('enable_web_search', False)
+
         # 初始化llm对象
         self._stream = True
-        self._llm = LLMService.get_bisheng_llm(model_id=self.node_params['model_id'],
+        self._llm = LLMService.get_bisheng_llm(model_id=self.node_params['model_id'], enable_web_search=self._enable_web_search,
                                                params={'stream': self._stream},
                                                cache=False)
 

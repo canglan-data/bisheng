@@ -419,6 +419,13 @@ const workflowTemplate = [
                         "placeholder": "请选择模型"
                     },
                     {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "type": "switch",
+                        "help": "",
+                        "value": false
+                    },
+                    {
                         "key": "temperature",
                         "label": "温度",
                         "type": "slide",
@@ -520,6 +527,13 @@ const workflowTemplate = [
                         "required": true,
                         "value": "",
                         "placeholder": "请选择模型"
+                    },
+                    {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "type": "switch",
+                        "help": "",
+                        "value": false
                     },
                     {
                         "key": "temperature",
@@ -771,6 +785,14 @@ const workflowTemplate = [
                         "value": "",
                         "required": true,
                         "placeholder": "请选择模型"
+                    },
+                    {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "global": "self",
+                        "type": "switch",
+                        "help": "",
+                        "value": false
                     },
                     {
                         "key": "temperature",

@@ -23,6 +23,7 @@ class BishengLLM(BaseChatModel):
     model_id: int = Field(description="后端服务保存的model唯一ID")
     model_name: Optional[str] = Field(default='', description="后端服务保存的model名称")
     streaming: bool = Field(default=True, description="是否使用流式输出", alias="stream")
+    enable_web_search: bool = Field(default=False, description="开启联网搜索")
     temperature: float = Field(default=0.3, description="模型生成的温度")
     top_p: float = Field(default=1, description="模型生成的top_p")
     cache: bool = Field(default=True, description="是否使用缓存")
@@ -63,6 +64,8 @@ class BishengLLM(BaseChatModel):
         self.temperature = kwargs.get('temperature', 0.3)
         self.top_p = kwargs.get('top_p', 1)
         self.cache = kwargs.get('cache', True)
+        self.enable_web_search = kwargs.get('enable_web_search', False)
+
         # 是否忽略模型是否上线的检查
         ignore_online = kwargs.get('ignore_online', False)
 
@@ -102,9 +105,9 @@ class BishengLLM(BaseChatModel):
         params = {}
         if server_info.config:
             params.update(server_info.config)
-        enable_web_search = False
+        enable_web_search = self.get_enable_web_search()
         if model_info.config:
-            enable_web_search = model_info.config.get('enable_web_search', False)
+            # enable_web_search = model_info.config.get('enable_web_search', False)
             if model_info.config.get('max_tokens'):
                 params['max_tokens'] = model_info.config.get('max_tokens')
 
@@ -151,9 +154,13 @@ class BishengLLM(BaseChatModel):
             return self.model_info.config
         return {}
 
+    def get_enable_web_search(self):
+        # self.get_model_info_config().get('enable_web_search')
+        return self.enable_web_search
+
     def parse_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if self.server_info.type == LLMServerType.MINIMAX.value:
-            if self.get_model_info_config().get('enable_web_search'):
+            if self.get_enable_web_search():
                 if 'tools' not in kwargs:
                     kwargs.update({
                         'tools': [{'type': 'web_search'}],
@@ -169,7 +176,7 @@ class BishengLLM(BaseChatModel):
                             'type': 'web_search',
                         })
         elif self.server_info.type == LLMServerType.MOONSHOT.value:
-            if self.get_model_info_config().get('enable_web_search'):
+            if self.get_enable_web_search():
                 if 'tools' not in kwargs:
                     kwargs.update({
                         'tools': [{
