@@ -235,7 +235,6 @@ const workflowTemplate = [
                         "tab": "dialog_input",
                         "help": "提取上传文件中的图片文件，当助手或大模型节点使用多模态大模型时，可传入此图片。"
                     },
-                    
                     {
                         "key": "dialog_audio_files",
                         "global": "key",
