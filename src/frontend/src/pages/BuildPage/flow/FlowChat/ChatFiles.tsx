@@ -7,8 +7,7 @@ import { getFileExtension } from "@/util/utils";
 import { FileIcon, PaperclipIcon, X } from "lucide-react";
 import { useContext, useMemo, useRef, useState } from "react";
 
-// @accepts '.png,.jpg'
-export default function ChatFiles({ v, accepts, onChange, preParsing }) {
+export default function ChatFiles({ v, onChange }) {
     const [files, setFiles] = useState([]);
     const filesRef = useRef([]);
     const remainingUploadsRef = useRef(0);
@@ -71,7 +70,7 @@ export default function ChatFiles({ v, accepts, onChange, preParsing }) {
 
         // Create an array of promises to handle multiple file uploads concurrently
         const uploadPromises = validFiles.map(({ file, id }) => {
-            return uploadChatFile(file, (progress) => {
+            return uploadChatFile(v, file, (progress) => {
                 // Update progress for each file individually
                 setFiles((prevFiles) => {
                     const updatedFiles = prevFiles.map(f => {
@@ -83,13 +82,11 @@ export default function ChatFiles({ v, accepts, onChange, preParsing }) {
                     filesRef.current = updatedFiles;
                     return updatedFiles;
                 });
-            }, preParsing, v).then(response => {
-                console.log('repose', response);
-                
-                const filePath = response.file_path; // Assuming the response contains the file ID
+            }).then(response => {
+                const fileId = response.id; // Assuming the response contains the file ID
                 filesRef.current = filesRef.current.map(f => {
                     if (f.id === id) {
-                        return { ...f, isUploading: false, filePath, progress: 100 }; // Set progress to 100 when uploaded
+                        return { ...f, isUploading: false, id: fileId, progress: 100 }; // Set progress to 100 when uploaded
                     }
                     return f;
                 });
@@ -98,9 +95,7 @@ export default function ChatFiles({ v, accepts, onChange, preParsing }) {
                 remainingUploadsRef.current -= 1; // Decrease the remaining uploads count
                 if (remainingUploadsRef.current === 0) {
                     // Once all files are uploaded, trigger onChange with the file IDs
-                    const uploadedFileIds = filesRef.current.filter(f => f.id).map(f => ({ path: f.filePath, name: f.name }));
-                    console.log('uploadedFileIds', uploadedFileIds);
-                    
+                    const uploadedFileIds = filesRef.current.filter(f => f.id).map(f => ({ id: f.id, name: f.name }));
                     onChange(uploadedFileIds); // Pass the file IDs to onChange
                 }
             }).catch(() => {
@@ -113,7 +108,7 @@ export default function ChatFiles({ v, accepts, onChange, preParsing }) {
                 remainingUploadsRef.current -= 1; // Decrease the remaining uploads count
                 if (remainingUploadsRef.current === 0) {
                     // If no files remain, trigger onChange immediately
-                    const uploadedFileIds = filesRef.current.filter(f => f.id).map(f => ({ path: f.filePath, name: f.name }));
+                    const uploadedFileIds = filesRef.current.filter(f => f.id).map(f => ({ id: f.id, name: f.name }));
                     onChange(uploadedFileIds);
                 }
             });
@@ -122,7 +117,7 @@ export default function ChatFiles({ v, accepts, onChange, preParsing }) {
         // Wait for all files to finish uploading
         Promise.all(uploadPromises).then(() => {
             // Once all files are uploaded, trigger onChange with the file IDs
-            const uploadedFileIds = filesRef.current.filter(f => f.id).map(f => ({ path: f.filePath, name: f.name }));
+            const uploadedFileIds = filesRef.current.filter(f => f.id).map(f => ({ id: f.id, name: f.name }));
             onChange(uploadedFileIds); // Pass the file IDs to onChange
         });
     };
@@ -182,14 +177,14 @@ export default function ChatFiles({ v, accepts, onChange, preParsing }) {
                             {file.isUploading ? file.progress === 100
                                 ? <div className="text-xs text-gray-500">解析中...</div>
                                 : <div className="text-xs text-gray-500">上传中... {file.progress}%</div>
-                                : <div className="text-xs text-gray-500">{getFileExtension(file.name)} {formatFileSize(file.size)}</div>}
+                                : <div className="text-xs text-gray-500">{getFileExtension(file.name).toUpperCase()} {formatFileSize(file.size)}</div>}
                         </div>
                     </div>
                 ))}
             </div>}
 
             {/* File Upload Button */}
-            <div className="absolute right-20 top-5 cursor-pointer" onClick={() => fileInputRef.current.click()}>
+            <div className="absolute right-10 top-5 cursor-pointer" onClick={() => fileInputRef.current.click()}>
                 <PaperclipIcon size={18} />
             </div>
 
@@ -198,7 +193,7 @@ export default function ChatFiles({ v, accepts, onChange, preParsing }) {
                 type="file"
                 ref={fileInputRef}
                 multiple
-                accept={accepts || fileAccepts.join(',')}
+                accept={fileAccepts.join(',')}
                 onChange={handleFileChange}
                 className="hidden"
             />

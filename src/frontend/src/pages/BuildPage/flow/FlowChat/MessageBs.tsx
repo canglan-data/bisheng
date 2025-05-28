@@ -187,9 +187,7 @@ export default function MessageBs({operation, audit, mark = false, logo, data, o
                     {!disableBtn && <MessageButtons
                         onlyRead={(audit || operation)}
                         mark={mark}
-                        msg={message}
                         id={data.id || data.message_id}
-                        chatId={chatId + data.id}
                         data={data.liked}
                         // 审计 & 运营页面展示差评
                         msgVNode={(audit || operation) && data.remark && <MsgVNodeCom message={data.remark} />}
