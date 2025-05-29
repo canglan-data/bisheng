@@ -185,7 +185,7 @@ export default function AppUseLog({ initFilter, clearFilter }) {
         }).then((res) => {
             if (res) {
                 const fileUrl = res.file;
-                downloadFile(checkSassUrl(fileUrl), generateFileName(start_date, end_date));
+                downloadFile(__APP_ENV__.BASE_URL + fileUrl, generateFileName(start_date, end_date));
             } else {
                 console.error('导出失败');
             }
