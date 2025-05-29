@@ -40,25 +40,20 @@ export const bindQuillEvent = (ref: any) => {
  * @param baseUrl 要添加的基础URL
  * @returns 处理后的HTML字符串
  */
-export function processImageUrlsSafely(html: string, baseUrl: string): string {
-    // 首先使用DOMPurify清理HTML
-    const cleanHtml = DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ['img', 'p', 'div', 'span', 'strong', 'em', 's', 'br', 'u', 'a'],
-        ALLOWED_ATTR: ['src', 'data-url', 'class', 'style', 'data-url', 'data-name']
-    });
-
-    // 创建DOM解析器
-    const doc = new DOMParser().parseFromString(cleanHtml, 'text/html');
-    
-    // 处理图片
-    const images = doc.querySelectorAll('img[src]');
-    images.forEach(img => {
-        const src = img.getAttribute('src');
-        if (src && shouldPrefixUrl(src, baseUrl)) {
-            img.setAttribute('src', prefixUrl(src, baseUrl));
-        }
-    });
-    return doc.body.innerHTML;
+export function  processImageUrlsSafely(html: string, baseUrl: string): string {
+  const res = html.replace(
+    /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi,
+    (match, before, src, after) => {
+      // 如果src不是绝对路径且不以baseUrl开头
+      console.log(shouldPrefixUrl(src, baseUrl), baseUrl);
+      
+      if (shouldPrefixUrl(src, baseUrl)) {
+        return `<img${before}src="${baseUrl}${src}"${after}>`;
+      }
+      return match;
+    }
+  );
+  return res;
 }
 
 /**
