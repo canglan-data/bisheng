@@ -2,7 +2,6 @@ import { Quill } from "react-quill";
 import { uploadFile } from '@/util/utils'
 import { Delta } from "quill";
 import { uploadFileWithProgress } from "@/modals/UploadModal/upload";
-import { checkSassUrl } from "@/components/bs-comp/FileView";
 
 export const modules = {
   toolbar: {
@@ -93,7 +92,7 @@ export const modules = {
               //file_path
               const imageUrl = res.file_path;
               const range = quill.getSelection();
-              quill.insertEmbed(range.index, 'image', checkSassUrl(imageUrl));
+              quill.insertEmbed(range.index, 'image', imageUrl);
               quill.setSelection(range.index + 1);
             }
           } catch (error) {
