@@ -653,7 +653,7 @@ def QA_save_knowledge(db_knowledge: Knowledge, QA: QAKnowledge):
                 except Exception as e:
                     raise e
             if not success:
-                raise "插入向量库失败"
+                raise ValueError("插入向量库失败")
         QA.status = 1
         with session_getter() as session:
             session.add(QA)
