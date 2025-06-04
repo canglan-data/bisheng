@@ -25,7 +25,7 @@ import {
 } from "../../components/bs-ui/table";
 import { deleteQa, generateSimilarQa, getQaDetail, getQaFile, getQaFilePreview, getQaList, postImportQaFile, updateKnowledgeApi, updateQa, updateQaStatus } from "../../controllers/API";
 import { captureAndAlertRequestErrorHoc } from "../../controllers/request";
-import { useTable } from "../../util/hook";
+import { useDebounce, useTable } from "../../util/hook";
 import { LoadingIcon } from "@/components/bs-icons/loading";
 import KnowledgeBaseSettingsDialog from "./components/EditKnowledgeDialog";
 import { downloadFile, processImageUrlsSafely } from "@/util/utils";
@@ -608,11 +608,11 @@ export default function QasPage() {
         });
     };
 
-    const handleStatusClick = async (id, checked) => {
+    const handleStatusClick = useDebounce(async (id, checked) => {
         const status = checked ? 1 : 0
         await updateQaStatus(id, status)
         refreshData((item) => item.id === id, { status })
-    }
+    }, 300, false)
     
     const handleSave = (form) => {
         captureAndAlertRequestErrorHoc(updateKnowledgeApi({
