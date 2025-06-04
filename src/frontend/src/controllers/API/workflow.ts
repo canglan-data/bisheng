@@ -171,7 +171,7 @@ const workflowTemplate = [
         "name": "输入",
         "description": "接收用户在会话页面的输入，支持 2 种形式：对话框输入，表单输入。",
         "type": "input",
-        "v": "1",
+        "v": "2",
         "tab": {
             "value": "dialog_input",
             "options": [
@@ -194,7 +194,7 @@ const workflowTemplate = [
                     {
                         "key": "user_input",
                         "global": "key",
-                        "label": "用户输入内容",
+                        "label": "输入文本内容",
                         "type": "var",
                         "tab": "dialog_input"
                     },
@@ -206,6 +206,13 @@ const workflowTemplate = [
                         "tab": "dialog_input"
                     },
                     {
+                        "key": "dialog_files_content_size",
+                        "label": "文件内容长度上限",
+                        "type": "number",
+                        "value": 15000,
+                        "tab": "dialog_input"
+                    },
+                    {
                         "key": "is_allow_upload",
                         "label": "允许上传文件",
                         "type": "switch",
@@ -214,11 +221,28 @@ const workflowTemplate = [
                         "value": true
                     },
                     {
-                        "key": "dialog_files_content_size",
-                        "label": "文件内容长度上限",
-                        "type": "number",
-                        "value": 15000,
+                        "key": "dialog_file_accept",
+                        "label": "上传文件类型",
+                        "type": "select_fileaccept",
+                        "value": ['file', 'audio', 'image'],
                         "tab": "dialog_input"
+                    },
+                    {
+                        "key": "dialog_image_files",
+                        "global": "key",
+                        "label": "上传图片文件",
+                        "type": "var",
+                        "tab": "dialog_input",
+                        "help": "提取上传文件中的图片文件，当助手或大模型节点使用多模态大模型时，可传入此图片。"
+                    },
+                    
+                    {
+                        "key": "dialog_audio_files",
+                        "global": "key",
+                        "label": "上传音频文件",
+                        "type": "var",
+                        "tab": "dialog_input",
+                        "help": "提取上传文件中的音频文件，当助手或大模型节点使用多模态大模型时，可传入此图片。"
                     },
                     {
                         "key": "form_input",
@@ -237,13 +261,16 @@ const workflowTemplate = [
         "name": "输出",
         "description": "可向用户发送消息，并且支持进行更丰富的交互，例如请求用户批准进行某项敏感操作、允许用户在模型输出内容的基础上直接修改并提交。",
         "type": "output",
-        "v": "1",
+        "v": "2",
         "group_params": [
             {
                 "params": [
                     {
+                        // TODO： 0522 KEY值改了 这里需要特别注意一下
                         "key": "output_msg",
+                        // "key": "message",
                         "label": "消息内容",
+                        "global": "key",
                         "type": "var_textarea_file",
                         "required": true,
                         "placeholder": "输入需要发送给用户的消息，例如“接下来我将执行 XX 操作，请您确认”，“以下是我的初版草稿，您可以在其基础上进行修改”",
@@ -375,7 +402,7 @@ const workflowTemplate = [
         "name": "大模型",
         "description": "调用大模型回答用户问题或者处理任务。",
         "type": "llm",
-        "v": "1",
+        "v": "2",
         "tab": {
             "value": "single",
             "options": [
@@ -416,7 +443,14 @@ const workflowTemplate = [
                         "type": "bisheng_model",
                         "value": "",
                         "required": true,
-                        "placeholder": "请选择模型"
+                        "placeholder": "请在模型管理中配置 LLM 模型"
+                    },
+                    {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "type": "switch",
+                        "help": "此开关控制模型是否开启联网搜索",
+                        "value": false
                     },
                     {
                         "key": "temperature",
@@ -448,7 +482,14 @@ const workflowTemplate = [
                         "test": "var",
                         "value": "",
                         "required": true
-                    }
+                    },
+                    {
+                        "key": "image_prompt",
+                        "label": "视觉",
+                        "type": "image_prompt",
+                        "value": [],
+                        "help": "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
+                    },
                 ]
             },
             {
@@ -478,7 +519,7 @@ const workflowTemplate = [
         "name": "助手",
         "description": "AI 自主进行任务规划，选择合适的知识库、数据库或工具进行调用。",
         "type": "agent",
-        "v": "1",
+        "v": "2",
         "tab": {
             "value": "single",
             "options": [
@@ -519,7 +560,14 @@ const workflowTemplate = [
                         "type": "agent_model",
                         "required": true,
                         "value": "",
-                        "placeholder": "请选择模型"
+                        "placeholder": "请在模型管理-系统模型设置中配置助手推理模型"
+                    },
+                    {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "type": "switch",
+                        "help": "此开关控制模型是否开启联网搜索",
+                        "value": false
                     },
                     {
                         "key": "temperature",
@@ -569,7 +617,14 @@ const workflowTemplate = [
                             "value": 50
                         },
                         "help": "带入模型上下文的历史消息条数，为 0 时代表不包含上下文信息。"
-                    }
+                    },
+                    {
+                        "key": "image_prompt",
+                        "label": "视觉",
+                        "type": "image_prompt",
+                        "value": "",
+                        "help": "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
+                    },
                 ]
             },
             {
@@ -770,7 +825,14 @@ const workflowTemplate = [
                         "type": "bisheng_model",
                         "value": "",
                         "required": true,
-                        "placeholder": "请选择模型"
+                        "placeholder": "请在模型管理中配置 LLM 模型"
+                    },
+                    {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "type": "switch",
+                        "help": "此开关控制模型是否开启联网搜索",
+                        "value": false
                     },
                     {
                         "key": "temperature",
@@ -992,14 +1054,44 @@ const workflowTemplateEN = [
         "name": "Input",
         "description": "Receive user input on the session page, supports two forms: dialog input, form input.",
         "type": "input",
-        "v": "1",
+        "v": "2",
         "tab": {
             "value": "dialog_input",
             "options": [
                 {
-                    "label": "Dialog Input",
+                    "label": "Enter text content",
                     "key": "dialog_input",
                     "help": "Receive content entered by the user from the dialog box."
+                },
+                {
+                    "key": "dialog_files_content",
+                    "global": "key",
+                    "label": "Upload file content",
+                    "type": "var",
+                    "tab": "dialog_input"
+                },
+                {
+                    "key": "dialog_files_content_size",
+                    "label": "Maximum length of file content (words)",
+                    "type": "number",
+                    "min": 0,
+                    "value": 15000,
+                    "tab": "dialog_input"
+                },
+                {
+                    "key": "dialog_file_accept",
+                    "label": "Upload file type",
+                    "type": "select_fileaccept",
+                    "value": "all",
+                    "tab": "dialog_input"
+                },
+                {
+                    "key": "dialog_image_files",
+                    "global": "key",
+                    "label": "Upload image files",
+                    "type": "var",
+                    "tab": "dialog_input",
+                    "help": "Extract the image file from the uploaded file. When the assistant or large model node uses the MultiModal Machine Learning large model, this image can be passed in."
                 },
                 {
                     "label": "Form Input",
@@ -1050,13 +1142,14 @@ const workflowTemplateEN = [
         "name": "Output",
         "description": "Send messages to users and support richer interactions, such as requesting user approval for sensitive operations or allowing users to directly modify and submit model-generated content.",
         "type": "output",
-        "v": "1",
+        "v": "2",
         "group_params": [
             {
                 "params": [
                     {
-                        "key": "output_msg",
+                        "key": "message",
                         "label": "Message Content",
+                        "global": "key",
                         "type": "var_textarea_file",
                         "required": true,
                         "placeholder": "Enter the message to send to the user, e.g., 'I will perform XX operation next, please confirm', or 'Here is my draft, feel free to modify it'.",
@@ -1086,7 +1179,7 @@ const workflowTemplateEN = [
         "name": "LLM",
         "description": "Invoke a large language model to answer user questions or process tasks.",
         "type": "llm",
-        "v": "1",
+        "v": "2",
         "tab": {
             "value": "single",
             "options": [
@@ -1126,7 +1219,7 @@ const workflowTemplateEN = [
                         "type": "bisheng_model",
                         "value": "",
                         "required": true,
-                        "placeholder": "Select a model"
+                        "placeholder": "Please configure LLM model in model management"
                     },
                     {
                         "key": "temperature",
@@ -1155,7 +1248,14 @@ const workflowTemplateEN = [
                         "test": "var",
                         "value": "",
                         "required": true
-                    }
+                    },
+                    {
+                        "key": "image_prompt",
+                        "label": "Visual",
+                        "type": "image_prompt",
+                        "value": [],
+                        "help": "When using MultiModal Machine Learning large models, you can use this function to pass in images and combine them with image content for Q & A"
+                    },
                 ]
             },
             {
@@ -1184,7 +1284,7 @@ const workflowTemplateEN = [
         "name": "Agent",
         "description": "AI autonomously plans tasks and selects appropriate knowledge bases or tools for invocation.",
         "type": "agent",
-        "v": "1",
+        "v": "2",
         "tab": {
             "value": "single",
             "options": [
@@ -1224,7 +1324,7 @@ const workflowTemplateEN = [
                         "type": "agent_model",
                         "required": true,
                         "value": "",
-                        "placeholder": "Select a model"
+                        "placeholder": "Please configure the assistant inference model in Model Management - System Model Settings"
                     },
                     {
                         "key": "temperature",
@@ -1268,7 +1368,14 @@ const workflowTemplateEN = [
                             "value": 50
                         },
                         "help": "Include historical chat records."
-                    }
+                    },
+                    {
+                        "key": "image_prompt",
+                        "label": "Visual",
+                        "type": "image_prompt",
+                        "value": "",
+                        "help": "When using MultiModal Machine Learning large models, you can use this function to pass in images and combine them with image content for Q & A"
+                    },
                 ]
             },
             {
@@ -1468,7 +1575,7 @@ const workflowTemplateEN = [
                         "type": "bisheng_model",
                         "value": "",
                         "required": true,
-                        "placeholder": "Select a model"
+                        "placeholder": "Please configure LLM model in model management"
                     },
                     {
                         "key": "temperature",

@@ -155,7 +155,9 @@ export default function MessageBs({ operation = false, mark = false, audit = fal
                         onlyRead={(audit || operation)}
                         mark={mark}
                         id={data.id}
+                        chatId={chatId + data.id}
                         data={data.liked}
+                        msg={message}
                         onUnlike={onUnlike}
                         // 审计 & 运营页面展示差评
                         msgVNode={(audit || operation) && data.remark && <MsgVNodeCom message={remark} />}

@@ -1,7 +1,7 @@
 from typing import Any
 
 from bisheng.api.services.llm import LLMService
-from bisheng.chat.clients.llm_callback import LLMNodeCallbackHandler
+from bisheng.workflow.callback.llm_callback import LLMNodeCallbackHandler
 from bisheng.workflow.nodes.base import BaseNode
 from bisheng.workflow.nodes.prompt_template import PromptTemplateParser
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -19,74 +19,88 @@ class LLMNode(BaseNode):
         # 是否输出结果给用户
         self._output_user = self.node_params.get('output_user', False)
 
+        self._image_prompt = self.node_params.get('image_prompt', [])
+
         # 初始化prompt
         self._system_prompt = PromptTemplateParser(template=self.node_params['system_prompt'])
         self._system_variables = self._system_prompt.extract()
-        self._system_prompt_list = []
         self._user_prompt = PromptTemplateParser(template=self.node_params['user_prompt'])
         self._user_variables = self._user_prompt.extract()
-        self._user_prompt_list = []
 
-        self._batch_variable_list = {}
+        # 存储日志所需数据
+        self._system_prompt_list = []
+        self._user_prompt_list = []
+        self._batch_variable_list = []
+        self._log_reasoning_content = []
 
         # 初始化llm对象
         self._stream = True
         self._llm = LLMService.get_bisheng_llm(model_id=self.node_params['model_id'],
+                                               temperature=self.node_params.get(
+                                                   'temperature', 0.3),
                                                params={'stream': self._stream},
                                                cache=False)
 
     def _run(self, unique_id: str):
         self._system_prompt_list = []
         self._user_prompt_list = []
-        self._batch_variable_list = {}
+        self._batch_variable_list = []
+        self._log_reasoning_content = []
+
         result = {}
         if self._tab == 'single':
-            result['output'] = self._run_once(None, unique_id, 'output')
+            result['output'], reasoning_content = self._run_once(None, unique_id, 'output')
+            self._log_reasoning_content.append(reasoning_content)
         else:
             for index, one in enumerate(self.node_params['batch_variable']):
+                self._batch_variable_list.append(self.get_other_node_variable(one))
                 output_key = self.node_params['output'][index]['key']
-                result[output_key] = self._run_once(one, unique_id, output_key)
+                result[output_key], reasoning_content = self._run_once(one, unique_id, output_key)
+                self._log_reasoning_content.append(reasoning_content)
 
         if self._output_user:
-            # 非stream 模式，处理结果
             for k, v in result.items():
                 self.graph_state.save_context(content=v, msg_sender='AI')
         return result
 
     def parse_log(self, unique_id: str, result: dict) -> Any:
-        ret = [
-            {"key": "system_prompt", "value": self._system_prompt_list, "type": "params"},
-            {"key": "user_prompt", "value": self._user_prompt_list, "type": "params"},
-        ]
-        if self._batch_variable_list:
-            ret.insert(0, {"key": "batch_variable", "value": self._batch_variable_list, "type": "params"})
+        ret = []
+        index = 0
         for k, v in result.items():
-            ret.append({"key": f'{self.id}.{k}', "value": v, "type": "variable"})
+            one_ret = [
+                {"key": "system_prompt", "value": self._system_prompt_list[index], "type": "params"},
+                {"key": "user_prompt", "value": self._user_prompt_list[index], "type": "params"},
+            ]
+            if self._log_reasoning_content[index]:
+                one_ret.append({"key": "思考内容", "value": self._log_reasoning_content[index], "type": "params"})
+            one_ret.append({"key": f'{self.id}.{k}', "value": v, "type": "variable"})
+            if self._batch_variable_list:
+                one_ret.insert(0, {"key": f"{self.id}.batch_variable", "value": self._batch_variable_list[index], "type": "variable"})
+            index += 1
+            ret.append(one_ret)
         return ret
 
     def _run_once(self,
                   input_variable: str = None,
                   unique_id: str = None,
-                  output_key: str = None) -> str:
+                  output_key: str = None) -> (str, str):
         # 说明是引用了批处理的变量, 需要把变量的值替换为用户选择的变量
         special_variable = f'{self.id}.batch_variable'
         variable_map = {}
         for one in self._system_variables:
             if input_variable and one == special_variable:
-                variable_map[one] = self.graph_state.get_variable_by_str(input_variable)
-                self._batch_variable_list[input_variable] = variable_map[one]
+                variable_map[one] = self.get_other_node_variable(input_variable)
                 continue
-            variable_map[one] = self.graph_state.get_variable_by_str(one)
+            variable_map[one] = self.get_other_node_variable(one)
         system = self._system_prompt.format(variable_map)
         self._system_prompt_list.append(system)
 
         variable_map = {}
         for one in self._user_variables:
             if input_variable and one == special_variable:
-                variable_map[one] = self.graph_state.get_variable_by_str(input_variable)
-                self._batch_variable_list[input_variable] = variable_map[one]
+                variable_map[one] = self.get_other_node_variable(input_variable)
                 continue
-            variable_map[one] = self.graph_state.get_variable_by_str(one)
+            variable_map[one] = self.get_other_node_variable(one)
         user = self._user_prompt.format(variable_map)
         self._user_prompt_list.append(user)
 
@@ -98,9 +112,19 @@ class LLMNode(BaseNode):
                                               output=self._output_user,
                                               output_key=output_key)
         config = RunnableConfig(callbacks=[llm_callback])
+        inputs = []
+        if system:
+            inputs.append(SystemMessage(content=system))
 
-        result = self._llm.invoke([SystemMessage(content=system),
-                                   HumanMessage(content=user)],
-                                  config=config)
+        human_message = HumanMessage(content=[{
+            'type': 'text',
+            'text': user
+        }])
+        human_message = self.contact_file_into_prompt(human_message, self._image_prompt)
+        inputs.append(human_message)
 
-        return result.content
+        logger.debug(f'llm invoke chat_history: {inputs} {self._image_prompt}')
+
+        result = self._llm.invoke(inputs, config=config)
+
+        return result.content, llm_callback.reasoning_content
