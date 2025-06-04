@@ -51,6 +51,8 @@ class BaseNode(ABC):
 
         # 简单参数解析
         self.init_data()
+        # 存储节点所需的其他节点变量的值
+        self.other_node_variable = {}
 
     def init_data(self):
         """ 统一的参数处理，节点有特殊需求的可以，自己初始化时处理 """
@@ -150,3 +152,9 @@ class BaseNode(ABC):
 
     def stop(self):
         self.stop_flag = True
+
+    def get_other_node_variable(self, variable_key: str) -> Any:
+        """ 从全局变量中获取其他节点的变量值 """
+        value = self.graph_state.get_variable_by_str(variable_key)
+        self.other_node_variable[variable_key] = value
+        return value
