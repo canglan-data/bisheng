@@ -1,13 +1,12 @@
 import axios from "axios";
 import clsx, { ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge"
-import DOMPurify from "dompurify";;
+import { twMerge } from "tailwind-merge";
+import DOMPurify from "dompurify";
 import { APITemplateType } from "../types/api";
 import { checkUpperWords } from "../utils";
 import { checkSassUrl } from "@/components/bs-comp/FileView";
 import ReactDOMServer, { renderToStaticMarkup } from 'react-dom/server';
 import ReactMarkdown from 'react-markdown';
-import DOMPurify from 'dompurify';
 import { createElement, ReactElement } from "react";
 
 
