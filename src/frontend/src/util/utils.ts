@@ -1,6 +1,7 @@
 import axios from "axios";
 import clsx, { ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "tailwind-merge"
+import DOMPurify from "dompurify";;
 import { APITemplateType } from "../types/api";
 import { checkUpperWords } from "../utils";
 import { checkSassUrl } from "@/components/bs-comp/FileView";
@@ -32,8 +33,56 @@ export const bindQuillEvent = (ref: any) => {
     const images = ref.current.querySelectorAll("img");
     images.forEach(image => {
         const url = image.getAttribute('src');
-        image.setAttribute('src', checkSassUrl(url));
+        if (url && shouldPrefixUrl(url, __APP_ENV__.BASE_URL)) {
+            image.setAttribute('src', prefixUrl(url, __APP_ENV__.BASE_URL));
+        }
     });
+}
+
+/**
+ * 安全处理富文本中的图片URL
+ * @param html 富文本HTML字符串
+ * @param baseUrl 要添加的基础URL
+ * @returns 处理后的HTML字符串
+ */
+export function  processImageUrlsSafely(html: string, baseUrl: string): string {
+  const res = html.replace(
+    /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi,
+    (match, before, src, after) => {
+      // 如果src不是绝对路径且不以baseUrl开头
+      console.log(shouldPrefixUrl(src, baseUrl), baseUrl);
+      
+      if (shouldPrefixUrl(src, baseUrl)) {
+        return `<img${before}src="${baseUrl}${src}"${after}>`;
+      }
+      return match;
+    }
+  );
+  return res;
+}
+
+/**
+ * 判断URL是否需要添加前缀
+ */
+function shouldPrefixUrl(url: string, baseUrl: string): boolean {
+    return !(
+        url.startsWith('http:') ||
+        url.startsWith('https:') ||
+        url.startsWith('//') ||
+        url.startsWith('data:') ||
+        url.startsWith('blob:') ||
+        url.startsWith(baseUrl)
+    );
+}
+
+/**
+ * 为URL添加前缀
+ */
+function prefixUrl(url: string, baseUrl: string): string {
+  // 确保baseUrl以/结尾，url不以/开头
+  const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const normalizedUrl = url.startsWith('/') ? url.slice(1) : url;
+  return `${normalizedBase}${normalizedUrl}`;
 }
 
 export const uploadFile = async ({ url, fileName = 'file', file, callback, cancel = null }) : Promise<any> => {
