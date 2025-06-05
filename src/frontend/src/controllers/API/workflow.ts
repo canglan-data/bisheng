@@ -445,13 +445,6 @@ const workflowTemplate = [
                         "placeholder": "请在模型管理中配置 LLM 模型"
                     },
                     {
-                        "key": "enable_web_search",
-                        "label": "联网搜索",
-                        "type": "switch",
-                        "help": "",
-                        "value": false
-                    },
-                    {
                         "key": "temperature",
                         "label": "温度",
                         "type": "slide",
@@ -461,7 +454,14 @@ const workflowTemplate = [
                         ],
                         "step": 0.1,
                         "value": 0.7
-                    }
+                    },
+                    {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "type": "switch",
+                        "help": "",
+                        "value": false
+                    },
                 ]
             },
             {
@@ -562,13 +562,6 @@ const workflowTemplate = [
                         "placeholder": "请在模型管理-系统模型设置中配置助手推理模型"
                     },
                     {
-                        "key": "enable_web_search",
-                        "label": "联网搜索",
-                        "type": "switch",
-                        "help": "",
-                        "value": false
-                    },
-                    {
                         "key": "temperature",
                         "label": "温度",
                         "type": "slide",
@@ -578,7 +571,14 @@ const workflowTemplate = [
                         ],
                         "step": 0.1,
                         "value": 0.7
-                    }
+                    },
+                    {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "type": "switch",
+                        "help": "",
+                        "value": false
+                    },
                 ]
             },
             {
@@ -750,7 +750,7 @@ const workflowTemplate = [
         "name": "文档知识库问答",
         "description": "根据用户问题从知识库中检索相关内容，结合检索结果调用大模型生成最终结果，支持多个问题并行执行。",
         "type": "rag",
-        "v": "1",
+        "v": "2",
         "group_params": [
             {
                 "name": "知识库检索设置",
@@ -827,14 +827,6 @@ const workflowTemplate = [
                         "placeholder": "请在模型管理中配置 LLM 模型"
                     },
                     {
-                        "key": "enable_web_search",
-                        "label": "联网搜索",
-                        "global": "self",
-                        "type": "switch",
-                        "help": "",
-                        "value": false
-                    },
-                    {
                         "key": "temperature",
                         "label": "温度",
                         "type": "slide",
@@ -844,6 +836,21 @@ const workflowTemplate = [
                         ],
                         "step": 0.1,
                         "value": 0.7
+                    },
+                    {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "global": "self",
+                        "type": "switch",
+                        "help": "",
+                        "value": false
+                    },
+                    {
+                        "key": "show_source",
+                        "label": "展示参考来源",
+                        "type": "switch",
+                        "value": true,
+                        "help": "关闭后在会话页面不展示消息参考来源"
                     }
                 ]
             },
@@ -856,13 +863,6 @@ const workflowTemplate = [
                         "type": "switch",
                         "value": true,
                         "help": "一般在问答等场景开启，文档审核、报告生成等场景可关闭。"
-                    },
-                    {
-                        "key": "show_source",
-                        "label": "展示参考来源",
-                        "type": "switch",
-                        "value": true,
-                        "help": "关闭后在会话页面不展示消息参考来源"
                     },
                     {
                         "key": "output_user_input",

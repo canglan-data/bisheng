@@ -4,14 +4,13 @@ import { generateUUID } from "@/components/bs-ui/utils";
 export const flowVersionCompatible = (flow) => {
 
     flow.nodes.forEach((node) => {
-
         switch (node.data.type) {
             case 'start': comptibleStart(node.data); break;
             case 'input': comptibleInput(node.data); break;
             case 'agent': comptibleAgent(node.data); break;
             case 'output': comptibleOutput(node.data); break;
             case 'llm': comptibleLLM(node.data); break;
-
+            case 'rag': comptibleRag(node.data); break;
         }
     })
     return flow
@@ -126,12 +125,41 @@ const comptibleAgent = (node) => {
     }
 
     if (node.v == 1) {
+        node.group_params[1].params.push({
+            key: "enable_web_search",
+            label: "联网搜索",
+            type: "switch",
+            help: "",
+            value: false
+        })
         node.group_params[2].params.push({
             key: "image_prompt",
             label: "视觉",
             type: "image_prompt",
             value: "",
             help: "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
+        })
+
+        node.v = 2
+    }
+}
+
+const comptibleRag = (node) => {
+    if (node.v == 1) {
+        node.group_params[1].params.push({
+            "key": "enable_web_search",
+            "label": "联网搜索",
+            "global": "self",
+            "type": "switch",
+            "help": "",
+            "value": false
+        })
+        node.group_params[1].params.push({
+            key: "show_source",
+            label: "展示参考来源",
+            type: "switch",
+            value: true,
+            help: "关闭后在会话页面不展示消息参考来源"
         })
 
         node.v = 2
@@ -151,6 +179,13 @@ const comptibleOutput = (node) => {
 
 const comptibleLLM = (node) => {
     if (node.v == 1) {
+        node.group_params[1].params.push({
+            key: "enable_web_search",
+            label: "联网搜索",
+            type: "switch",
+            help: "",
+            value: false
+        })
 
         node.group_params[2].params.push({
             key: "image_prompt",
