@@ -571,7 +571,7 @@ class AuditLogService:
     @classmethod
     def session_export(cls, all_session: list[AppChatList]):
         excel_data = [["会话ID","应用名称","会话创建时间","用户名称","消息角色","组织架构",
-                    "消息发送时间","用户消息文本内容","消息角色",  # 移除了第一次出现的点赞等列
+                    "消息发送时间","用户消息文本内容","消息角色", "是否命中安全审查",  # 移除了第一次出现的点赞等列
                     "消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈","复制","是否命中安全审查"]]
         for session in all_session:
             flow_id = str(session.flow_id).replace("-", '')
@@ -598,7 +598,11 @@ class AuditLogService:
                                 msg.create_time,  # 直接添加消息发送时间
                                 msg.message,     # 直接添加消息内容
                                 "用户" if msg.category == "question" else "AI"]  # 直接添加角色
-                        # 移除了第一次出现的点赞等字段
+                         # 添加安全审查状态（第一次）
+                        if msg.review_status in {0, 1, 2, 3, 4}:
+                            c_qa.append(["", "未审查", "通过", "违规", "审查失败"][msg.review_status])
+                        else:
+                            c_qa.append("未审查")
                         continue
                     
                     if len(c_qa) == 0:
