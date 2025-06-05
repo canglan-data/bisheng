@@ -641,7 +641,7 @@ def QA_save_knowledge(db_knowledge: Knowledge, QA: QAKnowledge):
                 try:
                     vectore_client.add_texts(texts=texts, metadatas=metadata)
                     validation_query = texts[0]
-                    search_results = vectore_client.search(query=validation_query,search_type="similarity")
+                    search_results = vectore_client.search(query=validation_query,search_type="similarity", k=100)
                     matched = any(
                         result.metadata.get('file_id') == QA.id and
                         result.metadata.get('knowledge_id') == f'{db_knowledge.id}'
