@@ -571,8 +571,8 @@ class AuditLogService:
     @classmethod
     def session_export(cls, all_session: list[AppChatList]):
         excel_data = [["会话ID","应用名称","会话创建时间","用户名称","消息角色","组织架构",
-                       "消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈","复制","是否命中安全审查",
-                       "消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈","复制","是否命中安全审查"]] # 获取用户名
+                    "消息发送时间","用户消息文本内容","消息角色",  # 移除了第一次出现的点赞等列
+                    "消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈","复制","是否命中安全审查"]]
         for session in all_session:
             flow_id = str(session.flow_id).replace("-", '')
             chat_id = session.chat_id
@@ -593,9 +593,17 @@ class AuditLogService:
                                 session.flow_name,
                                 session.create_time,
                                 session.user_name,
-                                "系统",session.user_groups[-1]["name"]]
+                                "系统",
+                                session.user_groups[-1]["name"],
+                                msg.create_time,  # 直接添加消息发送时间
+                                msg.message,     # 直接添加消息内容
+                                "用户" if msg.category == "question" else "AI"]  # 直接添加角色
+                        # 移除了第一次出现的点赞等字段
+                        continue
+                    
                     if len(c_qa) == 0:
                         continue
+                    # 只从第二次开始添加点赞等字段
                     c_qa.append(msg.create_time) #会话ID
                     c_qa.append(msg.message)
                     c_qa.append("用户" if msg.category == "question" else "AI")
