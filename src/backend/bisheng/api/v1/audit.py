@@ -119,7 +119,7 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
     logger.info(f"get_session_list Flow IDs: {flow_ids} | Group IDs: {group_ids} | review_status : {review_status}")
     all_session, total = AuditLogService.get_session_list(login_user, flow_ids, user_ids, group_ids, start_date, end_date,
                                                    feedback, review_status, page, page_size, keyword)
-    url = AuditLogService.session_export(all_session)
+    url = AuditLogService.session_export(all_session, 'aduit')
     return resp_200(data={"file": url})
 
 
