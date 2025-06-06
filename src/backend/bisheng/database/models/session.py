@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List
@@ -9,6 +10,7 @@ from sqlmodel import Field, Column, DateTime, text, select, update, func
 from bisheng.database.base import session_getter
 from bisheng.database.models.base import SQLModelSerializable
 from bisheng.database.models.user_group import UserGroup
+from bisheng.utils.sysloger import syslog_client
 
 
 class ReviewStatus(Enum):
@@ -54,6 +56,7 @@ class MessageSessionDao(MessageSessionBase):
             session.add(data)
             session.commit()
             session.refresh(data)
+            syslog_client.log_message_session(data.to_dict())
             return data
 
     @classmethod
