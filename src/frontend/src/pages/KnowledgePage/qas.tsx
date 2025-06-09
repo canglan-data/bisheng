@@ -182,6 +182,7 @@ const ImportQa = forwardRef( function ({ knowlageId, onChange } : any, ref) {
     };
 
     const handleSubmit = async () => {
+        setLoading(true);
         const isDataListEmpty = !dataList.length;
         const errors = [];
         setError({
@@ -199,8 +200,8 @@ const ImportQa = forwardRef( function ({ knowlageId, onChange } : any, ref) {
         const res = await captureAndAlertRequestErrorHoc(postImportQaFile(id, {
             url: form.fileUrl
         }));
+        setLoading(false);
         const errorLines = res.errors[0];
-        console.log('errors', errorLines);
         if (errorLines.length) {
             message({ variant: 'warning', description: t('errorMsg', { value: errorLines.length })});
         } else {
@@ -274,7 +275,8 @@ const ImportQa = forwardRef( function ({ knowlageId, onChange } : any, ref) {
                             {t('cancel2')}
                         </Button>
                     </DialogClose>
-                    <LoadButton loading={saveLoad} type="submit" className="px-11" onClick={handleSubmit}>
+                    <LoadButton loading={saveLoad} disabled={loading} type="submit" className="px-11" onClick={handleSubmit}>
+                        <LoadIcon className={`mr-1 ${loading ? '' : 'hidden'}`} />
                         {t('submit')}
                     </LoadButton>
                 </DialogFooter>
