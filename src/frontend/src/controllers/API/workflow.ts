@@ -108,7 +108,7 @@ const workflowTemplate = [
         "name": "开始",
         "description": "工作流运行的起始节点。",
         "type": "start",
-        "v": "1",
+        "v": "2",
         "group_params": [
             {
                 "name": "开场引导",
@@ -265,9 +265,7 @@ const workflowTemplate = [
             {
                 "params": [
                     {
-                        // TODO： 0522 KEY值改了 这里需要特别注意一下
                         "key": "output_msg",
-                        // "key": "message",
                         "label": "消息内容",
                         "global": "key",
                         "type": "var_textarea_file",
@@ -482,13 +480,13 @@ const workflowTemplate = [
                         "value": "",
                         "required": true
                     },
-                    {
-                        "key": "image_prompt",
-                        "label": "视觉",
-                        "type": "image_prompt",
-                        "value": [],
-                        "help": "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
-                    },
+                    // {
+                    //     "key": "image_prompt",
+                    //     "label": "视觉",
+                    //     "type": "image_prompt",
+                    //     "value": [],
+                    //     "help": "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
+                    // },
                 ]
             },
             {
@@ -617,13 +615,13 @@ const workflowTemplate = [
                         },
                         "help": "带入模型上下文的历史消息条数，为 0 时代表不包含上下文信息。"
                     },
-                    {
-                        "key": "image_prompt",
-                        "label": "视觉",
-                        "type": "image_prompt",
-                        "value": "",
-                        "help": "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
-                    },
+                    // {
+                    //     "key": "image_prompt",
+                    //     "label": "视觉",
+                    //     "type": "image_prompt",
+                    //     "value": "",
+                    //     "help": "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
+                    // },
                 ]
             },
             {
