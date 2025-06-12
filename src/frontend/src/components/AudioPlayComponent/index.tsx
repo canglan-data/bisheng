@@ -39,9 +39,14 @@ export const AudioPlayComponent = ({ messageId, msg }: AudioPlayButtonProps) => 
     try {
       setError('');
       
+      // 当前存在正在播放的音频 则暂停
       if (soundInstance?.playing()) {
         pauseAudio();
-        return;
+        // 猴子补丁
+        if (currentPlayingId === messageId) {
+          // 如果是暂停当前播放的 直接跳出，否则继续后续逻辑获取新的播放
+          return;
+        }
       }
 
       // 如果是暂停状态，恢复播放
