@@ -11,9 +11,10 @@ class OpenApiSchema:
         self.info = contents['info']
         self.title = self.info['title']
         self.description = self.info.get('description', '')
-
         self.default_server = ''
         self.apis = []
+        self.auth_type = 'basic'
+        self.auth_method = 0
 
     def parse_server(self) -> str:
         """
@@ -26,6 +27,24 @@ class OpenApiSchema:
             self.default_server = servers[0]['url']
         else:
             self.default_server = servers['url']
+        security_schemes = self.contents.get('components', {}).get('securitySchemes', {})
+        api_key_auth = security_schemes.get('ApiKeyAuth', {})
+
+        # 获取认证类型
+        auth_type = api_key_auth.get('type')
+        if auth_type == 'apiKey':
+            self.auth_type = 'custom'
+        elif auth_type == 'http':
+            self.auth_type = api_key_auth.get('schema')
+        else:
+            self.auth_type = 'basic'
+
+        # 设置认证方法
+        self.auth_method = 1 if auth_type in ('apiKey', 'http') else 0
+
+        # 获取 API 位置和参数名
+        self.api_location = api_key_auth.get('in')
+        self.parameter_name = api_key_auth.get('name')
         return self.default_server
 
     def parse_paths(self) -> list[dict]:
@@ -85,7 +104,13 @@ class OpenApiSchema:
         # 拼接请求头
         headers = {}
         if auth_method == AuthMethod.API_KEY.value:
-            if auth_type == AuthType.BASIC.value:
+            if auth_type == AuthType.CUSTOM.value:
+                extra_json = json.loads(extra)
+                location = extra_json["api_location"]
+                parameter_name= extra_json["parameter_name"]
+                if location == "header":
+                    headers = {parameter_name: api_key}
+            elif auth_type == AuthType.BASIC.value:
                 headers = {'Authorization': f'Basic {api_key}'}
             elif auth_type == AuthType.BEARER.value:
                 headers = {'Authorization': f'Bearer {api_key}'}
@@ -94,6 +119,7 @@ class OpenApiSchema:
         params = {
             'params': json.loads(extra),
             'headers': headers,
+            'api_key': api_key,
             'url': server_host,
             'description': name + description if description else name
         }
