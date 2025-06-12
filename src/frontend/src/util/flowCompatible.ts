@@ -28,6 +28,23 @@ const comptibleStart = (node) => {
 
         node.v = 1
     }
+    if (node.v == 1) {
+        node.group_params[1].params.shift({
+            "key": "current_time",
+            "global": "key",
+            "label": "当前时间",
+            "type": "var",
+            "value": ""
+        })
+        node.group_params[1].params.shift({
+            "key": "user_info",
+            "global": "key",
+            "label": "用户信息",
+            "type": "var",
+            "value": ""
+        })
+        node.v = 2
+    }
 }
 
 const comptibleInput = (node) => {
@@ -60,20 +77,12 @@ const comptibleInput = (node) => {
     // 1 => 2
     if (node.v == 1) {
         node.group_params[0].params.push({
-            key: "dialog_files_content",
-            global: "key",
-            label: "上传文件内容",
-            type: "var",
-            tab: "dialog_input"
-        })
-
-        node.group_params[0].params.push({
-            key: "dialog_files_content_size",
-            label: "文件内容长度上限",
-            type: "char_number",
-            min: 0,
-            value: 15000,
-            tab: "dialog_input"
+            "key": "is_allow_upload",
+            "label": "允许上传文件",
+            "type": "switch",
+            "tab": "dialog_input",
+            "help": "控制会话中是否允许上传文件",
+            "value": true
         })
 
         node.group_params[0].params.push({
@@ -132,13 +141,13 @@ const comptibleAgent = (node) => {
             help: "",
             value: false
         })
-        node.group_params[2].params.push({
-            key: "image_prompt",
-            label: "视觉",
-            type: "image_prompt",
-            value: "",
-            help: "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
-        })
+        // node.group_params[2].params.push({
+        //     key: "image_prompt",
+        //     label: "视觉",
+        //     type: "image_prompt",
+        //     value: "",
+        //     help: "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
+        // })
 
         node.v = 2
     }
@@ -187,13 +196,13 @@ const comptibleLLM = (node) => {
             value: false
         })
 
-        node.group_params[2].params.push({
-            key: "image_prompt",
-            label: "视觉",
-            type: "image_prompt",
-            value: [],
-            help: "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
-        })
+        // node.group_params[2].params.push({
+        //     key: "image_prompt",
+        //     label: "视觉",
+        //     type: "image_prompt",
+        //     value: [],
+        //     help: "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
+        // })
 
         node.v = 2
     }
