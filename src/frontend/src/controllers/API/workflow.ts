@@ -456,7 +456,7 @@ const workflowTemplate = [
                     {
                         "key": "enable_web_search",
                         "label": "联网搜索",
-                        "type": "switch",
+                        "type": "online_switch",
                         "help": "",
                         "value": false
                     },
@@ -573,7 +573,7 @@ const workflowTemplate = [
                     {
                         "key": "enable_web_search",
                         "label": "联网搜索",
-                        "type": "switch",
+                        "type": "online_switch",
                         "help": "",
                         "value": false
                     },
