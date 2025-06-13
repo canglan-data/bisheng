@@ -1,6 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import useFlowStore from "../flowStore"
 
 // 引导词推荐
 const GuideQuestions = forwardRef(({ locked, chatId, onClick, bottom }, ref) => {
