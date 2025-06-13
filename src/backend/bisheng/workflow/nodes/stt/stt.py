@@ -51,6 +51,12 @@ class STTNode(BaseNode):
                   input_variable: str = None,
                   unique_id: str = None,
                   output_key: str = None) -> str:
-        url = self.graph_state.get_variable_by_str(input_variable)
-        text = self._stt.transcribe(url)
-        return text
+        input_file = self.graph_state.get_variable_by_str(input_variable)
+        if type(input_file) == list:
+            result = []
+            for u in input_file:
+                text = self._stt.transcribe(u)
+                result.append(text)
+        else:
+            result = self._stt.transcribe(input_file)
+        return result

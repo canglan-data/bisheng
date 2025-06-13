@@ -5,6 +5,7 @@ import { Mic, Square, Loader } from 'lucide-react';
 import { textToSpeech } from '@/controllers/API/flow';
 import { checkSassUrl } from '../bs-comp/FileView';
 import { ThunmbIcon } from '../bs-icons';
+import { formatTTSText } from '@/util/utils';
 
 interface AudioPlayButtonProps {
   messageId: string;
@@ -24,7 +25,7 @@ export const AudioPlayComponent = ({ messageId, msg }: AudioPlayButtonProps) => 
   } = useAudioPlayerStore();
 
   const getAudioUrl = async (msg: string) => {
-    const res = await textToSpeech({ text: msg });
+    const res = await textToSpeech({ text: formatTTSText(msg) });
     return checkSassUrl(res.url);
   }
 
@@ -38,9 +39,14 @@ export const AudioPlayComponent = ({ messageId, msg }: AudioPlayButtonProps) => 
     try {
       setError('');
       
+      // 当前存在正在播放的音频 则暂停
       if (soundInstance?.playing()) {
         pauseAudio();
-        return;
+        // 猴子补丁
+        if (currentPlayingId === messageId) {
+          // 如果是暂停当前播放的 直接跳出，否则继续后续逻辑获取新的播放
+          return;
+        }
       }
 
       // 如果是暂停状态，恢复播放

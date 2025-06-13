@@ -18,7 +18,7 @@ import SpeechToTextComponent from "@/components/SpeechToTextComponent";
 export const FileTypes = {
     IMAGE: ['.PNG', '.JPEG', '.JPG', '.BMP'],
     FILE: ['.PDF', '.TXT', '.MD', '.HTML', '.XLS', '.XLSX', '.DOC', '.DOCX', '.PPT', '.PPTX'],
-    AUDIO: ['.MP3'],
+    AUDIO: ['.MP3', '.AMR', 'WAV', 'AAC'],
 }
 
 export default function ChatInput({flow, assistant, clear, form, questions, inputForm, wsUrl, onBeforSend, onClickClear, showUpload }) {
@@ -320,6 +320,7 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
                 chatId={chatId}
                 questions={questions}
                 onClick={handleClickGuideWord}
+                bottom={getFileIds().length ? 20 : 0} //有文件 则给引导问题顶上去
             />
             {/* clear */}
             <div className="flex absolute left-0 top-4 z-10">

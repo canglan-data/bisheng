@@ -33,9 +33,11 @@ class LLMNode(BaseNode):
         self._batch_variable_list = []
         self._log_reasoning_content = []
 
+        self._enable_web_search = self.node_params.get('enable_web_search', False)
+
         # 初始化llm对象
         self._stream = True
-        self._llm = LLMService.get_bisheng_llm(model_id=self.node_params['model_id'],
+        self._llm = LLMService.get_bisheng_llm(model_id=self.node_params['model_id'], enable_web_search=self._enable_web_search,
                                                temperature=self.node_params.get(
                                                    'temperature', 0.3),
                                                params={'stream': self._stream},

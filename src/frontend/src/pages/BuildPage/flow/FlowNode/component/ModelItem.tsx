@@ -1,6 +1,7 @@
 import { Label } from "@/components/bs-ui/label";
 import Cascader from "@/components/bs-ui/select/cascader";
 import { getAssistantModelList, getLlmDefaultModel, getModelListApi, getVoiceDefaultModel } from "@/controllers/API/finetune";
+import useModelStore, { MODEL_TYPE } from "@/store/useModelStore";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -8,9 +9,12 @@ export default function ModelItem({ agent = false, data, onChange, onValidate, t
     const [options, setOptions] = useState<any[]>([])
     const { t } = useTranslation()
 
+    const { setModels } = useModelStore();
+
     useEffect(() => {
         const isVoiceLlm = ['tts', 'stt'].includes(type);
         (agent ? getAssistantModelList() : getModelListApi()).then(res => {
+            setModels(res, agent ? MODEL_TYPE.AGENT_MODEL : MODEL_TYPE.MODEL );
             let llmOptions = []
             let voiceOptions = []
             let embeddings = []
