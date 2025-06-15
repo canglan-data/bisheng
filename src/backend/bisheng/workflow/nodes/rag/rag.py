@@ -80,7 +80,7 @@ class RagNode(BaseNode):
             QA_PROMPT=self._qa_prompt,
             max_content=self._max_chunk_size,
             sort_by_source_and_index=self._sort_chunks,
-            return_source_documents=self._show_source,
+            return_source_documents=True,
         )
         user_questions = self.init_user_question()
         ret = {}
@@ -94,6 +94,9 @@ class RagNode(BaseNode):
                                                      output_key=output_key)
 
             result = retriever._call({'query': question}, run_manager=llm_callback)
+            if not self._show_source:
+                # 不进行溯源
+                result['source_documents'] = []
 
             if self._output_user:
                 self.graph_state.save_context(content=result['result'], msg_sender='AI')
