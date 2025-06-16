@@ -100,7 +100,7 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
         setFormShow(false)
 
         const [fileIds, fileNames] = getFileIds().reduce((acc, cur) => {
-            acc[0].push(cur.id)
+            acc[0].push(cur.path)
             acc[1].push(cur.name)
             return acc
         }, [[], []])

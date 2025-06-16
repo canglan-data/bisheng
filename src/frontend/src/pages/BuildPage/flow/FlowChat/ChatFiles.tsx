@@ -89,7 +89,7 @@ const ChatFiles = forwardRef(({ v, accepts, onChange, preParsing }, ref) => {
             }, preParsing, v).then(response => {
                 console.log('repose', response);
                 
-                const filePath = response.file_path; // Assuming the response contains the file ID
+                const filePath = response.file_path || response.id; // Assuming the response contains the file ID
                 filesRef.current = filesRef.current.map(f => {
                     if (f.id === id) {
                         return { ...f, isUploading: false, filePath, progress: 100 }; // Set progress to 100 when uploaded
