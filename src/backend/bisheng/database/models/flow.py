@@ -323,7 +323,8 @@ class FlowDao(FlowBase):
 
     @classmethod
     def get_all_apps(cls, name: str = None, status: int = None, id_list: list = None, flow_type: int = None,
-                     user_id: int = None, id_extra: list = None, page: int = 0, limit: int = 0) -> (List[Dict], int):
+                     user_id: int = None, id_extra: list = None, page: int = 0, limit: int = 0,
+                     company_members:list[int]=None) -> (List[Dict], int):
         """ 获取所有的应用 包含技能、助手、工作流 """
         sub_query = select(Flow.id, Flow.name, Flow.description, Flow.flow_type, Flow.logo, Flow.user_id, Flow.status,
                            Flow.create_time, Flow.update_time).union_all(
@@ -359,6 +360,9 @@ class FlowDao(FlowBase):
             statement = statement.order_by(sub_query.c.name)
         else:
             statement = statement.order_by(sub_query.c.update_time.desc())
+        if company_members:
+            statement = statement.where(sub_query.c.user_id.in_(company_members))
+            count_statement = count_statement.where(sub_query.c.user_id.in_(company_members))
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
         with (session_getter() as session):

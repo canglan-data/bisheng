@@ -128,6 +128,7 @@ def read_flows(*,
                tag_id: int = Query(default=None, description='标签ID'),
                page_size: int = Query(default=10, description='每页数量'),
                page_num: int = Query(default=1, description='页数'),
+
                status: int = None,
                Authorize: AuthJWT = Depends()):
     """Read all flows."""

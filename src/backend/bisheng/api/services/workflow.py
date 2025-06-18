@@ -1,7 +1,7 @@
 import json
 import os
 from tempfile import TemporaryDirectory
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from uuid import UUID
 
 from fastapi import UploadFile
@@ -21,10 +21,12 @@ from bisheng.cache.utils import save_uploaded_file
 from bisheng.chat.utils import SourceType
 from bisheng.database.models.flow import FlowDao, FlowType, FlowStatus
 from bisheng.database.models.flow_version import FlowVersionDao
+from bisheng.database.models.group import GroupDao
 from bisheng.database.models.group_resource import GroupResourceDao, ResourceTypeEnum
 from bisheng.database.models.role_access import AccessType, RoleAccessDao
 from bisheng.database.models.tag import TagDao
 from bisheng.database.models.user import UserDao
+from bisheng.database.models.user_group import UserGroupDao
 from bisheng.utils import generate_uuid
 from bisheng.workflow.callback.base_callback import BaseCallback
 from bisheng.workflow.common.node import BaseNodeData, NodeType
@@ -34,6 +36,21 @@ from bisheng.workflow.nodes.node_manage import NodeFactory
 
 
 class WorkFlowService(BaseService):
+
+    @classmethod
+    def get_company_members_by_uid(cls,user_id: int) -> List[int]:
+        user_groups = UserGroupDao.get_user_group(user_id)
+        if not user_groups:
+            return []
+        group_ids = [ug.group_id for ug in user_groups]
+        group_infos = GroupDao.get_group_by_ids(group_ids)
+        codes = set([str(g.code).split("|")[0] for g in group_infos if g.code])
+        all_group_id = []
+        for code in codes:
+            group_info = GroupDao.get_child_groups(code)
+            all_group_id.extend([g.id for g in group_info])
+        all_user_id = UserGroupDao.get_groups_user(all_group_id)
+        return list(set(all_user_id))
 
     @classmethod
     def get_all_flows(cls, user: UserPayload, name: str, status: int, tag_id: Optional[int], flow_type: Optional[int],
@@ -55,14 +72,15 @@ class WorkFlowService(BaseService):
         if user.is_admin():
             data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, page, page_size)
         else:
+            company_members = cls.get_company_members_by_uid(user.user_id)
             role_ids = user.user_role
             role_access = RoleAccessDao.get_role_access_batch(role_ids, [AccessType.FLOW, AccessType.WORK_FLOW,
                                                                          AccessType.ASSISTANT_READ])
             flow_id_extra = []
             if role_access:
                 flow_id_extra = [access.third_id for access in role_access]
-            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, user.user_id, flow_id_extra, page,
-                                               page_size)
+            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, flow_id_extra, page,
+                                               page_size,company_members)
 
         # 应用ID列表
         resource_ids = []
