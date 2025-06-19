@@ -6,7 +6,7 @@ import { CodeBlock } from "@/modals/formModal/chatMessage/codeBlock";
 import { WorkflowMessage } from "@/types/flow";
 import { formatStrTime } from "@/util/utils";
 import { copyText } from "@/utils";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeMathjax from "rehype-mathjax";
 import remarkGfm from "remark-gfm";
@@ -21,6 +21,7 @@ import { TitleLogo } from "@/components/bs-comp/cardComponent";
 import MsgVNodeCom from "@/pages/OperationPage/useAppLog/MsgBox";
 import { SourceType } from "@/constants";
 import RichText from "@/components/bs-comp/richText";
+import { locationContext } from "@/contexts/locationContext";
 
 // 颜色列表
 const colorList = [
@@ -66,9 +67,11 @@ const ReasoningLog = ({ loading, msg = '' }) => {
     </div>
 }
 export default function MessageBs({operation, audit, mark = false, logo, data, onUnlike = () => { }, onSource, disableBtn = false, onMarkClick, flow }: { logo: string, data: WorkflowMessage, onUnlike?: any, onSource?: any }) {
+    const { appConfig } = useContext(locationContext)
     const avatarColor = colorList[
         (data.sender?.split('').reduce((num, s) => num + s.charCodeAt(), 0) || 0) % colorList.length
     ]
+    const isDisableCopy = !!appConfig?.disableCopyFlowIds?.includes(data?.flow_id);
     const message = useMemo(() => {
         const msg = typeof data.message === 'string' ? data.message : data.message.msg;
         return msg
@@ -146,7 +149,14 @@ export default function MessageBs({operation, audit, mark = false, logo, data, o
                 {/* 只有审计展示违规 */}
                 {audit && data.review_status === 3 && <Badge variant="destructive" className="bg-red-500"><ShieldAlert className="size-4" /> 违规情况: {data.review_reason}</Badge>}
                 <div className="min-h-8 px-6 py-4 rounded-2xl bg-[#F5F6F8] dark:bg-[#313336]">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2"
+                        style={isDisableCopy ? {
+                            '-webkit-user-select': 'none', /* Safari */
+                            '-moz-user-select': 'none', /* Firefox */
+                            '-ms-user-select': 'none', /* IE10+/Edge */
+                            'user-select': 'none', /* Standard */
+                        } : {}}
+                    >
                         {<TitleLogo url={flow?.logo} className="max-w-6 min-w-6 max-h-6 rounded-full overflow-hidden" id={flow?.id}></TitleLogo>}
                         {/* {logo ? <div className="max-w-6 min-w-6 max-h-6 rounded-full overflow-hidden">
                             <img className="w-6 h-6" src={logo} />

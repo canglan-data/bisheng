@@ -600,9 +600,10 @@ def post_import_file(*,
                 insert_data.append(QACreate)
                 all_questions = all_questions | tmp_questions
         db_knowledge = KnowledgeDao.query_by_id(qa_knowledge_id)
-        result = add_qa_batch(db_knowledge,insert_data)
+        result,fail = add_qa_batch(db_knowledge,insert_data)
         insert_result.append(result)
         error_result.append(have_data)
+        error_result.append(fail)
 
     return resp_200({"result": insert_result,"errors": error_result})
 

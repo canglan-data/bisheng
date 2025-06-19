@@ -15,4 +15,6 @@ export type AppConfig = {
     version: string;
     /** 注册入口 */
     enable_registration: boolean;
+    /** 不允许被复制的会话id列表 */
+    disable_copy_flow_ids: string[];
 };

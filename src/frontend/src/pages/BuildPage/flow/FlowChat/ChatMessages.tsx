@@ -14,8 +14,6 @@ import MessageBsChoose from "./MessageBsChoose";
 import MessageNodeRun from "./MessageNodeRun";
 import { useMessageStore } from "./messageStore";
 import MessageUser from "./MessageUser";
-import MsgVNodeCom from "@/pages/OperationPage/useAppLog/MsgBox";
-import useAudioPlayer from "@/util/hook";
 
 export default function ChatMessages({ operation = false, audit = false, mark = false, logo, useName, disableBtn = false, guideWord, loadMore, onMarkClick, msgVNode, flow }) {
     const { t } = useTranslation()
@@ -245,12 +243,14 @@ export default function ChatMessages({ operation = false, audit = false, mark = 
                         id={`msg-${msg.id}`}
                         key={msg.id}
                         className="message-item"><Separator key={msg.message_id} text={msg.message || t('chat.roundOver')} /></div>;
-                    case 'output_choose_msg':
+                    // case 'output_choose_msg':
+                    case 'output_with_choose_msg':
                         return <div
                             id={`msg-${msg.id}`}
                             key={msg.id}
                             className="message-item"><MessageBsChoose key={msg.message_id} data={msg} logo={logo} flow={flow} /></div>;
-                    case 'output_input_msg':
+                    // case 'output_input_msg':
+                    case 'output_with_input_msg':
                         return <div
                             id={`msg-${msg.id}`}
                             key={msg.id}

@@ -46,7 +46,9 @@ class RagNode(BaseNode):
 
         self._qa_prompt = None
 
-        self._llm = LLMService.get_bisheng_llm(model_id=self.node_params['model_id'],
+        self._enable_web_search = self.node_params.get('enable_web_search', False)
+
+        self._llm = LLMService.get_bisheng_llm(model_id=self.node_params['model_id'], enable_web_search=self._enable_web_search,
                                                temperature=self.node_params.get(
                                                    'temperature', 0.3))
 
@@ -54,8 +56,8 @@ class RagNode(BaseNode):
 
         # 是否输出结果给用户
         self._output_user = self.node_params.get('output_user', False)
-        # self._show_source = self.node_params.get('show_source', True)
-        self._show_source = True
+        self._show_source = self.node_params.get('show_source', True)
+        # self._show_source = True
 
         # 运行日志数据
         self._log_source_documents = {}
@@ -78,7 +80,7 @@ class RagNode(BaseNode):
             QA_PROMPT=self._qa_prompt,
             max_content=self._max_chunk_size,
             sort_by_source_and_index=self._sort_chunks,
-            return_source_documents=self._show_source,
+            return_source_documents=True,
         )
         user_questions = self.init_user_question()
         ret = {}
@@ -92,6 +94,9 @@ class RagNode(BaseNode):
                                                      output_key=output_key)
 
             result = retriever._call({'query': question}, run_manager=llm_callback)
+            if not self._show_source:
+                # 不进行溯源
+                result['source_documents'] = []
 
             if self._output_user:
                 self.graph_state.save_context(content=result['result'], msg_sender='AI')
