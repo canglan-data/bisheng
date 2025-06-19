@@ -33,7 +33,7 @@ from bisheng.workflow.common.node import BaseNodeData, NodeType
 from bisheng.workflow.graph.graph_state import GraphState
 from bisheng.workflow.graph.workflow import Workflow
 from bisheng.workflow.nodes.node_manage import NodeFactory
-
+from loguru import logger
 
 class WorkFlowService(BaseService):
 
@@ -50,6 +50,7 @@ class WorkFlowService(BaseService):
             group_info = GroupDao.get_child_groups(code)
             all_group_id.extend([g.id for g in group_info])
         all_user_id = UserGroupDao.get_groups_user(all_group_id)
+        logger.info(f"WorkFlowService get_company_members_by_uid user_id={user_id} all_user_id={all_user_id}")
         return list(set(all_user_id))
 
     @classmethod
