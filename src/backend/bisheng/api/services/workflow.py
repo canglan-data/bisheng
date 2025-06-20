@@ -82,7 +82,7 @@ class WorkFlowService(BaseService):
 
         # 获取用户可见的技能列表
         if user.is_admin():
-            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, page, page_size)
+            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, 0, page, page_size)
         else:
 #<<<<<<< HEAD
             # user_role = UserRoleDao.get_user_roles(user.user_id)
@@ -97,7 +97,7 @@ class WorkFlowService(BaseService):
             if role_access:
                 flow_id_extra = [access.third_id for access in role_access]
             all_user_id = cls.get_company_members_by_uid(user.user_id)
-            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, flow_id_extra, page,
+            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, flow_id_extra, 0, page,
                                                page_size,all_user_id)
 
         # 应用ID列表
