@@ -11,6 +11,7 @@ from celery.schedules import crontab
 from langchain_core.language_models import BaseChatModel
 from loguru import logger
 from openpyxl.workbook import Workbook
+from openpyxl.utils import get_column_letter
 from redbeat import RedBeatSchedulerEntry
 from sqlalchemy import or_
 from sqlmodel import select
@@ -569,7 +570,7 @@ class AuditLogService:
         return result, total
 
     @classmethod
-    def session_export(cls, all_session: list[AppChatList]):
+    def session_export(cls, all_session: list[AppChatList], export_type: str = "", start_date: datetime=None, end_date: datetime=None):
         excel_data = [["会话ID","应用名称","会话创建时间","用户名称","消息角色","组织架构",
                     "消息发送时间","用户消息文本内容","消息角色", "是否命中安全审查",  # 移除了第一次出现的点赞等列
                     "消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈","复制","是否命中安全审查"]]
@@ -577,6 +578,10 @@ class AuditLogService:
             flow_id = str(session.flow_id).replace("-", '')
             chat_id = session.chat_id
             where = select(ChatMessage).where(ChatMessage.flow_id == flow_id, ChatMessage.chat_id == chat_id)
+            if start_date:
+                where = where.where(ChatMessage.create_time >= start_date)
+            if end_date:
+                where = where.where(ChatMessage.create_time <= end_date)
             with session_getter() as query_session:
                 db_message = query_session.exec(where.order_by(ChatMessage.id.asc())).all()
                 c_qa = []
@@ -632,6 +637,21 @@ class AuditLogService:
             print(excel_data[i])
             for j in range(len(excel_data[i])):
                 ws.cell(i + 1, j + 1, excel_data[i][j])
+
+        # 根据 export_type 隐藏列
+        if export_type == "audit":
+            # 审计模式：隐藏 "点赞"、"点踩"、"点踩反馈"、"复制" 列
+            columns_to_hide = ["点赞", "点踩", "点踩反馈", "复制"]
+            for col_idx, header in enumerate(excel_data[0], start=1):
+                if header in columns_to_hide:
+                    ws.column_dimensions[get_column_letter(col_idx)].hidden = True
+        elif export_type == "operation":
+            # 运营模式：隐藏 "是否命中安全审查" 列
+            columns_to_hide = ["是否命中安全审查"]
+            for col_idx, header in enumerate(excel_data[0], start=1):
+                if header in columns_to_hide:
+                    ws.column_dimensions[get_column_letter(col_idx)].hidden = True
+                    
         minio_client = MinioClient()
         tmp_object_name = f'tmp/session/export_{generate_uuid()}.docx'
         with NamedTemporaryFile() as tmp_file:

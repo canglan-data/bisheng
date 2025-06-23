@@ -641,7 +641,7 @@ def QA_save_knowledge(db_knowledge: Knowledge, QA: QAKnowledge):
                 try:
                     vectore_client.add_texts(texts=texts, metadatas=metadata)
                     validation_query = texts[0]
-                    search_results = vectore_client.search(query=validation_query,search_type="similarity")
+                    search_results = vectore_client.search(query=validation_query,search_type="similarity", k=100)
                     matched = any(
                         result.metadata.get('file_id') == QA.id and
                         result.metadata.get('knowledge_id') == f'{db_knowledge.id}'
@@ -653,7 +653,7 @@ def QA_save_knowledge(db_knowledge: Knowledge, QA: QAKnowledge):
                 except Exception as e:
                     raise e
             if not success:
-                raise "插入向量库失败"
+                raise ValueError("插入向量库失败")
         QA.status = 1
         with session_getter() as session:
             session.add(QA)
@@ -696,12 +696,17 @@ def add_qa(db_knowledge: Knowledge, data: QAKnowledgeUpsert) -> QAKnowledge:
         logger.exception(e)
         raise e
 
-def add_qa_batch(db_knowledge: Knowledge, data_list: List[QAKnowledgeUpsert]) -> List[QAKnowledge]:
+def add_qa_batch(db_knowledge: Knowledge, data_list: List[QAKnowledgeUpsert]) -> tuple[List[QAKnowledge], List[QAKnowledgeUpsert]]:
     result = []
+    fail = []
     for data in data_list:
-        QA = add_qa(db_knowledge, data)
-        result.append(QA)
-    return result
+        try:
+            QA = add_qa(db_knowledge, data)
+            result.append(QA)
+        except Exception as e:
+            logger.error(str(e))
+            fail.append(data)
+    return result, fail
 
 
 def qa_status_change(qa_id: int, target_status: int):
@@ -827,7 +832,7 @@ def recommend_question(question: str, answer: str, number: int = 3) -> List[str]
     from langchain.chains.llm import LLMChain
     from langchain_core.prompts.prompt import PromptTemplate
     prompt = """- Role: 问题生成专家
-        - Background: 用户希望通过人工智能模型根据给定的问题和答案生成相似的问题，以便于扩展知识库或用于教育和测试目的。
+        - Background: 用户希望通过人工智能模型根据给定的问题和答案生成相似的问题，以便于扩展知识库或用于学习和测试目的。
         - Profile: 你是一位专业的数据分析师和语言模型专家，擅长从现有数据中提取模式，并生成新的相关问题。
         - Constrains: 确保生成的问题在语义上与原始问题相似，同时保持多样性，避免重复。
         - Workflow:

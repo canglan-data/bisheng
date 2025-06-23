@@ -14,7 +14,7 @@ const enum ThumbsState {
     ThumbsDown
 }
 
-export default function MessageButtons({ mark = false, id, onCopy, data, onUnlike, onMarkClick, msgVNode, onlyRead = false, chatId, msg = '' }) {
+export default function MessageButtons({ mark = false, id, onCopy, data, onUnlike, onMarkClick, msgVNode, onlyRead = false, chatId, msg = '', isDisableCopy = false }) {
     const { t } = useTranslation()
     const [state, setState] = useState<ThumbsState>(data)
     const [copied, setCopied] = useState(false)
@@ -59,11 +59,11 @@ export default function MessageButtons({ mark = false, id, onCopy, data, onUnlik
             messageId={chatId}
             msg={msg}
         />
-        <ThunmbIcon
+        {!isDisableCopy && <ThunmbIcon
             type='copy'
             className={`${!onlyRead && 'cursor-pointer'} ${copied && 'text-primary hover:text-primary'}`}
             onClick={handleCopy}
-        />
+        />}
         <ThunmbIcon
             type='like'
             className={`${!onlyRead && 'cursor-pointer'} ${state === ThumbsState.ThumbsUp && 'text-primary hover:text-primary'}`}

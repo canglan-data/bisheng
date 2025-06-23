@@ -108,7 +108,7 @@ const workflowTemplate = [
         "name": "开始",
         "description": "工作流运行的起始节点。",
         "type": "start",
-        "v": "1",
+        "v": "2",
         "group_params": [
             {
                 "name": "开场引导",
@@ -235,7 +235,6 @@ const workflowTemplate = [
                         "tab": "dialog_input",
                         "help": "提取上传文件中的图片文件，当助手或大模型节点使用多模态大模型时，可传入此图片。"
                     },
-                    
                     {
                         "key": "dialog_audio_files",
                         "global": "key",
@@ -266,9 +265,7 @@ const workflowTemplate = [
             {
                 "params": [
                     {
-                        // TODO： 0522 KEY值改了 这里需要特别注意一下
                         "key": "output_msg",
-                        // "key": "message",
                         "label": "消息内容",
                         "global": "key",
                         "type": "var_textarea_file",
@@ -446,13 +443,6 @@ const workflowTemplate = [
                         "placeholder": "请在模型管理中配置 LLM 模型"
                     },
                     {
-                        "key": "enable_web_search",
-                        "label": "联网搜索",
-                        "type": "switch",
-                        "help": "此开关控制模型是否开启联网搜索",
-                        "value": false
-                    },
-                    {
                         "key": "temperature",
                         "label": "温度",
                         "type": "slide",
@@ -462,7 +452,14 @@ const workflowTemplate = [
                         ],
                         "step": 0.1,
                         "value": 0.7
-                    }
+                    },
+                    {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "type": "online_switch",
+                        "help": "",
+                        "value": false
+                    },
                 ]
             },
             {
@@ -483,13 +480,13 @@ const workflowTemplate = [
                         "value": "",
                         "required": true
                     },
-                    {
-                        "key": "image_prompt",
-                        "label": "视觉",
-                        "type": "image_prompt",
-                        "value": [],
-                        "help": "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
-                    },
+                    // {
+                    //     "key": "image_prompt",
+                    //     "label": "视觉",
+                    //     "type": "image_prompt",
+                    //     "value": [],
+                    //     "help": "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
+                    // },
                 ]
             },
             {
@@ -563,13 +560,6 @@ const workflowTemplate = [
                         "placeholder": "请在模型管理-系统模型设置中配置助手推理模型"
                     },
                     {
-                        "key": "enable_web_search",
-                        "label": "联网搜索",
-                        "type": "switch",
-                        "help": "此开关控制模型是否开启联网搜索",
-                        "value": false
-                    },
-                    {
                         "key": "temperature",
                         "label": "温度",
                         "type": "slide",
@@ -579,7 +569,14 @@ const workflowTemplate = [
                         ],
                         "step": 0.1,
                         "value": 0.7
-                    }
+                    },
+                    {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "type": "online_switch",
+                        "help": "",
+                        "value": false
+                    },
                 ]
             },
             {
@@ -618,13 +615,13 @@ const workflowTemplate = [
                         },
                         "help": "带入模型上下文的历史消息条数，为 0 时代表不包含上下文信息。"
                     },
-                    {
-                        "key": "image_prompt",
-                        "label": "视觉",
-                        "type": "image_prompt",
-                        "value": "",
-                        "help": "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
-                    },
+                    // {
+                    //     "key": "image_prompt",
+                    //     "label": "视觉",
+                    //     "type": "image_prompt",
+                    //     "value": "",
+                    //     "help": "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
+                    // },
                 ]
             },
             {
@@ -751,7 +748,7 @@ const workflowTemplate = [
         "name": "文档知识库问答",
         "description": "根据用户问题从知识库中检索相关内容，结合检索结果调用大模型生成最终结果，支持多个问题并行执行。",
         "type": "rag",
-        "v": "1",
+        "v": "2",
         "group_params": [
             {
                 "name": "知识库检索设置",
@@ -828,13 +825,6 @@ const workflowTemplate = [
                         "placeholder": "请在模型管理中配置 LLM 模型"
                     },
                     {
-                        "key": "enable_web_search",
-                        "label": "联网搜索",
-                        "type": "switch",
-                        "help": "此开关控制模型是否开启联网搜索",
-                        "value": false
-                    },
-                    {
                         "key": "temperature",
                         "label": "温度",
                         "type": "slide",
@@ -844,6 +834,21 @@ const workflowTemplate = [
                         ],
                         "step": 0.1,
                         "value": 0.7
+                    },
+                    {
+                        "key": "enable_web_search",
+                        "label": "联网搜索",
+                        "global": "self",
+                        "type": "switch",
+                        "help": "",
+                        "value": false
+                    },
+                    {
+                        "key": "show_source",
+                        "label": "展示参考来源",
+                        "type": "switch",
+                        "value": true,
+                        "help": "关闭后在会话页面不展示消息参考来源"
                     }
                 ]
             },
@@ -857,13 +862,6 @@ const workflowTemplate = [
                         "value": true,
                         "help": "一般在问答等场景开启，文档审核、报告生成等场景可关闭。"
                     },
-                    // {
-                    //     "key": "show_source",
-                    //     "label": "展示参考来源",
-                    //     "type": "switch",
-                    //     "value": true,
-                    //     "help": "关闭后在会话页面不展示消息参考来源"
-                    // },
                     {
                         "key": "output_user_input",
                         "label": "输出变量",

@@ -7,6 +7,7 @@ import InputFileComponent from "@/components/inputFileComponent";
 import { WorkflowNodeParam } from "@/types/flow";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FileTypes } from "./ChatInput";
 
 const enum FormItemType {
     Text = 'text',
@@ -118,6 +119,18 @@ const InputForm = ({ data, onSubmit }: { data: WorkflowNodeParam, onSubmit: (dat
                                                 </Select>
                                         )
                                     case FormItemType.File:
+                                        const fileAccept = item.file_types;
+                                        const filesTypes = [];
+                                        if (fileAccept.includes('image')) {
+                                            filesTypes.push(...FileTypes.IMAGE);
+                                        }
+                                        if (fileAccept.includes('file')) {
+                                            filesTypes.push(...FileTypes.FILE);
+                                        } 
+                                        if (fileAccept.includes('audio')) {
+                                            filesTypes.push(...FileTypes.AUDIO);
+                                        }
+                                        console.log('filesTypes.join(',')', filesTypes.join(','));
                                         return (
                                             <InputFileComponent
                                                 isSSO
@@ -126,7 +139,7 @@ const InputForm = ({ data, onSubmit }: { data: WorkflowNodeParam, onSubmit: (dat
                                                 value={''}
                                                 multiple={item.multiple}
                                                 onChange={(name) => updataFileName(item, name)}
-                                                suffixes={[".png", ".jpg", ".jpeg", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".txt", ".md", ".html", ".pdf"]}
+                                                suffixes={filesTypes}
                                                 // suffixes={['xxx']}
                                                 onFileChange={(val) => handleChange(item, val)}
                                             />

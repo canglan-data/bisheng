@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import Chat from "./Chat";
 import { useMessageStore } from "./messageStore";
 import { getFlowApi } from "@/controllers/API/flow";
+import { toast } from "@/components/bs-ui/toast/use-toast";
 
 export default function ChatPane({ autoRun = false, chatId, flow, wsUrl = '', test = false }: { autoRun?: boolean, chatId: string, flow: any, wsUrl?: string }) {
     const { changeChatId } = useMessageStore()
@@ -50,6 +51,14 @@ export default function ChatPane({ autoRun = false, chatId, flow, wsUrl = '', te
         }
         if (action === 'input') {
             const node = flow.nodes.find(node => node.id === nodeId)
+            if (!node) {
+                toast({
+                    title: '提示',
+                    variant: 'error',
+                    description: '应用已更新，请重新发起会话'
+                });
+                return false;
+            }
             const tab = node.data.tab.value
             let variable = ''
             node.data.group_params.some(group =>

@@ -1,10 +1,14 @@
 import axios from "axios";
 import clsx, { ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge"
-import DOMPurify from "dompurify";;
+import { twMerge } from "tailwind-merge";
+import DOMPurify from "dompurify";
 import { APITemplateType } from "../types/api";
 import { checkUpperWords } from "../utils";
 import { checkSassUrl } from "@/components/bs-comp/FileView";
+import ReactDOMServer, { renderToStaticMarkup } from 'react-dom/server';
+import ReactMarkdown from 'react-markdown';
+import { createElement, ReactElement } from "react";
+
 
 export function classNames(...classes: Array<string>): string {
     return classes.filter(Boolean).join(" ");
@@ -333,4 +337,91 @@ function writeString(view, offset, string) {
   for (let i = 0; i < string.length; i++) {
     view.setUint8(offset + i, string.charCodeAt(i));
   }
+}
+
+function sanitizeHtmlToText(html) {
+  // 使用DOMPurify进行安全清理
+  const cleanHtml = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'strong', 'em', 'u', 's', 'br', 'img', 'div', 'a'], // 允许的标签
+    ALLOWED_ATTR: ['src', 'data-url', 'data-name', 'class'] // 允许的属性
+  });
+
+  // 创建临时div来解析HTML
+  const temp = document.createElement('div');
+  temp.innerHTML = cleanHtml;
+
+  // 处理特殊元素
+  // 图片替换为[图片]
+  const images = temp.querySelectorAll('img');
+  images.forEach(img => {
+    img.replaceWith('[图片]');
+  });
+
+  // 文件处理
+  const files = temp.querySelectorAll('.ql-file');
+  files.forEach(file => {
+    const fileName = file.getAttribute('data-name') || '文件';
+    file.replaceWith(`[文件:${fileName}]`);
+  });
+
+  // 获取纯文本
+  return temp.textContent || temp.innerText || '';
+}
+function markdownToText(markdown: string): string {
+  // 使用createElement替代JSX语法
+  const reactElement: ReactElement = createElement(
+    ReactMarkdown,
+    { children: markdown }
+  );
+  
+  // 将React元素渲染为HTML字符串
+  const htmlString = renderToStaticMarkup(reactElement);
+  
+  // 使用HTML处理方法转换为纯文本
+  return sanitizeHtmlToText(htmlString);
+}
+
+/**
+ * 智能内容转换函数
+ * @param {string} content 富文本或Markdown内容
+ * @returns {string} 纯文本
+ */
+export function contentToPlainText(content) {
+  if (!content) return '';
+  
+  // 简单判断是否是HTML（包含HTML标签）
+  const isHtml = /<[a-z][\s\S]*>/i.test(content);
+  
+  // 简单判断是否是Markdown（包含Markdown特有语法）
+  const isMarkdown = !isHtml && /^[\s\S]*([*_`\[]|#+\s)/.test(content);
+  
+  if (isHtml) {
+    return sanitizeHtmlToText(content);
+  }
+  
+  if (isMarkdown) {
+    return markdownToText(content);
+  }
+  
+  // 纯文本直接返回
+  return content;
+}
+
+export function optimizeForTTS(text) {
+  if (!text) return '';
+  
+  return text
+    // 合并连续空白字符
+    .replace(/\s+/g, ' ')
+    // 处理特殊符号
+    .replace(/\.{3,}/g, '省略号')
+    .replace(/…/g, '省略号')
+    .replace(/#/g, '井号')
+    .replace(/\*/g, '星号')
+    // 去除首尾空白
+    .trim();
+}
+
+export function formatTTSText(text) {
+    return optimizeForTTS(contentToPlainText(text));
 }
