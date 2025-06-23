@@ -675,7 +675,7 @@ class AuditLogService:
 
     @classmethod
     def session_export(cls, all_session: list[AppChatList], export_type: str = "", start_date: datetime=None, end_date: datetime=None):
-        excel_data = [["会话ID","应用名称","会话创建时间","用户名称","消息角色","组织架构",
+        excel_data = [["会话ID","应用名称","应用版本","应用更新时间","会话创建时间","用户名称","消息角色","组织架构",
                     "消息发送时间","用户消息文本内容","消息角色", "是否命中安全审查",  # 移除了第一次出现的点赞等列
                     "消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈","复制","是否命中安全审查"]]
         for session in all_session:
@@ -700,6 +700,8 @@ class AuditLogService:
                             excel_data.append(c_qa)
                         c_qa = [session.chat_id,
                                 session.flow_name,
+                                msg.flow_version_name,
+                                msg.flow_update_time,
                                 session.create_time,
                                 session.user_name,
                                 "系统",
