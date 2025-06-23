@@ -685,7 +685,7 @@ class AuditLogService:
             chat_id = session.chat_id
             where = select(ChatMessage).where(ChatMessage.flow_id == flow_id, ChatMessage.chat_id == chat_id)
             if start_date:
-                where = where.where(ChatMessage.update_time >= start_date)
+                where = where.where(ChatMessage.create_time >= start_date)
             if end_date:
                 where = where.where(ChatMessage.create_time <= end_date)
             with session_getter() as query_session:

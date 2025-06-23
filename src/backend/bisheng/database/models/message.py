@@ -12,6 +12,7 @@ from bisheng.database.models.base import SQLModelSerializable
 from bisheng.database.models.session import ReviewStatus
 from bisheng.database.models.user_group import UserGroup
 from bisheng.database.models.session import MessageSession
+from bisheng.database.models.assistant import AssistantDao
 from bisheng.database.models.flow import FlowDao
 from bisheng.database.models.flow_version import FlowVersionDao
 from bisheng.utils.sysloger import syslog_client
@@ -321,6 +322,12 @@ class ChatMessageDao(MessageBase):
                 flow_version = FlowVersionDao.get_version_by_flow(message.flow_id)
                 if flow_version:
                     message.flow_version_name = flow_version.name
+            else:
+                assistant = AssistantDao.get_one_assistant(message.flow_id)
+                if assistant:
+                    message.flow_update_time = assistant.update_time
+                    message.flow_version_name = "v0"
+
         with session_getter() as session:
             session.exec(statement)
             session.add(message)
