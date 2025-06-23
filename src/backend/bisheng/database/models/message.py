@@ -611,9 +611,6 @@ class ChatMessageDao(MessageBase):
             func.min(ChatMessage.user_id).label("user_id")
         ).select_from(ChatMessage).join(UserGroup, ChatMessage.user_id == UserGroup.user_id)
 
-        sql = sql.where(ChatMessage.is_delete == 0)
-        count_stat = count_stat.where(ChatMessage.is_delete == 0)
-        total_session_stat = total_session_stat.where(ChatMessage.is_delete == 0)
         if flow_ids:
             sql = sql.where(ChatMessage.flow_id.in_(flow_ids))
             count_stat = count_stat.where(ChatMessage.flow_id.in_(flow_ids))
