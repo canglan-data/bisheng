@@ -76,7 +76,7 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
     review_status = [ReviewStatus(review_status)] if review_status else []
     all_session, total = AuditLogService.get_session_list(login_user, flow_ids, user_ids, group_ids, start_date, end_date,
                                                    feedback, review_status, page, page_size, keyword)
-    url = AuditLogService.session_export(all_session, 'operation')
+    url = AuditLogService.session_export(all_session, 'operation', start_date, end_date)
     return resp_200(data={"file": url})
 
 

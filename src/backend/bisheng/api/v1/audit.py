@@ -117,9 +117,10 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
     start_date, end_date = validate_date_range(start_date, end_date)
     review_status = [ReviewStatus(review_status)] if review_status else []
     logger.info(f"get_session_list Flow IDs: {flow_ids} | Group IDs: {group_ids} | review_status : {review_status}")
+
     all_session, total = AuditLogService.get_session_list(login_user, flow_ids, user_ids, group_ids, start_date, end_date,
                                                    feedback, review_status, page, page_size, keyword)
-    url = AuditLogService.session_export(all_session, 'audit')
+    url = AuditLogService.session_export(all_session, 'audit', start_date, end_date)
     return resp_200(data={"file": url})
 
 
