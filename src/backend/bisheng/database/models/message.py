@@ -12,6 +12,8 @@ from bisheng.database.models.base import SQLModelSerializable
 from bisheng.database.models.session import ReviewStatus
 from bisheng.database.models.user_group import UserGroup
 from bisheng.database.models.session import MessageSession
+from bisheng.database.models.flow import FlowDao
+from bisheng.database.models.flow_version import FlowVersionDao
 from bisheng.utils.sysloger import syslog_client
 
 
@@ -62,6 +64,9 @@ class ChatMessage(MessageBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     receiver: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
     is_delete: int = Field(default=0, nullable=False, index=False)
+    flow_version_name: str = Field(default="v0", description='应用版本')
+    flow_update_time:  Optional[datetime] = Field(default=None, sa_column=Column(
+        DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP')))
 
 
 class ChatMessageRead(MessageBase):
@@ -309,6 +314,13 @@ class ChatMessageDao(MessageBase):
         statement = update(MessageSession).where(MessageSession.chat_id == message.chat_id).values(
             update_time = datetime.now(),
         )
+        if message.flow_id :
+            flow = FlowDao.get_flow_by_id(message.flow_id)
+            if flow:
+                message.flow_update_time = flow.update_time
+                flow_version = FlowVersionDao.get_version_by_flow(message.flow_id)
+                if flow_version:
+                    message.flow_version_name = flow_version.name
         with session_getter() as session:
             session.exec(statement)
             session.add(message)
