@@ -521,6 +521,7 @@ class AuditLogService:
                          sensitive_status: List[SensitiveStatus] = None,
                          review_status: List[ReviewStatus] = None,
                          is_delete: int = 0,
+                         category: List[str] = None,
                          page: int = 1, page_size: int = 10, keyword=None) -> (list, int):
         # flag, filter_flow_ids = cls.get_filter_flow_ids(user, flow_ids, group_ids)
         # if not flag:
@@ -544,7 +545,7 @@ class AuditLogService:
         logger.info(f"get_session_list user_ids {user_ids} | group_ids {group_ids}")
         chat_ids = []
         if start_date or end_date:
-            chat_ids = cls.get_filter_chat_ids_by_time(flow_ids, start_date, end_date, is_delete)
+            chat_ids = cls.get_filter_chat_ids_by_time(flow_ids, start_date, end_date, is_delete, category)
         if keyword:
             keyword2 = keyword.encode("unicode_escape").decode().replace("\\u", "%")
             where = select(ChatMessage).where(or_(
@@ -600,8 +601,9 @@ class AuditLogService:
 
 
     @classmethod
-    def get_filter_chat_ids_by_time(cls,flow_ids:List[str], start_date: datetime = None, end_date: datetime = None, is_delete : int=0):
-        chat_ids = ChatMessageDao.get_chat_id_by_time(flow_ids, start_date, end_date, is_delete)
+    def get_filter_chat_ids_by_time(cls,flow_ids:List[str], start_date: datetime = None, end_date: datetime = None,
+                                    is_delete : int=0, category: List[str] = None):
+        chat_ids = ChatMessageDao.get_chat_id_by_time(flow_ids, start_date, end_date, is_delete, category)
         if len(chat_ids) == 0:
             chat_ids = [""]
         return chat_ids
