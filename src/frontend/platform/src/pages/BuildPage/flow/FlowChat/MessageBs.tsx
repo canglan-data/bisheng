@@ -38,13 +38,13 @@ const colorList = [
     "#95A5A6"
 ]
 
-const ReasoningLog = ({ loading, msg = '' }) => {
+const ReasoningLog = ({ loading, msg = '', style }) => {
     const [open, setOpen] = useState(true)
     // console.log('msg :>> ', msg);
 
     if (!msg) return null
 
-    return <div className="py-1">
+    return <div className="py-1" style={style}>
         <div className="rounded-sm border">
             <div className="flex justify-between items-center px-4 py-2 cursor-pointer" onClick={() => setOpen(!open)}>
                 {loading ? <div className="flex items-center font-bold gap-2 text-sm">
@@ -137,10 +137,19 @@ export default function MessageBs({ debug, operation, audit, mark = false, logo,
         // api data.id
         copyText(messageRef.current)
     }
+
+    const style = isDisableCopy ? {
+        '-webkit-user-select': 'none', /* Safari */
+        '-moz-user-select': 'none', /* Firefox */
+        '-ms-user-select': 'none', /* IE10+/Edge */
+        'user-select': 'none', /* Standard */
+    } : {};
+
     const chatId = useMessageStore(state => state.chatId)
+
     return <div className="flex w-full">
         <div className="w-fit group max-w-[90%]">
-            <ReasoningLog loading={!data.end && data.reasoning_log} msg={data.reasoning_log} />
+            <ReasoningLog loading={!data.end && data.reasoning_log} msg={data.reasoning_log} style={style}/>
             {!(data.reasoning_log && !message && !data.files.length) && <>
                 <div className="flex justify-between items-center mb-1">
                     {data.sender ? <p className="text-gray-600 text-xs">{data.sender}</p> : <p />}
@@ -163,12 +172,7 @@ export default function MessageBs({ debug, operation, audit, mark = false, logo,
                             <div 
                                 ref={messageRef} 
                                 className="text-sm max-w-[calc(100%-24px)]"
-                                style={isDisableCopy ? {
-                                    '-webkit-user-select': 'none', /* Safari */
-                                    '-moz-user-select': 'none', /* Firefox */
-                                    '-ms-user-select': 'none', /* IE10+/Edge */
-                                    'user-select': 'none', /* Standard */
-                                } : {}}
+                                style={style}
                             >
                                 {message && (richText || mkdown)}
                                 {data.files.length > 0 && data.files.map(file => <ChatFile key={file.path} fileName={file.name} filePath={file.path} />)}
@@ -199,6 +203,7 @@ export default function MessageBs({ debug, operation, audit, mark = false, logo,
                         })}
                     />
                     {!disableBtn && !debug && <MessageButtons
+                        isDisableCopy={isDisableCopy}
                         onlyRead={(audit || operation)}
                         mark={mark}
                         msg={message}
