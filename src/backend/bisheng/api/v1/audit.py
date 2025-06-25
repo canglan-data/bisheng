@@ -62,7 +62,7 @@ def get_session_config(*, request: Request, login_user: UserPayload = Depends(ge
 def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_login_user),
                      flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
                      user_ids: Optional[List[int]] = Query(default=[], description='用户id列表'),
-                     group_ids: Optional[List[int]] = Query(default=[], description='用户组id列表'),
+                     group_ids: Optional[List[str]] = Query(default=[], description='用户组id列表'),
                      start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                      end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                      feedback: Optional[str] = Query(default=None, description='like：点赞；dislike：点踩；copied：复制'),
@@ -91,7 +91,7 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
                                                    group_ids=group_ids, start_date=start_date, end_date=end_date,
                                                    feedback=feedback, review_status=review_status,
                                                    sensitive_status=sensitive_status, page=page, page_size=page_size,
-                                                   keyword=keyword)
+                                                   keyword=keyword, category=['question', 'answer'])
     return resp_200(data={
         'data': data,
         'total': total
@@ -101,7 +101,7 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
 def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_login_user),
                      flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
                      user_ids: Optional[List[int]] = Query(default=[], description='用户id列表'),
-                     group_ids: Optional[List[int]] = Query(default=[], description='用户组id列表'),
+                     group_ids: Optional[List[str]] = Query(default=[], description='用户组id列表'),
                      start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                      end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                      feedback: Optional[str] = Query(default=None, description='like：点赞；dislike：点踩；copied：复制'),
@@ -127,10 +127,10 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
     sensitive_status = [SensitiveStatus(sensitive_status)] if sensitive_status else []
     logger.info(f"get_session_list Flow IDs: {flow_ids} | Group IDs: {group_ids} | review_status : {review_status}")
     all_session, total = AuditLogService.get_session_list(user=login_user, flow_ids=flow_ids, user_ids=user_ids, group_ids=group_ids,
-                                                          start_date=start_date, end_date=end_date,
+                                                          start_date=start_date, end_date=end_date, is_delete=None,
                                                    feedback=feedback, review_status=review_status, sensitive_status=sensitive_status,
-                                                          page=page, page_size=page_size, keyword=keyword)
-    url = AuditLogService.session_export(all_session, 'audit')
+                                                          page=page, page_size=page_size, keyword=keyword, category=['question', 'answer'])
+    url = AuditLogService.session_export(all_session, 'audit', start_date, end_date)
     return resp_200(data={"file": url})
 
 

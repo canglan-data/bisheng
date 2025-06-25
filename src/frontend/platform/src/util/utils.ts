@@ -483,20 +483,53 @@ export function contentToPlainText(content) {
 }
 
 export function optimizeForTTS(text) {
-    if (!text) return '';
+  if (!text) return '';
     
-    return text
-      // 合并连续空白字符
-      .replace(/\s+/g, ' ')
-      // 处理特殊符号
-      .replace(/\.{3,}/g, '省略号')
-      .replace(/…/g, '省略号')
-      .replace(/#/g, '井号')
-      .replace(/\*/g, '星号')
-      // 去除首尾空白
-      .trim();
-  }
+  return text
+    // 合并连续空白字符
+    .replace(/\s+/g, ' ')
+    // 处理特殊符号
+    .replace(/\.{3,}/g, '省略号')
+    .replace(/…/g, '省略号')
+    .replace(/#/g, '井号')
+    .replace(/\*/g, '星号')
+    // 去除首尾空白
+    .trim();
+}
   
-  export function formatTTSText(text) {
-      return optimizeForTTS(contentToPlainText(text));
-  }
+export function formatTTSText(text) {
+    return optimizeForTTS(contentToPlainText(text));
+}
+
+// 用户组转树形结构
+export function buildUserGroupTreeOptimized(
+  flatList
+) {
+  const idToNode = new Map();
+  const roots = [];
+  
+  // 第一次遍历：创建所有节点
+  flatList.forEach(item => {
+    const node = { ...item, children: [] };
+    idToNode.set(item.id, node);
+  });
+  
+  // 第二次遍历：建立父子关系
+  flatList.forEach(item => {
+    const node = idToNode.get(item.id);
+    const parentId = item.parent_id;
+    
+    if (parentId && idToNode.has(parentId)) {
+      // 如果父节点存在，建立关系
+      idToNode.get(parentId).children.push(node);
+    } else if (!parentId) {
+      // 如果parent_id为null/undefined，作为根节点
+      roots.push(node);
+    } else {
+      // 父节点不存在，也作为根节点显示
+      roots.push(node);
+    }
+  });
+  
+  return roots;
+}
