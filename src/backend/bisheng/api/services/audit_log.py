@@ -520,7 +520,6 @@ class AuditLogService:
                          feedback: str,
                          sensitive_status: List[SensitiveStatus] = None,
                          review_status: List[ReviewStatus] = None,
-                         is_delete: int = 0,
                          category: List[str] = None,
                          page: int = 1, page_size: int = 10, keyword=None) -> (list, int):
         # flag, filter_flow_ids = cls.get_filter_flow_ids(user, flow_ids, group_ids)

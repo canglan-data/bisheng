@@ -107,10 +107,11 @@ class InputNode(BaseNode):
             if key_info['type'] == 'file':
                 new_params = self.parse_upload_file(key, key_info, value)
                 ret.update(new_params)
-                content = ""
-                for one in new_params[key_info['key']]:
-                    content += f"{one.get('source')},"
-                human_input += f"{label}: {content.rstrip(',')}\n"
+                if new_params[key_info['key']]:
+                    content = ""
+                    for one in new_params[key_info['key']]:
+                        content += f"{one.get('source')},"
+                    human_input += f"{label}: {content.rstrip(',')}\n"
             else:
                 human_input += f"{label}: {value}\n"
         self.graph_state.save_context(content=f'{human_input}', msg_sender='human')
@@ -185,7 +186,8 @@ class InputNode(BaseNode):
         file_extension_name = file_name.split(".")[-1].lower()
         if file_extension_name in self._audio_ext:
             texts = [file_name]
-            metadatas = [{'file_id': file_id, 'knowledge_id': self.workflow_id, 'extra': '', 'bbox': ''}]
+            metadatas = [{'file_id': file_id, 'knowledge_id': self.workflow_id, 'extra': '', 'bbox': '',
+                          'page': 0, 'title': str(file_id), "source": file_name, "chunk_index": 0}]
             return file_name, original_file_path, texts, metadatas
         try:
             file_rule = FileProcessBase(knowledge_id=0)
