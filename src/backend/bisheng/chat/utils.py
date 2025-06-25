@@ -1,9 +1,14 @@
+import ast
 import json
 import re
-import ast
 from enum import Enum
 from typing import Dict, List
 from urllib.parse import unquote, urlparse
+
+from fastapi import WebSocket
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
+from langchain.schema.document import Document
 
 from bisheng.api.services.llm import LLMService
 from bisheng.api.v1.schemas import ChatMessage
@@ -12,20 +17,7 @@ from bisheng.database.models.recall_chunk import RecallChunk
 from bisheng.interface.utils import try_setting_streaming_options
 from bisheng.processing.base import get_result_and_steps
 from bisheng.utils.logger import logger
-from fastapi import WebSocket
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain.schema.document import Document
 
-class SourceType(Enum):
-    """
-    source type
-    """
-    NOT_SUPPORT = 0  # 不支持溯源
-    FILE = 1  # 通过源文件溯源，支持bbox那种形式
-    NO_PERMISSION = 2  # 无权限访问溯源信息
-    LINK = 3  # 带链接的chunk内容
-    QA = 4  # 命中了QA知识库
 
 class SourceType(Enum):
     """
@@ -139,13 +131,20 @@ def sync_judge_source(result, source_document, chat_id, extra: Dict):
         else:
             source = SourceType.FILE.value
 
-    if source == SourceType.FILE.value:
-        for doc in source_document:
-            # 确保每个chunk 都可溯源
-            if 'bbox' not in doc.metadata or not doc.metadata['bbox'] or not json.loads(
-                    doc.metadata['bbox'])['chunk_bboxes']:
-                source = SourceType.NOT_SUPPORT.value
-                break
+            # 判断是否都是知识库内的文件, 有一个不是则不支持溯源
+            for one in source_document:
+                # 如果没有知识库id和文件id，则不支持溯源
+                if not one.metadata.get('knowledge_id') or not one.metadata.get('file_id'):
+                    source = SourceType.NOT_SUPPORT.value
+                    break
+                # 判断下知识库id和文件id是否是数字格式，因为工作流上传的临时文档也有knowledge_id和文件id
+                try:
+                    int(one.metadata.get('knowledge_id'))
+                    int(one.metadata.get('file_id'))
+                except ValueError:
+                    source = SourceType.NOT_SUPPORT.value
+                    break
+
     return source, result
 
 

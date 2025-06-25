@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 import time
@@ -21,6 +20,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool, Tool
 from langchain_core.utils.function_calling import format_tool_to_openai_tool
 from langchain_core.vectorstores import VectorStoreRetriever
+from langgraph.prebuilt import create_react_agent
 from loguru import logger
 
 from bisheng.api.services.assistant_base import AssistantUtils
@@ -34,7 +34,6 @@ from bisheng.database.models.assistant import Assistant, AssistantLink, Assistan
 from bisheng.database.models.flow import FlowDao, FlowStatus
 from bisheng.database.models.gpts_tools import GptsTools, GptsToolsDao, GptsToolsType
 from bisheng.database.models.knowledge import Knowledge, KnowledgeDao
-from bisheng.mcp_manage.constant import McpClientType
 from bisheng.mcp_manage.langchain.tool import McpTool
 from bisheng.mcp_manage.manager import ClientManager
 from bisheng.settings import settings
@@ -126,7 +125,7 @@ class AssistantAgent(AssistantUtils):
         """
         # 特殊处理下bisheng_code_interpreter的参数
         if tool.tool_key == 'bisheng_code_interpreter':
-            return {'minio': settings.get_knowledge().get('minio', {})}
+            return {'minio': settings.get_minio_conf().model_dump()}
         if not tool.extra:
             return {}
         params = json.loads(tool.extra)
@@ -414,12 +413,14 @@ class AssistantAgent(AssistantUtils):
         prompt = self.assistant.prompt
         if getattr(self.llm, 'model_name', '').startswith('command-r'):
             prompt = self.ASSISTANT_PROMPT_COHERE.format(preamble=prompt)
-
-        # 初始化agent
-        self.agent = ConfigurableAssistant(agent_executor_type=agent_executor_type,
-                                           tools=self.tools,
-                                           llm=self.llm,
-                                           assistant_message=prompt)
+        if self.current_agent_executor == 'ReAct':
+            # 初始化agent
+            self.agent = ConfigurableAssistant(agent_executor_type=agent_executor_type,
+                                               tools=self.tools,
+                                               llm=self.llm,
+                                               assistant_message=prompt)
+        else:
+            self.agent = create_react_agent(self.llm, self.tools, prompt=prompt, checkpointer=False)
 
     async def optimize_assistant_prompt(self):
         """ 自动优化生成prompt """
@@ -517,18 +518,6 @@ class AssistantAgent(AssistantUtils):
 
         return get_finally_message(messages)
 
-    async def arun(self, query: str, chat_history: List = None, callback: Callbacks = None):
-        await self.fake_callback(callback)
-
-        if chat_history:
-            chat_history.append(HumanMessage(content=query))
-            inputs = chat_history
-        else:
-            inputs = [HumanMessage(content=query)]
-
-        async for one in self.agent.astream(inputs, config=RunnableConfig(callbacks=callback)):
-            yield one
-
     async def run(self, query: str, chat_history: List = None, callback: Callbacks = None) -> List[BaseMessage]:
         """
         运行智能体对话
@@ -547,7 +536,8 @@ class AssistantAgent(AssistantUtils):
         if self.current_agent_executor == 'ReAct':
             result = await self.react_run(inputs, callback)
         else:
-            result = await self.agent.ainvoke(inputs, config=RunnableConfig(callbacks=callback))
+            result = await self.agent.ainvoke({'messages': inputs}, config=RunnableConfig(callbacks=callback))
+            result = result['messages']
 
         # 记录聊天历史
         await self.record_chat_history([one.to_json() for one in result])

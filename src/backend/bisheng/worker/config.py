@@ -11,3 +11,4 @@ beat_scheduler = 'redbeat.RedBeatScheduler'
 redbeat_redis_url = settings.celery_redis_url
 # redbeat_lock_key = None
 # redbeat_lock_timeout = 10
+task_routes = settings.celery_task.task_routers

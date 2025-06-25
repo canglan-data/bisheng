@@ -129,20 +129,17 @@ export default function l2Edit() {
         if (isParamError(name, description, true)) return
         setLoading(true)
         formRef.current?.save()
-
-        const res = await captureAndAlertRequestErrorHoc(saveFlow({ ...flow, name, description, guide_word: guideWords, logo }))
+        await saveFlow({ ...flow, name, description, guide_word: guideWords, logo })
         await updateVersion(vid, { data: flow.data })
-        
+
         setLoading(false)
-        if (res) {
-            message({
-                title: t('prompt'),
-                variant: 'success',
-                description: t('saved')
-            });
-            setTimeout(() => /^\/skill\/[\w\d-]+/.test(location.pathname) && navigate(-1), 2000);
-        }
-        flow.status === 1 && appConfig.securityCommitment && setCommitmentApi(flow.id, commitmentId)
+        message({
+            title: t('prompt'),
+            variant: 'success',
+            description: t('saved')
+        });
+        setTimeout(() => /^\/skill\/[\w\d-]+/.test(location.pathname) && navigate(-1), 2000);    
+        flow.status === 1 && appConfig.securityCommitment && setCommitmentApi(flow.id, commitmentId);
     }
 
     // 表单收缩
@@ -160,7 +157,7 @@ export default function l2Edit() {
     const [logo, setLogo] = useState('')
     const uploadAvator = (file) => {
         uploadFileWithProgress(file, (progress) => { }, 'icon').then(res => {
-            setLogo(res.file_path);
+            setLogo('/bisheng/' + res.relative_path);
         })
     }
 

@@ -18,6 +18,7 @@ import ChatFiles from "./ChatFiles";
 import SpeechToTextComponent from "@/components/SpeechToTextComponent";
 
 export const FileTypes = {
+    ALL: ['.PNG', '.JPEG', '.JPG', '.BMP', '.PDF', '.TXT', '.MD', '.HTML', '.XLS', '.XLSX', '.CSV', '.DOC', '.DOCX', '.PPT', '.PPTX'],
     IMAGE: ['.PNG', '.JPEG', '.JPG', '.BMP'],
     FILE: ['.PDF', '.TXT', '.MD', '.HTML', '.XLS', '.XLSX', '.DOC', '.CSV', '.DOCX', '.PPT', '.PPTX'],
     AUDIO: ['.MP3', '.AMR', 'WAV', 'AAC'],
@@ -340,9 +341,10 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
                 setAccepts(filesTypes.join(','));
             }
             // 待用户输入
-            input_schema.tab === 'form_input'
-                ? (setInputForm(input_schema), setFormShow(true))
-                : setInputLock({ locked: false, reason: '' });
+            input_schema.tab === 'form_input' ? (setInputForm(input_schema), setFormShow(true)) : setInputLock({ locked: false, reason: '' })
+            setTimeout(() => {
+                inputRef.current.focus()
+            }, 60);
             return
         } else if (data.category === 'guide_question') {
             return questionsRef.current.updateQuestions(data.message.guide_question.filter(q => q))
@@ -478,9 +480,8 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
         restartCallBackRef.current[chatId] = () => {
             createWebSocket().then(() => {
                 setRestarted(false)
-                onBeforSend('refresh_flow', {}).then((data) => {
-                    sendWsMsg(data)
-                })
+                const data = onBeforSend('refresh_flow', {})
+                sendWsMsg(data)
             })
         }
         if (stop.show) {
