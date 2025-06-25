@@ -3,6 +3,10 @@ import time
 from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, WebSocket, WebSocketException, Request, status as http_status
+from bisheng_langchain.utils.requests import Requests
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, WebSocket, WebSocketException, Request, UploadFile, \
+    File
+from fastapi import status as http_status
 from fastapi_jwt_auth import AuthJWT
 from loguru import logger
 from sqlmodel import select
@@ -19,6 +23,7 @@ from bisheng.database.base import session_getter
 from bisheng.database.models.flow import Flow, FlowCreate, FlowDao, FlowRead, FlowReadWithStyle, FlowType, FlowUpdate, \
     FlowStatus
 from bisheng.database.models.flow_version import FlowVersionDao
+from bisheng.database.models.session import MessageSessionDao
 from bisheng.database.models.role_access import AccessType
 from bisheng.utils.minio_client import MinioClient
 from bisheng_langchain.utils.requests import Requests
@@ -92,6 +97,12 @@ async def upload_report_file(
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     return {'error': 0}
 
+@router.post('/input/file', status_code=200)
+async def process_input_file(request: Request, login_user: UserPayload = Depends(get_login_user),
+                             file: UploadFile = File(...)):
+    """ 处理对话框的文件上传, 将文件解析为对应的chunk """
+    res = await WorkFlowService.process_input_file(login_user, file)
+    return resp_200(data=res)
 
 @router.post('/run_once', status_code=200)
 async def run_once(request: Request, login_user: UserPayload = Depends(get_login_user),
@@ -124,11 +135,8 @@ async def workflow_ws(*,
 def create_flow(*, request: Request, flow: FlowCreate, login_user: UserPayload = Depends(get_login_user)):
     """Create a new flow."""
     # 判断用户是否重复技能名
-    with session_getter() as session:
-        if session.exec(
-                select(Flow).where(Flow.name == flow.name, Flow.flow_type == FlowType.WORKFLOW.value,
-                                   Flow.user_id == login_user.user_id)).first():
-            raise WorkflowNameExistsError.http_exception()
+    if FlowService.judge_name_repeat(flow.name):
+        raise WorkflowNameExistsError.http_exception()
     flow.user_id = login_user.user_id
     db_flow = Flow.model_validate(flow)
     db_flow.create_time = None
@@ -238,12 +246,15 @@ async def update_flow(*,
 
     flow_data = flow.model_dump(exclude_unset=True)
 
+    if FlowService.judge_name_repeat(flow.name, flow_id):
+        raise WorkflowNameExistsError.http_exception()
     # TODO:  验证工作流是否可以使用
 
     if db_flow.status == FlowStatus.ONLINE.value and (
             'status' not in flow_data or flow_data['status'] != FlowStatus.OFFLINE.value):
         raise WorkFlowOnlineEditError.http_exception()
-
+    if 'name' in flow_data and flow_data['name'] != db_flow.name:
+        MessageSessionDao.update_flow_name_by_flow_id(db_flow.id, flow_data['name'])
     for key, value in flow_data.items():
         if key in ['data', 'create_time', 'update_time']:
             continue

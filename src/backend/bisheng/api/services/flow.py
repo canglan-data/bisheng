@@ -19,6 +19,7 @@ from bisheng.api.v1.schemas import UnifiedResponseModel, resp_200, FlowVersionCr
 from bisheng.chat.utils import process_node_data
 from bisheng.database.models.flow import FlowDao, FlowStatus, Flow, FlowType
 from bisheng.database.models.flow_version import FlowVersionDao, FlowVersionRead, FlowVersion
+from bisheng.database.models.group import GroupDao
 from bisheng.database.models.group_resource import GroupResourceDao, ResourceTypeEnum, GroupResource
 from bisheng.database.models.role_access import RoleAccessDao, AccessType
 from bisheng.database.models.tag import TagDao
@@ -27,9 +28,26 @@ from bisheng.database.models.user_group import UserGroupDao
 from bisheng.database.models.user_role import UserRoleDao
 from bisheng.database.models.variable_value import VariableDao
 from bisheng.processing.process import process_graph_cached, process_tweaks
+from bisheng.database.models.assistant import AssistantDao
 
 
 class FlowService(BaseService):
+
+    @classmethod
+    def get_company_members_by_uid(cls,user_id: int) -> List[int]:
+        user_groups = UserGroupDao.get_user_group(user_id)
+        if not user_groups:
+            return []
+        group_ids = [ug.group_id for ug in user_groups]
+        group_infos = GroupDao.get_group_by_ids(group_ids)
+        codes = set([str(g.code).split("|")[0] for g in group_infos if g.code])
+        all_group_id = []
+        for code in codes:
+            group_info = GroupDao.get_child_groups(code)
+            all_group_id.extend([g.id for g in group_info])
+        all_user_id = UserGroupDao.get_groups_user(all_group_id)
+        logger.info(f"FlowService get_company_members_by_uid user_id={user_id} all_user_id={all_user_id}")
+        return list(set(all_user_id))
 
     @classmethod
     def get_version_list_by_flow(cls, user: UserPayload, flow_id: str) -> UnifiedResponseModel[List[FlowVersionRead]]:
@@ -199,6 +217,14 @@ class FlowService(BaseService):
         return resp_200(data=flow_version)
 
     @classmethod
+    def judge_name_repeat(cls, name: str, flow_id: Optional[str] = None) -> bool:
+        """ 判断助手名字是否重复 """
+        flow = AssistantDao.get_assistant_by_name_filter_self(name, flow_id) or FlowDao.get_flow_by_name_filter_self(name, flow_id)
+        if flow:
+            return True
+        return False
+
+    @classmethod
     def get_one_flow(cls, login_user: UserPayload, flow_id: str) -> UnifiedResponseModel[Flow]:
         """
         获取单个技能的详情
@@ -206,13 +232,14 @@ class FlowService(BaseService):
         flow_info = FlowDao.get_flow_by_id(flow_id)
         if not flow_info:
             raise NotFoundFlowError.http_exception()
+        flow_info.logo = cls.get_logo_share_link(flow_info.logo)
         atype = AccessType.FLOW
         if flow_info.flow_type == FlowType.WORKFLOW.value:
             atype = AccessType.WORK_FLOW
-        if not login_user.access_check(flow_info.user_id, flow_info.id, atype):
-            raise UnAuthorizedError.http_exception()
-        flow_info.logo = cls.get_logo_share_link(flow_info.logo)
-
+        all_user_id = cls.get_company_members_by_uid(login_user.user_id)
+        if flow_info.user_id not in all_user_id:
+            if not login_user.access_check(flow_info.user_id, flow_info.id, atype):
+                raise UnAuthorizedError.http_exception()
         return resp_200(data=flow_info)
 
     @classmethod

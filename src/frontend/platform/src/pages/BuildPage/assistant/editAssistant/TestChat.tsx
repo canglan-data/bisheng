@@ -34,6 +34,7 @@ export default function TestChat({ assisId, guideQuestion, onClear }) {
         } as any
         if (msg) msgData.inputs = { [inputKey]: msg }
         if (data) msgData.inputs.data = data
+        if (data) msgData.inputs.file_ids = data
         if (action === 'continue') msgData.action = action
         return [msgData, inputKey]
     }
@@ -47,6 +48,8 @@ export default function TestChat({ assisId, guideQuestion, onClear }) {
             <span className="text-sm ">{t('build.debugPreview')}</span>
         </div>
         <ChatComponent
+            showUpload={!!assistantState.is_allow_upload}
+            assistant
             debug
             clear
             logo={assistantState.logo}

@@ -11,11 +11,21 @@ import { useTranslation } from "react-i18next";
 import GuideQuestions from "./GuideQuestions";
 import { useMessageStore } from "./messageStore";
 import { CirclePause } from "lucide-react";
+import ChatFiles from "@/pages/BuildPage/flow/FlowChat/ChatFiles";
+import SpeechToTextComponent from "@/components/SpeechToTextComponent";
 
-export default function ChatInput({ clear, form, questions, inputForm, wsUrl, onBeforSend, onClickClear }) {
+// 未来助手可能会支持 多模态 + 语音识别
+export const FileTypes = {
+    IMAGE: ['.PNG', '.JPEG', '.JPG', '.BMP'],
+    FILE: ['.PDF', '.TXT', '.MD', '.HTML', '.XLS', '.XLSX', '.DOC', '.DOCX', '.PPT', '.PPTX'],
+    AUDIO: ['.MP3', '.AMR', 'WAV', 'AAC'],
+}
+
+export default function ChatInput({flow, assistant, clear, form, questions, inputForm, wsUrl, onBeforSend, onClickClear, showUpload }) {
     const { toast } = useToast()
     const { t } = useTranslation()
     const { appConfig } = useContext(locationContext)
+    const [accepts, setAccepts] = useState('*') // 接受文件类型
 
     const [formShow, setFormShow] = useState(false)
     const [showWhenLocked, setShowWhenLocked] = useState(false) // 强制开启表单按钮，不限制于input锁定
@@ -35,6 +45,9 @@ export default function ChatInput({ clear, form, questions, inputForm, wsUrl, on
      * 记录会话切换状态，等待消息加载完成时，控制表单在新会话自动展开
      */
     const changeChatedRef = useRef(false)
+
+    const chatFilesRef = useRef(null); // 用于访问 ChatFiles 的方法
+    
     useEffect(() => {
         // console.log('message msg', messages, form);
 
@@ -77,6 +90,7 @@ export default function ChatInput({ clear, form, questions, inputForm, wsUrl, on
     }, [])
 
     const handleSendClick = async () => {
+        if (fileUploading) return
         // 解除锁定状态下 form 按钮开放的状态
         setShowWhenLocked(false)
         // 关闭引导词
@@ -85,15 +99,23 @@ export default function ChatInput({ clear, form, questions, inputForm, wsUrl, on
         // formShow && setFormShow(false)
         setFormShow(false)
 
-        const value = inputRef.current.value
-        if (value.trim() === '') return
+        const [fileIds, fileNames] = getFileIds().reduce((acc, cur) => {
+            acc[0].push(cur.path)
+            acc[1].push(cur.name)
+            return acc
+        }, [[], []])
+
+        const _value = inputRef.current.value
+        if (_value.trim() === '' && fileIds.length === 0) return
+        const value = fileNames.length > 0 ? fileNames.join('\n') + '\n' + _value : _value;
 
         const event = new Event('input', { bubbles: true, cancelable: true });
         inputRef.current.value = ''
         inputRef.current.dispatchEvent(event); // 触发调节input高度
         const contunue = continueRef.current ? 'continue' : ''
         continueRef.current = false
-        const [wsMsg, inputKey] = onBeforSend(contunue, value)
+
+        const [wsMsg, inputKey] = onBeforSend(contunue, value, fileIds)
         // msg to store
         createSendMsg(wsMsg.inputs, inputKey)
         // 锁定 input
@@ -277,6 +299,16 @@ export default function ChatInput({ clear, form, questions, inputForm, wsUrl, on
         // setInputEmpty(textarea.value.trim() === '')
     }
 
+    // 文件上传状态
+    const { fileUploading, getFileIds, loadingChange, clear: clearFiles } = useFileLoading(inputLock.locked)
+
+    useEffect(() => {
+        // 测试页面状态变化后，清空文件
+        clearFiles();
+    }, [showUpload])
+
+    console.log('flow?.is_allow_upload', flow, assistant);
+    
     return <div className="absolute bottom-0 w-full pt-1 bg-[#fff] dark:bg-[#1B1B1B]">
         <div className={`relative ${clear && 'pl-9'}`}>
             {/* form */}
@@ -293,6 +325,7 @@ export default function ChatInput({ clear, form, questions, inputForm, wsUrl, on
                 chatId={chatId}
                 questions={questions}
                 onClick={handleClickGuideWord}
+                bottom={chatFilesRef?.current?.getHeight() || 0} //有文件 则给引导问题顶上去
             />
             {/* clear */}
             <div className="flex absolute left-0 top-4 z-10">
@@ -312,6 +345,8 @@ export default function ChatInput({ clear, form, questions, inputForm, wsUrl, on
                     ><FormIcon className={!showWhenLocked && inputLock.locked ? 'text-muted-foreground' : 'text-foreground'}></FormIcon></div>
                 }
             </div>
+            {!inputLock.locked && <SpeechToTextComponent onChange={(text) => {inputRef.current.value += text}} />}
+            {!inputLock.locked && assistant && (flow?.is_allow_upload || showUpload) && <ChatFiles ref={chatFilesRef} v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} preParsing/>}
             {/* send */}
             <div className="flex gap-2 absolute right-3 top-4 z-10">
                 {stop.show ?
@@ -327,8 +362,8 @@ export default function ChatInput({ clear, form, questions, inputForm, wsUrl, on
                     : <div
                         id="bs-send-btn"
                         className="w-6 h-6 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-950 cursor-pointer flex justify-center items-center"
-                        onClick={() => { !inputLock.locked && handleSendClick() }}>
-                        <SendIcon className={`${inputLock.locked ? 'text-muted-foreground' : 'text-foreground'}`} />
+                        onClick={() => { !inputLock.locked && !fileUploading  && handleSendClick() }}>
+                        <SendIcon className={`${inputLock.locked || fileUploading ? 'text-muted-foreground' : 'text-foreground'}`} />
                     </div>
                 }
             </div>
@@ -350,7 +385,7 @@ export default function ChatInput({ clear, form, questions, inputForm, wsUrl, on
                 disabled={inputLock.locked}
                 onInput={handleTextAreaHeight}
                 placeholder={inputLock.locked ? inputLock.reason : t('chat.inputPlaceholder')}
-                className={"resize-none py-4 pr-10 text-md min-h-6 max-h-[200px] scrollbar-hide dark:bg-[#2A2B2E] text-gray-800" + (form && ' pl-10')}
+                className={"resize-none py-4 pr-20 text-md min-h-6 max-h-[200px] scrollbar-hide dark:bg-[#2A2B2E] text-gray-800" + (form && ' pl-10')}
                 onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();
@@ -362,3 +397,29 @@ export default function ChatInput({ clear, form, questions, inputForm, wsUrl, on
         <p className="text-center text-sm pt-2 pb-4 text-gray-400">{appConfig.dialogTips}</p>
     </div>
 };
+
+
+const useFileLoading = (locked) => {
+    const [loading, setLoading] = useState(false);
+    const filesRef = useRef([])
+    useEffect(() => {
+        if (locked) filesRef.current = []
+    }, [locked])
+    return {
+        fileUploading: loading,
+        getFileIds: () => filesRef.current,
+        loadingChange(files: string[] | null) {
+            if (files) {
+                setLoading(false)
+                filesRef.current = files
+            } else {
+                setLoading(true)
+                filesRef.current = []
+            }
+        },
+        clear() {
+            setLoading(false)
+            filesRef.current = []
+        }
+    }
+}

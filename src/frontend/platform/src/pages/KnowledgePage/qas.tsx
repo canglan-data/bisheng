@@ -1,20 +1,20 @@
-import { checkSassUrl } from "@/components/bs-comp/FileView";
 import { LoadIcon } from "@/components/bs-icons";
-import { LoadingIcon } from "@/components/bs-icons/loading";
 import { bsConfirm } from "@/components/bs-ui/alertDialog/useConfirm";
 import { Checkbox } from "@/components/bs-ui/checkBox";
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/bs-ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/bs-ui/dialog";
 import { Switch } from "@/components/bs-ui/switch";
-import { useToast } from "@/components/bs-ui/toast/use-toast";
-import { downloadFile, formatDate } from "@/util/utils";
-import { ArrowLeft } from "lucide-react";
+import { message, useToast } from "@/components/bs-ui/toast/use-toast";
+import { ArrowLeft, SquarePen } from "lucide-react";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import 'react-quill/dist/quill.snow.css';
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
+import { Label } from "@/components/bs-ui/label";
 import ShadTooltip from "../../components/ShadTooltipComponent";
 import { Button, LoadButton } from "../../components/bs-ui/button";
 import { Input, InputList, SearchInput, Textarea } from "../../components/bs-ui/input";
 import AutoPagination from "../../components/bs-ui/pagination/autoPagination";
+import * as XLSX from 'xlsx';
 import {
     Table,
     TableBody,
@@ -23,9 +23,17 @@ import {
     TableHeader,
     TableRow
 } from "../../components/bs-ui/table";
-import { deleteQa, generateSimilarQa, getQaDetail, getQaFile, getQaList, updateQa, updateQaStatus } from "../../controllers/API";
+import { deleteQa, generateSimilarQa, getQaDetail, getQaFile, getQaFilePreview, getQaList, postImportQaFile, updateKnowledgeApi, updateQa, updateQaStatus } from "../../controllers/API";
 import { captureAndAlertRequestErrorHoc } from "../../controllers/request";
-import { useTable } from "../../util/hook";
+import { useDebounce, useTable } from "../../util/hook";
+import { LoadingIcon } from "@/components/bs-icons/loading";
+import KnowledgeBaseSettingsDialog from "./components/EditKnowledgeDialog";
+import { downloadFile, formatDate, processImageUrlsSafely } from "@/util/utils";
+import SimpleUpload from "@/components/bs-ui/upload/simple";
+import { checkSassUrl } from "@/components/bs-comp/FileView";
+import { generateUUID } from "@/components/bs-ui/utils";
+import RichText from "@/components/bs-comp/richText";
+import RichInput from "./components/RichInput/index";
 import { ImportQa } from "./components/ImportQa";
 
 const defaultQa = {
@@ -33,6 +41,7 @@ const defaultQa = {
     similarQuestions: [''],
     answer: ''
 }
+
 // 添加&编辑qa
 const EditQa = forwardRef(function ({ knowlageId, onChange }, ref) {
     const { t } = useTranslation('knowledge');
@@ -73,6 +82,13 @@ const EditQa = forwardRef(function ({ knowlageId, onChange }, ref) {
         setForm((prevForm) => ({
             ...prevForm,
             [name]: value
+        }));
+    };
+    
+    const handleAnswerChange = (value) => {
+        setForm((prevForm) => ({
+            ...prevForm,
+            answer: value
         }));
     };
 
@@ -133,7 +149,7 @@ const EditQa = forwardRef(function ({ knowlageId, onChange }, ref) {
         if (form.answer.length > 10000) {
             return message({
                 variant: 'warning',
-                description: t('max1000CharactersForAnswer')
+                description: t('max10000CharactersForAnswer')
             });
         }
 
@@ -194,11 +210,16 @@ const EditQa = forwardRef(function ({ knowlageId, onChange }, ref) {
                         <label htmlFor="answer" className="bisheng-label">
                             <span className="text-red-500">*</span>{t('answer')}
                         </label>
-                        <Textarea
+                        {/* <Textarea
                             name="answer"
                             className={`col-span-3 h-36 ${error.answer && 'border-red-400'}`}
                             value={form.answer}
                             onChange={handleInputChange}
+                        /> */}
+                        <RichInput
+                            className={`col-span-3 h-36 ${error.answer && 'border-red-400'}`}
+                            value={processImageUrlsSafely(form.answer, __APP_ENV__.BASE_URL)}
+                            onChange={handleAnswerChange}
                         />
                     </div>
                 </div>
@@ -217,17 +238,17 @@ const EditQa = forwardRef(function ({ knowlageId, onChange }, ref) {
     );
 });
 
-
-
 export default function QasPage() {
     const { t } = useTranslation('knowledge')
 
-    const { id } = useParams()
-    const [title, setTitle] = useState('')
+    const { id } = useParams();
     const [selectedItems, setSelectedItems] = useState([]); // 存储选中的项
     const [selectAll, setSelectAll] = useState(false); // 全选状态
     const editRef = useRef(null)
     const importRef = useRef(null)
+    const [libInfo, setLibInfo] = useState({ name: '', desc: '' })
+    const [open, setOpen] = useState(false)
+    const { message } = useToast()
     const [hasPermission, setHasPermission] = useState(false)
 
     const { page, pageSize, data: datalist, total, loading, setPage, search, reload, refreshData } = useTable({}, (param) =>
@@ -252,11 +273,12 @@ export default function QasPage() {
 
     useEffect(() => {
         // @ts-ignore
-        const libname = window.libname // 临时记忆
+        const [libname, libdesc] = window.libname || [] // 临时记忆
         if (libname) {
-            localStorage.setItem('libname', window.libname)
+            localStorage.setItem('libname', libname)
+            localStorage.setItem('libdesc', libdesc)
         }
-        setTitle(window.libname || localStorage.getItem('libname'))
+        setLibInfo({ name: libname || localStorage.getItem('libname'), desc: libdesc || localStorage.getItem('libdesc') })
     }, [])
 
     const handleCheckboxChange = (id) => {
@@ -309,8 +331,8 @@ export default function QasPage() {
 
     const {toast} = useToast()
 
-    
-    const handleStatusClick = async (id: number, checked: boolean) => {
+
+    const handleStatusClick = useDebounce(async (id: number, checked: boolean) => {
         const targetStatus = checked ? 1 : 0;
         const isOpening = checked;
         try {
@@ -328,7 +350,24 @@ export default function QasPage() {
                 status: 3
             });
         }
-    };
+    }, 300, false)
+    
+    const handleSave = (form) => {
+        captureAndAlertRequestErrorHoc(updateKnowledgeApi({
+            knowledge_id: Number(id),
+            name: form.name,
+            description: form.desc
+        })).then((res) => {
+        if (!res) return
+            // api
+            setLibInfo(form)
+            setOpen(false)
+            message({ variant: 'success', description: t('saved') })
+            localStorage.setItem('libname', form.name)
+            localStorage.setItem('libdesc', form.desc)
+        })
+    }
+
     return <div className="relative px-2 pt-4 size-full">
         {/* {loading && <div className="absolute w-full h-full top-0 left-0 flex justify-center items-center z-10 bg-[rgba(255,255,255,0.6)] dark:bg-blur-shared">
             <LoadingIcon />
@@ -342,7 +381,21 @@ export default function QasPage() {
                                 <Link to='/filelib'><ArrowLeft className="side-bar-button-size" /></Link>
                             </button>
                         </ShadTooltip>
-                        <span className="text-gray-700 text-sm font-black pl-4 dark:text-white">{title}</span>
+                        <div>
+                            <div className="group flex items-center">
+                                <span className="text-gray-700 text-sm font-black pl-4 dark:text-white">{libInfo.name}</span>
+                                {/* edit dialog */}
+                                <Dialog open={open} onOpenChange={setOpen} >
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="group-hover:visible invisible"><SquarePen className="w-4 h-4" /></Button>
+                                    </DialogTrigger>
+                                    {
+                                        open && <KnowledgeBaseSettingsDialog initialName={libInfo.name} initialDesc={libInfo.desc} onSave={handleSave}></KnowledgeBaseSettingsDialog>
+                                    }
+                                </Dialog>
+                            </div>
+                            <p className="max-w-96 pl-4 text-muted-foreground text-sm truncate">{libInfo.desc}</p>
+                        </div>
                     </div>
                 </div>
                 <div className="flex justify-between items-center mb-4">
@@ -352,13 +405,13 @@ export default function QasPage() {
                     </div>
                     <div className="flex gap-4 items-center">
                         <SearchInput placeholder={t('qaContent')} onChange={(e) => search(e.target.value)}></SearchInput>
-                        <Button variant="outline" className="px-8" onClick={() => importRef.current.open()}>导入</Button>
+                        <Button variant="outline" className="px-8" onClick={() => importRef.current.open()}>{t('importQa')}</Button>
                         <Button variant="outline" className="px-8" onClick={() => {
                             getQaFile(id).then(res => {
                                 const fileUrl = res.file_list[0];
-                                downloadFile(checkSassUrl(fileUrl), `${title} ${formatDate(new Date(), 'yyyy-MM-dd')}.xlsx`);
+                                downloadFile(checkSassUrl(fileUrl), `${libInfo.name} ${formatDate(new Date(), 'yyyy-MM-dd')}.xlsx`);
                             })
-                        }}>导出</Button>
+                        }}>{t('exportQa')}</Button>
                         <Button className="px-8" onClick={() => editRef.current.open()}>{t('createQA')}</Button>
                     </div>
                 </div>
@@ -381,7 +434,7 @@ export default function QasPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {datalist.map(el => (
+                        {datalist.map((el: any) => (
                             <TableRow key={el.id}>
                                 <TableCell className="font-medium">
                                     <Checkbox checked={selectedItems.includes(el.id)} onCheckedChange={() => handleCheckboxChange(el.id)} />
@@ -393,10 +446,10 @@ export default function QasPage() {
                                 </TableCell>
                                 <TableCell className="font-medium">
                                     <div className="max-h-48 overflow-y-auto scrollbar-hide">
-                                        {el.answers}
+                                        <RichText msg={el.answers}/>
                                     </div>
                                 </TableCell>
-                                <TableCell>{['未知', '手动创建', '标注导入', 'api导入', '批量导入'][el.source]}</TableCell>
+                                <TableCell>{[t('unknown'), t('manualCreation'), t('APIImport'), t('bulkImport') , t('bulkImport')][el.source]}</TableCell>
                                 <TableCell>{el.create_time.replace('T', ' ')}</TableCell>
                                 <TableCell>{el.update_time.replace('T', ' ')}</TableCell>
                                 <TableCell>{el.user_name}</TableCell>

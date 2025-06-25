@@ -5,16 +5,18 @@ import { locationContext } from "@/contexts/locationContext";
 import { uploadChatFile } from "@/controllers/API/flow";
 import { getFileExtension } from "@/util/utils";
 import { FileIcon, PaperclipIcon, X } from "lucide-react";
-import { useContext, useMemo, useRef, useState } from "react";
+import { forwardRef, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 
 // @accepts '.png,.jpg'
-export default function ChatFiles({ v, accepts, onChange }) {
+const ChatFiles = forwardRef(({ v, accepts, onChange, preParsing }, ref) => {
     const [files, setFiles] = useState([]);
     const filesRef = useRef([]);
     const remainingUploadsRef = useRef(0);
     const { appConfig } = useContext(locationContext);
-    // const fileAccepts = useMemo(() => appConfig.libAccepts.map((ext) => `.${ext}`), [appConfig.libAccepts]);
+    const fileAccepts = useMemo(() => appConfig.libAccepts.map((ext) => `.${ext}`), [appConfig.libAccepts]);
     const { toast } = useToast();
+    const containerRef = useRef(null); // 新增：用于监听高度的容器 ref
+    const [containerHeight, setContainerHeight] = useState(0); // 新增：存储高度
 
     const fileInputRef = useRef(null);
     const fileSizeLimit = appConfig.uploadFileMaxSize * 1024 * 1024; // File size limit in bytes
@@ -71,7 +73,7 @@ export default function ChatFiles({ v, accepts, onChange }) {
 
         // Create an array of promises to handle multiple file uploads concurrently
         const uploadPromises = validFiles.map(({ file, id }) => {
-            return uploadChatFile(v, file, (progress) => {
+            return uploadChatFile(file, (progress) => {
                 // Update progress for each file individually
                 setFiles((prevFiles) => {
                     const updatedFiles = prevFiles.map(f => {
@@ -83,8 +85,8 @@ export default function ChatFiles({ v, accepts, onChange }) {
                     filesRef.current = updatedFiles;
                     return updatedFiles;
                 });
-            }).then(response => {
-                const filePath = response.file_path; // Assuming the response contains the file ID
+            }, preParsing, v).then(response => {
+                const filePath = response.file_path || response.id; // Assuming the response contains the file ID
                 filesRef.current = filesRef.current.map(f => {
                     if (f.id === id) {
                         return { ...f, isUploading: false, filePath, progress: 100 }; // Set progress to 100 when uploaded
@@ -151,10 +153,32 @@ export default function ChatFiles({ v, accepts, onChange }) {
         return `${fileSize.toFixed(2)} ${units[index]}`;
     };
 
+    // 监听容器高度变化
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        const observer = new ResizeObserver((entries) => {
+            const { height } = entries[0].contentRect;
+            console.log('内部height', height);
+            
+            setContainerHeight(height);
+        });
+
+        observer.observe(containerRef.current);
+        return () => observer.disconnect(); // 清理观察器
+    }, [files]); // 依赖 files 变化重新计算高度
+
+    // 暴露高度给父组件
+    useImperativeHandle(ref, () => ({
+        getHeight: () => containerHeight,
+    }));
     return (
         <div className="relative z-10">
             {/* Displaying files */}
-            {!!files.length && <div className="absolute bottom-2 left-2 flex flex-wrap gap-2  bg-gray-50 p-2 rounded-xl max-h-96 overflow-y-auto">
+            {!!files.length && <div
+                ref={containerRef}
+                className="absolute bottom-2 left-2 flex flex-wrap gap-2 bg-gray-50 p-2 rounded-xl max-h-[180px] overflow-y-auto"
+            >
                 {files.map((file, index) => (
                     <div key={index} className="group relative flex items-center space-x-3 bg-gray-100 p-2 rounded-xl cursor-default">
                         {/* Remove button */}
@@ -185,7 +209,7 @@ export default function ChatFiles({ v, accepts, onChange }) {
             </div>}
 
             {/* File Upload Button */}
-            <div className="absolute right-10 top-5 cursor-pointer" onClick={() => fileInputRef.current.click()}>
+            <div className="absolute right-20 top-5 cursor-pointer" onClick={() => fileInputRef.current.click()}>
                 <PaperclipIcon size={18} />
             </div>
 
@@ -194,10 +218,12 @@ export default function ChatFiles({ v, accepts, onChange }) {
                 type="file"
                 ref={fileInputRef}
                 multiple
-                accept={accepts}
+                accept={accepts || fileAccepts.join(',')}
                 onChange={handleFileChange}
                 className="hidden"
             />
         </div>
     );
-}
+})
+
+export default ChatFiles;

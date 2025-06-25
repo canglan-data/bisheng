@@ -65,7 +65,8 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const [extraComponent, setExtraComponent] = useState(<></>);
   const [appConfig, setAppConfig] = useState<any>({
     libAccepts: [],
-    noFace: true
+    noFace: true,
+    disableCopyFlowIds: [],
   })
 
   const loadConfig = () => {
@@ -81,8 +82,10 @@ export function LocationProvider({ children }: { children: ReactNode }) {
           websocketHost: res.websocket_url,
           isPro: !!res.pro,
           chatPrompt: !!res.application_usage_tips,
+          securityCommitment: !!res.enable_security_commitment,
           noFace: !res.show_github_and_help,
           register: !!res.enable_registration,
+          disableCopyFlowIds: res.disable_copy_flow_ids || [],
           uploadFileMaxSize: res.uploaded_files_maximum_size || 50,
         });
 

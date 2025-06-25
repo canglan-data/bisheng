@@ -115,8 +115,8 @@ export function isVarInFlow(nodeId, nodes, varName, varNameCn) {
                         // if (item.multiple) return `${node.id}.${item.key}` === varName
                         // 文件类型
                         const vars = [`${node.id}.${item.key}`, `${node.id}.${item.file_content}`, `${node.id}.${item.file_path}`]
-                        // 图片类型追加校验变量
-                        item.file_type !== 'file' && vars.push(`${node.id}.${item.image_file}`)
+                        item.file_types.includes('image') && vars.push(`${node.id}.${item.image_file}`)
+                        item.file_types.includes('audio') && vars.push(`${node.id}.${item.audio_file}`)
                         return vars.includes(varName)
                     })
                 } else if (param.hidden) {

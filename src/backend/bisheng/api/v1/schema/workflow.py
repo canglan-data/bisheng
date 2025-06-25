@@ -61,7 +61,6 @@ class WorkflowEvent(BaseModel):
             return v
         return str(v)
 
-
 class WorkflowStream(BaseModel):
     session_id: str = Field(default=None, description='The session id')
     data: WorkflowEvent | list[WorkflowEvent] = Field(default=None, description='The event data or event data list')

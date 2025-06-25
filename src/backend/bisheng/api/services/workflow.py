@@ -1,16 +1,33 @@
-from typing import Dict, Optional
-
+import asyncio
+import uuid
+from typing import Dict, Optional, List
+from bisheng.worker.workflow.tasks import execute_workflow
+from bisheng.database.models.group import GroupDao
+from bisheng.database.models.user_group import UserGroupDao
 from bisheng.utils import generate_uuid
+import json
+import os
+from tempfile import TemporaryDirectory
+from typing import Dict, Optional
+from uuid import UUID
+
+from fastapi import UploadFile
 from fastapi.encoders import jsonable_encoder
 from langchain.memory import ConversationBufferWindowMemory
 
 from bisheng.api.errcode.base import NotFoundError, UnAuthorizedError
 from bisheng.api.errcode.flow import WorkFlowInitError
 from bisheng.api.services.base import BaseService
+from bisheng.api.services.knowledge_imp import read_chunk_text
 from bisheng.api.services.user_service import UserPayload
 from bisheng.api.v1.schemas import ChatResponse
 from bisheng.api.v1.schema.workflow import WorkflowEvent, WorkflowEventType, WorkflowInputSchema, WorkflowInputItem, \
-    WorkflowOutputSchema
+    WorkflowOutputSchema, WorkflowStream
+from bisheng.api.v1.schema.workflow import WorkflowEvent, WorkflowEventType, WorkflowOutputSchema, WorkflowInputSchema, \
+    WorkflowInputItem
+from bisheng.api.v1.schemas import ChatResponse
+from bisheng.cache.redis import redis_client
+from bisheng.cache.utils import save_uploaded_file
 from bisheng.chat.utils import SourceType
 from bisheng.database.models.flow import FlowDao, FlowType, FlowStatus
 from bisheng.database.models.flow_version import FlowVersionDao
@@ -19,14 +36,33 @@ from bisheng.database.models.role_access import AccessType, RoleAccessDao
 from bisheng.database.models.tag import TagDao
 from bisheng.database.models.user import UserDao
 from bisheng.database.models.user_role import UserRoleDao
+from bisheng.utils import generate_uuid
 from bisheng.workflow.callback.base_callback import BaseCallback
 from bisheng.workflow.common.node import BaseNodeData, NodeType
+from bisheng.workflow.common.workflow import WorkflowStatus
 from bisheng.workflow.graph.graph_state import GraphState
 from bisheng.workflow.graph.workflow import Workflow
 from bisheng.workflow.nodes.node_manage import NodeFactory
+from loguru import logger
 
 
 class WorkFlowService(BaseService):
+
+    @classmethod
+    def get_company_members_by_uid(cls,user_id: int) -> List[int]:
+        user_groups = UserGroupDao.get_user_group(user_id)
+        if not user_groups:
+            return []
+        group_ids = [ug.group_id for ug in user_groups]
+        group_infos = GroupDao.get_group_by_ids(group_ids)
+        codes = set([str(g.code).split("|")[0] for g in group_infos if g.code])
+        all_group_id = []
+        for code in codes:
+            group_info = GroupDao.get_child_groups(code)
+            all_group_id.extend([g.id for g in group_info])
+        all_user_id = UserGroupDao.get_groups_user(all_group_id)
+        logger.info(f"WorkFlowService get_company_members_by_uid user_id={user_id} all_user_id={all_user_id}")
+        return list(set(all_user_id))
 
     @classmethod
     def get_all_flows(cls, user: UserPayload, name: str, status: int, tag_id: Optional[int], flow_type: Optional[int],
@@ -48,15 +84,21 @@ class WorkFlowService(BaseService):
         if user.is_admin():
             data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, page, page_size)
         else:
-            user_role = UserRoleDao.get_user_roles(user.user_id)
-            role_ids = [role.role_id for role in user_role]
+#<<<<<<< HEAD
+            # user_role = UserRoleDao.get_user_roles(user.user_id)
+            # role_ids = [role.role_id for role in user_role]
+# DONE merge_check 用下方
+#=======
+            role_ids = user.user_role
+#>>>>>>> feat/zyrs_0527
             role_access = RoleAccessDao.get_role_access_batch(role_ids, [AccessType.FLOW, AccessType.WORK_FLOW,
                                                                          AccessType.ASSISTANT_READ])
             flow_id_extra = []
             if role_access:
                 flow_id_extra = [access.third_id for access in role_access]
-            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, user.user_id, flow_id_extra, page,
-                                               page_size)
+            all_user_id = cls.get_company_members_by_uid(user.user_id)
+            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, flow_id_extra, page,
+                                               page_size,all_user_id)
 
         # 应用ID列表
         resource_ids = []
@@ -190,6 +232,39 @@ class WorkFlowService(BaseService):
         return
 
     @classmethod
+    async def process_input_file(cls, login_user: UserPayload, upload_file: UploadFile):
+        """
+        处理工作流对话框输入的文件
+        """
+        file_id = generate_uuid()
+        # 保存文件内容到本地，并解析出文件内容
+        texts = []
+        with TemporaryDirectory() as tmp_dir:
+            file_path = os.path.join(tmp_dir, upload_file.filename)
+            with open(file_path, 'wb') as tmp_file:
+                tmp_file.write(upload_file.file.read())
+            texts, _, _, _ = read_chunk_text(file_path, upload_file.filename,
+                                             ['\n\n', '\n'], ['after', 'after'], 1000, 500)
+            if len(texts) == 0:
+                raise ValueError('文件解析为空')
+        upload_file.file.seek(0)
+        # 文件上传到minio
+        file_path = save_uploaded_file(upload_file.file, 'tmp', file_id)
+
+        # 数据存储到redis内
+        redis_client.set(f"workflow:dialog_file:{file_id}", json.dumps({
+            "path": file_path,
+            "content": "\n".join(texts),
+            "name": upload_file.filename
+        }, ensure_ascii=False))
+        return {
+            'id': file_id,
+            'name': upload_file.filename,
+            'size': upload_file.size,
+        }
+
+
+    @classmethod
     def convert_chat_response_to_workflow_event(cls, chat_response: ChatResponse) -> WorkflowEvent:
         workflow_event = WorkflowEvent(
             event=chat_response.category,
@@ -259,6 +334,10 @@ class WorkFlowService(BaseService):
                     type='text',
                     required=True,
                     value=''
+                ),
+                WorkflowInputItem(
+                    key='dialog_files_content',
+                    type='dialog_file',
                 )
             ]
             for one in event_input_schema.get('value', []):
@@ -269,6 +348,7 @@ class WorkFlowService(BaseService):
                 elif tmp.key == 'dialog_file_accept':
                     tmp.type = 'dialog_file_accept'
                 input_schema.value.append(tmp)
+
         workflow_event.input_schema = input_schema
         return workflow_event
 
@@ -310,3 +390,108 @@ class WorkFlowService(BaseService):
             )]
         )
         return workflow_event
+
+    @classmethod
+    async def invoke_workflow(cls,workflow_id: str,
+                              version:int,
+                          user_input: Optional[dict],
+                          message_id: Optional[int],
+                          session_id: Optional[str],
+                          stream: Optional[bool] = False):
+        from bisheng.api.v2.utils import get_default_operator
+        from bisheng.worker import RedisCallback
+        login_user = get_default_operator()
+        workflow_id = workflow_id
+
+        # 解析出chat_id和unique_id
+        if not session_id:
+            chat_id = uuid.uuid4().hex
+            unique_id = f'{chat_id}_async_task_id'
+            session_id = unique_id
+        else:
+            chat_id = session_id.split('_', 1)[0]
+            unique_id = session_id
+        logger.debug(f'invoke_workflow: {workflow_id}, {session_id}')
+        workflow = RedisCallback(unique_id, workflow_id, chat_id, str(login_user.user_id))
+
+        # 查询工作流信息
+        logger.info("workflow_id,version",workflow_id,version)
+        workflow_info = FlowVersionDao.get_version_by_id(version)
+        if not workflow_info:
+            raise NotFoundError.http_exception()
+        if workflow_info.flow_type != FlowType.WORKFLOW.value:
+            raise NotFoundError.http_exception()
+
+        # 查询工作流状态
+        status_info = workflow.get_workflow_status()
+        if not status_info:
+            # 初始化工作流
+            workflow.set_workflow_data(workflow_info.data)
+            workflow.set_workflow_status(WorkflowStatus.WAITING.value)
+            # 发起异步任务
+            execute_workflow.delay(unique_id, workflow_id, chat_id, str(login_user.user_id))
+        else:
+            # 设置用户的输入
+            if status_info['status'] == WorkflowStatus.INPUT.value and user_input:
+                workflow.set_user_input(user_input, message_id)
+                workflow.set_workflow_status(WorkflowStatus.INPUT_OVER.value)
+
+        logger.debug(f'waiting workflow over or input: {workflow_id}, {session_id}')
+
+        async def handle_workflow_event(event_list: List):
+            async for event in workflow.get_response_until_break():
+                if event.category == WorkflowEventType.NodeRun.value:
+                    continue
+                logger.debug(f'handle_workflow_event workflow event: {event}')
+                # 非流式请求，过滤掉节点产生的流式输出事件
+                if not stream and event.category == WorkflowEventType.StreamMsg.value and event.type == 'stream':
+                    continue
+                workflow_stream = WorkflowStream(session_id=session_id,
+                                                 data=WorkFlowService.convert_chat_response_to_workflow_event(event))
+                event_list.append(workflow_stream.data)
+                yield workflow_stream
+            tmp_status_info = workflow.get_workflow_status()
+            if tmp_status_info['status'] in [WorkflowStatus.SUCCESS.value, WorkflowStatus.FAILED.value]:
+                workflow.clear_workflow_status()
+            if tmp_status_info['status'] == WorkflowStatus.SUCCESS.value:
+                workflow_stream = WorkflowStream(session_id=session_id,
+                                                 data=WorkflowEvent(event=WorkflowEventType.Close.value))
+                event_list.append(workflow_stream.data)
+                yield workflow_stream
+
+        res = []
+        # 非流式返回累计的事件列表
+        if not stream:
+            async for _ in handle_workflow_event(res):
+                pass
+            return {
+                'session_id': session_id,
+                'events': res
+            }
+
+    # 仅处理一问一答的workflow
+    @classmethod
+    async def run_workflow_1Q1A(cls, workflow_id: str, version: int, input: str) -> str:
+        events = await cls.invoke_workflow(workflow_id, version, None, None, None, False)
+        session_id = events['session_id']
+        message_id = None
+        node_id = None
+        evens = events['events']
+        for even in evens:
+            if even.event != WorkflowEventType.UserInput.value:
+                continue
+            message_id = even.message_id
+            node_id = even.node_id
+            break
+        out_put = ""
+        if node_id and message_id:
+            result = await cls.invoke_workflow(workflow_id, version, {node_id:{"user_input": str(input)}}, message_id, session_id, False)
+            for even in result['events']:
+                if even.event!= WorkflowEventType.OutputMsg.value:
+                    continue
+                out_put = even.output_schema.message
+                break
+        return out_put
+
+
+

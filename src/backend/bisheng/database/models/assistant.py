@@ -31,6 +31,9 @@ class AssistantBase(SQLModelSerializable):
     status: int = Field(default=AssistantStatus.OFFLINE.value, description='助手是否上线')
     user_id: int = Field(default=0, description='创建用户ID')
     is_delete: int = Field(default=0, description='删除标志')
+
+    is_allow_upload: int = Field(default=1, description='是否允许上传文件')
+    file_max_size: int = Field(default=15000, description='文件大小限制')
     create_time: Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, index=True, server_default=text('CURRENT_TIMESTAMP')))
     update_time: Optional[datetime] = Field(default=None,
@@ -104,6 +107,14 @@ class AssistantDao(AssistantBase):
         with session_getter() as session:
             statement = select(Assistant).filter(Assistant.name == name,
                                                  Assistant.user_id == user_id,
+                                                 Assistant.is_delete == 0)
+            return session.exec(statement).first()
+
+    @classmethod
+    def get_assistant_by_name_filter_self(cls, name: str, flow_id: Optional[str] = None) -> Assistant:
+        with session_getter() as session:
+            statement = select(Assistant).filter(Assistant.name == name,
+                                                 Assistant.id != flow_id,
                                                  Assistant.is_delete == 0)
             return session.exec(statement).first()
 

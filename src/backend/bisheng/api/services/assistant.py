@@ -25,17 +25,36 @@ from bisheng.database.models.assistant import (Assistant, AssistantDao, Assistan
                                                AssistantStatus)
 from bisheng.database.models.flow import Flow, FlowDao
 from bisheng.database.models.gpts_tools import GptsToolsDao, GptsToolsTypeRead, GptsTools
+from bisheng.database.models.group import GroupDao
 from bisheng.database.models.group_resource import GroupResourceDao, GroupResource, ResourceTypeEnum
 from bisheng.database.models.knowledge import KnowledgeDao
 from bisheng.database.models.role_access import AccessType, RoleAccessDao
 from bisheng.database.models.tag import TagDao
 from bisheng.database.models.user import UserDao
+from bisheng.database.models.session import MessageSessionDao
 from bisheng.database.models.user_group import UserGroupDao
 from bisheng.database.models.user_role import UserRoleDao
 
 
 class AssistantService(BaseService, AssistantUtils):
     UserCache: InMemoryCache = InMemoryCache()
+
+
+    @classmethod
+    def get_company_members_by_uid(cls, user_id: int) -> List[int]:
+        user_groups = UserGroupDao.get_user_group(user_id)
+        if not user_groups:
+            return []
+        group_ids = [ug.group_id for ug in user_groups]
+        group_infos = GroupDao.get_group_by_ids(group_ids)
+        codes = set([str(g.code).split("|")[0] for g in group_infos if g.code])
+        all_group_id = []
+        for code in codes:
+            group_info = GroupDao.get_child_groups(code)
+            all_group_id.extend([g.id for g in group_info])
+        all_user_id = UserGroupDao.get_groups_user(all_group_id)
+        logger.info(f"AssistantService get_company_members_by_uid user_id={user_id} all_user_id={all_user_id}")
+        return list(set(all_user_id))
 
     @classmethod
     def get_assistant(cls,
@@ -112,8 +131,10 @@ class AssistantService(BaseService, AssistantUtils):
         if not assistant or assistant.is_delete:
             return AssistantNotExistsError.return_resp()
         # 检查是否有权限获取信息
-        if not login_user.access_check(assistant.user_id, assistant.id, AccessType.ASSISTANT_READ):
-            return UnAuthorizedError.return_resp()
+        all_user_id = cls.get_company_members_by_uid(login_user.user_id)
+        if assistant.user_id not in all_user_id:
+            if not login_user.access_check(assistant.user_id, assistant.id, AccessType.ASSISTANT_READ):
+                return UnAuthorizedError.return_resp()
 
         tool_list = []
         flow_list = []
@@ -143,7 +164,7 @@ class AssistantService(BaseService, AssistantUtils):
             -> UnifiedResponseModel[AssistantInfo]:
 
         # 检查下是否有重名
-        if cls.judge_name_repeat(assistant.name, assistant.user_id):
+        if cls.judge_name_repeat(assistant.name, assistant.id):
             return AssistantNameRepeatError.return_resp()
 
         logger.info(f"assistant original prompt id: {assistant.id}, desc: {assistant.prompt}")
@@ -268,8 +289,10 @@ class AssistantService(BaseService, AssistantUtils):
         # 更新助手数据
         if req.name and req.name != assistant.name:
             # 检查下是否有重名
-            if cls.judge_name_repeat(req.name, assistant.user_id):
+            if cls.judge_name_repeat(req.name, assistant.id):
                 return AssistantNameRepeatError.return_resp()
+            # 修改审计/运营中的flow_name
+            MessageSessionDao.update_flow_name_by_flow_id(assistant.id, req.name)
             assistant.name = req.name
         assistant.desc = req.desc
         assistant.logo = req.logo
@@ -280,6 +303,8 @@ class AssistantService(BaseService, AssistantUtils):
         assistant.temperature = req.temperature
         assistant.update_time = datetime.now()
         assistant.max_token = req.max_token
+        assistant.is_allow_upload = req.is_allow_upload
+        assistant.file_max_size = req.file_max_size
         AssistantDao.update_assistant(assistant)
 
         # 更新助手关联信息
@@ -376,9 +401,8 @@ class AssistantService(BaseService, AssistantUtils):
         tool_type_ids_extra = []
         if is_preset != ToolPresetType.PRESET.value:
             # 获取自定义工具列表时，需要包含用户可用的工具列表
-            user_role = UserRoleDao.get_user_roles(user.user_id)
-            if user_role:
-                role_ids = [role.role_id for role in user_role]
+            role_ids = user.user_role
+            if role_ids:
                 role_access = RoleAccessDao.get_role_access(role_ids, AccessType.GPTS_TOOL_READ)
                 if role_access:
                     tool_type_ids_extra = [int(access.third_id) for access in role_access]
@@ -629,9 +653,9 @@ class AssistantService(BaseService, AssistantUtils):
         return user.user_name
 
     @classmethod
-    def judge_name_repeat(cls, name: str, user_id: int) -> bool:
+    def judge_name_repeat(cls, name: str, flow_id: Optional[str] = None) -> bool:
         """ 判断助手名字是否重复 """
-        assistant = AssistantDao.get_assistant_by_name_user_id(name, user_id)
+        assistant = AssistantDao.get_assistant_by_name_filter_self(name, flow_id) or FlowDao.get_flow_by_name_filter_self(name, flow_id)
         if assistant:
             return True
         return False
