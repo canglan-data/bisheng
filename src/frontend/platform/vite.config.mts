@@ -8,7 +8,7 @@ import svgr from "vite-plugin-svgr";
 
 // Use environment variable to determine the target.
 //  const target = process.env.VITE_PROXY_TARGET || "http://127.0.0.1:7860";
- const target = process.env.VITE_PROXY_TARGET || "http://192.168.106.120:3002";
+ const target = process.env.VITE_PROXY_TARGET || "http://8.130.146.85:8080";
 const apiRoutes = ["^/api/", "/health"];
 
 const proxyTargets = apiRoutes.reduce((proxyObj, route) => {
@@ -50,7 +50,8 @@ proxyTargets['/custom_base/api'] = {
  * 内层网关访问 api或者前端静态资源需要去掉【custom】前缀
 */
 // const app_env = { BASE_URL: '/custom_base' }
-const app_env = { BASE_URL: '' }
+const app_env = { BASE_URL: '/platform' }
+// const app_env = { BASE_URL: '' }
 
 export default defineConfig(() => {
   return {
