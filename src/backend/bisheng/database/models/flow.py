@@ -299,7 +299,8 @@ class FlowDao(FlowBase):
 
     @classmethod
     def filter_flows_by_ids(cls, flow_ids: List[str], keyword: str = None,
-                            page: int = 0, limit: int = 0, flow_type: int = FlowType.FLOW.value) \
+                            page: int = 0, limit: int = 0, flow_type: int = FlowType.FLOW.value,
+                            user_ids = None) \
             -> (List[Flow], int):
         """
         通过技能ID过滤技能列表，只返回简略信息，不包含data
@@ -315,6 +316,9 @@ class FlowDao(FlowBase):
                 or_(Flow.name.like(f'%{keyword}%'), Flow.description.like(f'%{keyword}%')))
             count_statement = count_statement.where(
                 or_(Flow.name.like(f'%{keyword}%'), Flow.description.like(f'%{keyword}%')))
+        if user_ids:
+            statement = statement.where(Flow.user_id.in_(user_ids))
+            count_statement = count_statement.where(Flow.user_id.in_(user_ids))
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
         statement = statement.where(Flow.flow_type == flow_type)

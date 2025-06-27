@@ -223,7 +223,7 @@ class GptsToolsDao(GptsToolsBase):
 
     @classmethod
     def filter_tool_types_by_ids(cls, tool_type_ids: List[int], keyword: Optional[str] = None, page: int = 0,
-                                 limit: int = 0, include_preset: bool = False) -> (List[GptsToolsType], int):
+                                 limit: int = 0, include_preset: bool = False,user_ids:List[int] = None) -> (List[GptsToolsType], int):
         """
         根据工具类别id过滤工具类别
         """
@@ -245,7 +245,9 @@ class GptsToolsDao(GptsToolsBase):
                 GptsToolsType.name.like(f'%{keyword}%'),
                 GptsToolsType.description.like(f'%{keyword}%')
             ))
-
+        if user_ids:
+            statement = statement.where(GptsToolsType.user_id.in_(user_ids))
+            count_statement = count_statement.where(GptsToolsType.user_id.in_(user_ids))
         if limit and page:
             statement = statement.offset(
                 (page - 1) * limit
