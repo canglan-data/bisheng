@@ -346,6 +346,12 @@ class RoleGroupService():
         group_ids = [ug.group_id for ug in user_groups]
         return GroupDao.get_group_by_ids(group_ids)
 
+    def get_group_and_child_group_member(self,group_id) -> List[int]:
+        child_groups = GroupDao.get_all_child_groups_by_id([group_id])
+        group_member = UserGroupDao.get_groups_users([x.id for x in child_groups])
+        return [one.user_id for one in group_member]
+
+
     def set_group_admin(self, request: Request, login_user: UserPayload, user_ids: List[int], group_id: int):
         """设置用户组管理员"""
         # 获取目前用户组的管理员列表
@@ -459,13 +465,14 @@ class RoleGroupService():
         rs_type = ResourceTypeEnum.FLOW
         if flow_type == FlowType.WORKFLOW:
             rs_type = ResourceTypeEnum.WORK_FLOW
-        resource_list = GroupResourceDao.get_group_resource(group_id, rs_type)
-        if not resource_list:
-            return [], 0
+        # resource_list = GroupResourceDao.get_group_resource(group_id, rs_type)
+        # if not resource_list:
+        #     return [], 0
+        # flow_ids = [resource.third_id for resource in resource_list]
+        user_ids = self.get_group_and_child_group_member(group_id)
         res = []
-        flow_ids = [UUID(resource.third_id) for resource in resource_list]
         flow_type_value = flow_type.value if flow_type else FlowType.FLOW.value
-        data, total = FlowDao.filter_flows_by_ids(flow_ids, keyword, page_num, page_size, flow_type_value)
+        data, total = FlowDao.filter_flows_by_ids(None, keyword, page_num, page_size, flow_type_value,user_ids)
         db_user_ids = {one.user_id for one in data}
         user_map = self.get_user_map(db_user_ids)
         for one in data:
@@ -478,13 +485,14 @@ class RoleGroupService():
     def get_group_knowledge(self, group_id: int, keyword: str, page_size: int, page_num: int) -> (List[Any], int):
         """ 获取用户组下的知识库列表 """
         # 查询用户组下的知识库ID列表
-        resource_list = GroupResourceDao.get_group_resource(group_id, ResourceTypeEnum.KNOWLEDGE)
-        if not resource_list:
-            return [], 0
-        res = []
-        knowledge_ids = [int(resource.third_id) for resource in resource_list]
+        # resource_list = GroupResourceDao.get_group_resource(group_id, ResourceTypeEnum.KNOWLEDGE)
+        # if not resource_list:
+        #     return [], 0
+        # knowledge_ids = [int(resource.third_id) for resource in resource_list]
         # 查询知识库
-        data, total = KnowledgeDao.filter_knowledge_by_ids(knowledge_ids, keyword, page_num, page_size)
+        res = []
+        user_ids = self.get_group_and_child_group_member(group_id)
+        data, total = KnowledgeDao.filter_knowledge_by_ids(None, keyword, page_num, page_size,user_ids)
         db_user_ids = {one.user_id for one in data}
         user_map = self.get_user_map(db_user_ids)
         for one in data:
@@ -496,12 +504,13 @@ class RoleGroupService():
     def get_group_assistant(self, group_id: int, keyword: str, page_size: int, page_num: int) -> (List[Any], int):
         """ 获取用户组下的助手列表 """
         # 查询用户组下的助手ID列表
-        resource_list = GroupResourceDao.get_group_resource(group_id, ResourceTypeEnum.ASSISTANT)
-        if not resource_list:
-            return [], 0
+        # resource_list = GroupResourceDao.get_group_resource(group_id, ResourceTypeEnum.ASSISTANT)
+        # if not resource_list:
+        #     return [], 0
+        # assistant_ids = [resource.third_id for resource in resource_list]  # 查询助手
+        user_ids = self.get_group_and_child_group_member(group_id)
         res = []
-        assistant_ids = [resource.third_id for resource in resource_list]  # 查询助手
-        data, total = AssistantDao.filter_assistant_by_id(assistant_ids, keyword, page_num, page_size)
+        data, total = AssistantDao.filter_assistant_by_id(None, keyword, page_num, page_size,user_ids)
         for one in data:
             simple_one = AssistantService.return_simple_assistant_info(one)
             res.append(simple_one)
@@ -510,13 +519,14 @@ class RoleGroupService():
     def get_group_tool(self, group_id: int, keyword: str, page_size: int, page_num: int) -> (List[Any], int):
         """ 获取用户组下的工具列表 """
         # 查询用户组下的工具ID列表
-        resource_list = GroupResourceDao.get_group_resource(group_id, ResourceTypeEnum.GPTS_TOOL)
-        if not resource_list:
-            return [], 0
+        # resource_list = GroupResourceDao.get_group_resource(group_id, ResourceTypeEnum.GPTS_TOOL)
+        # if not resource_list:
+        #     return [], 0
+        # tool_ids = [int(resource.third_id) for resource in resource_list]
+        user_ids = self.get_group_and_child_group_member(group_id)
         res = []
-        tool_ids = [int(resource.third_id) for resource in resource_list]
         # 查询工具
-        data, total = GptsToolsDao.filter_tool_types_by_ids(tool_ids, keyword, page_num, page_size)
+        data, total = GptsToolsDao.filter_tool_types_by_ids(None, keyword, page_num, page_size,user_ids)
         db_user_ids = {one.user_id for one in data}
         user_map = self.get_user_map(db_user_ids)
         for one in data:
