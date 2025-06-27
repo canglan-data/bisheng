@@ -473,6 +473,8 @@ class RoleGroupService():
         #     return [], 0
         # flow_ids = [resource.third_id for resource in resource_list]
         user_ids = self.get_group_and_child_group_member(group_id)
+        if not user_ids:
+            return [], 0
         res = []
         flow_type_value = flow_type.value if flow_type else FlowType.FLOW.value
         data, total = FlowDao.filter_flows_by_ids(None, keyword, page_num, page_size, flow_type_value,user_ids)
@@ -495,6 +497,8 @@ class RoleGroupService():
         # 查询知识库
         res = []
         user_ids = self.get_group_and_child_group_member(group_id)
+        if not user_ids:
+            return [], 0
         data, total = KnowledgeDao.filter_knowledge_by_ids(None, keyword, page_num, page_size,user_ids)
         db_user_ids = {one.user_id for one in data}
         user_map = self.get_user_map(db_user_ids)
@@ -512,6 +516,8 @@ class RoleGroupService():
         #     return [], 0
         # assistant_ids = [resource.third_id for resource in resource_list]  # 查询助手
         user_ids = self.get_group_and_child_group_member(group_id)
+        if not user_ids:
+            return [], 0
         res = []
         data, total = AssistantDao.filter_assistant_by_id(None, keyword, page_num, page_size,user_ids)
         for one in data:
@@ -527,6 +533,8 @@ class RoleGroupService():
         #     return [], 0
         # tool_ids = [int(resource.third_id) for resource in resource_list]
         user_ids = self.get_group_and_child_group_member(group_id)
+        if not user_ids:
+            return [], 0
         res = []
         # 查询工具
         data, total = GptsToolsDao.filter_tool_types_by_ids(None, keyword, page_num, page_size,user_ids)
