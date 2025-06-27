@@ -389,7 +389,7 @@ async def get_audit_resources(*, request: Request, login_user: UserPayload = Dep
 
 @router.get("/roles")
 async def get_group_roles(*,
-                          group_id: list[str] = Query(None, description="用户组ID列表，不传则查询所有有权限的角色列表"),
+                          group_id: list[int] = Query(None, description="用户组ID列表，不传则查询所有有权限的角色列表"),
                           keyword: str = Query(None, description="搜索关键字"),
                           include_parent: bool = Query(False, description="是否包含父用户组绑定的角色"),
                           page: int = 0,

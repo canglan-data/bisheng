@@ -347,8 +347,11 @@ class RoleGroupService():
         return GroupDao.get_group_by_ids(group_ids)
 
     def get_group_and_child_group_member(self,group_id) -> List[int]:
+        logger.debug(f"get_group_and_child_group_member: {group_id}")
         child_groups = GroupDao.get_all_child_groups_by_id([group_id])
-        group_member = UserGroupDao.get_groups_users([x.id for x in child_groups])
+        logger.debug(f"child_groups: {child_groups}")
+        group_member = UserGroupDao.get_groups_users([x.id for x in child_groups]+[group_id])
+        logger.debug(f"group_member: {group_member}")
         return [one.user_id for one in group_member]
 
 
@@ -616,7 +619,9 @@ class RoleGroupService():
         else:
             # 查询下是否是其他用户组的管理员
             user_groups = UserGroupDao.get_user_admin_group(login_user.user_id)
+            logger.info(f"get_group_roles {str(user_groups)},{login_user.user_id}")
             user_group_ids = [one.group_id for one in user_groups if one.is_group_admin]
+            logger.info(f"get_group_roles group_ids: {str(group_ids)} user_group_ids: {str(user_group_ids)}")
             if group_ids:
                 group_ids = list(set(group_ids) & set(user_group_ids))
             else:
