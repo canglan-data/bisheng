@@ -218,7 +218,8 @@ class KnowledgeDao(KnowledgeBase):
                                 knowledge_ids: List[int],
                                 keyword: str = None,
                                 page: int = 0,
-                                limit: int = 0) -> (List[Knowledge], int):
+                                limit: int = 0,
+                                user_ids:List[int]=None) -> (List[Knowledge], int):
         """
         根据关键字和知识库id过滤出对应的知识库
 
@@ -235,6 +236,9 @@ class KnowledgeDao(KnowledgeBase):
             count_statement = count_statement.where(
                 or_(Knowledge.name.like('%' + keyword + '%'),
                     Knowledge.description.like('%' + keyword + '%')))
+        if user_ids:
+            statement = statement.where(Knowledge.user_id.in_(user_ids))
+            count_statement = count_statement.where(Knowledge.user_id.in_(user_ids))
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
         statement = statement.order_by(Knowledge.update_time.desc())
