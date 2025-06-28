@@ -155,7 +155,7 @@ export default function EvaluationPage() {
                         >
                           {t(EvaluationStatusLabelMap[el.status].label)}
                           {
-                            el.status === EvaluationStatusEnum.failed && <QuestionTooltip content={''} />
+                            el.status === EvaluationStatusEnum.failed && <QuestionTooltip content={el.failed_info} />
                           }
                           {el.status === EvaluationStatusEnum.running
                             ? ` ${el.progress}`
