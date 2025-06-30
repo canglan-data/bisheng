@@ -41,7 +41,7 @@ const ApiAccessFlow = () => {
         })
     }
 
-    const preUrl = [location.origin, __APP_ENV__.BASE_URL].filter(item => item).join('/');
+    const preUrl = [location.origin, __APP_ENV__.BASE_URL].filter(item => item).join('');
 
     const scrollToSection = (params) => {
 

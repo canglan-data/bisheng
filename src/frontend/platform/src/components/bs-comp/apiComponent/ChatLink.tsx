@@ -72,7 +72,7 @@ const NoLoginLink = ({ type, noLogin = false }) => {
     })
   }
 
-  const preUrl = [location.origin, __APP_ENV__.BASE_URL].filter(item => item).join('/');
+  const preUrl = [location.origin, __APP_ENV__.BASE_URL].filter(item => item).join('');
 
   const [embed, setEmbed] = useState(false)
   const url = useMemo(() => {
