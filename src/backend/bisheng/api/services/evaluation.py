@@ -99,8 +99,8 @@ class EvaluationService:
             work_flow_names = {str(one.id): one.name for one in work_flows}
 
         if work_flow_version_ids:
-            versions = FlowVersionDao.get_list_by_ids(ids=work_flow_version_ids)
-            work_flow_versions = {one.id: one.name for one in versions}
+            versions_work_flow = FlowVersionDao.get_list_by_ids(ids=work_flow_version_ids)
+            work_flow_versions = {one.id: one.name for one in versions_work_flow}
 
         for one in res_evaluations:
             evaluation_item = jsonable_encoder(one)
