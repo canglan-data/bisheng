@@ -92,6 +92,9 @@ export default function EvaluatingCreate() {
     if (!selectedKeyId) errorlist.push(t("evaluation.enterUniqueId"));
     if (["flow", "work_flow"].includes(selectedType) && !selectedVersion)
       errorlist.push(t("evaluation.enterVersion"));
+
+    console.log('selectedType', selectedType, 'selectedVersion', selectedVersion);
+    
     if (!fileRef.current) errorlist.push(t("evaluation.enterFile"));
     if (!prompt) errorlist.push(t("evaluation.enterPrompt"));
 
@@ -231,7 +234,11 @@ export default function EvaluatingCreate() {
                   </Select>
                   <Select
                     value={selectedKeyId}
-                    onValueChange={(id) => setSelectedKeyId(id)}
+                    onValueChange={(id) => {
+                      setSelectedKeyId(id)
+                      // 切换应用需要把版本号设置为空
+                      setSelectedVersion("");
+                    }}
                     onOpenChange={() => {
                       if (!selectedType)
                         return handleError([t("evaluation.enterExecType")]);

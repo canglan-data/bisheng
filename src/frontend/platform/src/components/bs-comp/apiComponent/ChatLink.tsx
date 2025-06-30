@@ -72,21 +72,23 @@ const NoLoginLink = ({ type, noLogin = false }) => {
     })
   }
 
+  const preUrl = [location.origin, __APP_ENV__.BASE_URL].filter(item => item).join('');
+
   const [embed, setEmbed] = useState(false)
   const url = useMemo(() => {
-    const loginUrl = `${location.origin}/chat/${type}/auth/${id}`
-    const noLoginUrl = `${location.origin}/chat/${type === API_TYPE.SKILL ? '' : type+'/'}${id}`
+    const loginUrl = `${preUrl}/chat/${type}/auth/${id}`
+    const noLoginUrl = `${preUrl}/chat/${type === API_TYPE.SKILL ? '' : type+'/'}${id}`
     return noLogin ? noLoginUrl : loginUrl;
-  }, [type, noLogin])
+  }, [type, noLogin, preUrl])
 
   const embedCode = useMemo(() => {
     if (embed) return `<script
-  src="${location.origin}/iframe.js"
+  src="${preUrl}/iframe.js"
   id="chatbot-iframe-script"
   data-bot-src="${url}"
   data-drag="true"
-  data-open-icon="${location.origin}/user.png"
-  data-close-icon="${location.origin}/logo-small-dark.png"
+  data-open-icon="${preUrl}/user.png"
+  data-close-icon="${preUrl}/logo-small-dark.png"
   defer
 ></script>
 <script>console.log("chat ready")</script>
@@ -98,7 +100,7 @@ const NoLoginLink = ({ type, noLogin = false }) => {
   frameborder="0"
   allow="fullscreen;clipboard-write">
 </iframe>`
-  }, [embed, url])
+  }, [embed, url, preUrl])
 
   return (
     <section className='pb-20 max-w-[1600px]'>

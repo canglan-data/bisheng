@@ -334,10 +334,6 @@ class WorkFlowService(BaseService):
                     type='text',
                     required=True,
                     value=''
-                ),
-                WorkflowInputItem(
-                    key='dialog_files_content',
-                    type='dialog_file',
                 )
             ]
             for one in event_input_schema.get('value', []):

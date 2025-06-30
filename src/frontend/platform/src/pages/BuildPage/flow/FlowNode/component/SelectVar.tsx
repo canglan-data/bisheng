@@ -31,12 +31,14 @@ const getSpecialVar = (obj, type, onlyImg = false) => {
                 if (item.type === 'file') {
                     // if (item.multiple) return res
                     // res.push({ label: item.key, value: item.key })
-                    if (!onlyImg) {
+                    if (onlyImg){
+                        item.file_types.includes('image') && res.push({ label: item.image_file, value: item.image_file })
+                    } else {
                         res.push({ label: item.file_content, value: item.file_content })
                         res.push({ label: item.file_path, value: item.file_path })
+                        item.file_types.includes('image') && res.push({ label: item.image_file, value: item.image_file })
+                        item.file_types.includes('audio') && res.push({ label: item.audio_file, value: item.audio_file })
                     }
-                    item.file_types.includes('image') && res.push({ label: item.image_file, value: item.image_file })
-                    item.file_types.includes('audio') && res.push({ label: item.audio_file, value: item.audio_file })
                 } else if (!onlyImg) {
                     res.push({ label: item.key, value: item.key })
                 }
@@ -184,9 +186,11 @@ const SelectVar = forwardRef(({
      * 限制findInputFileOnly为true时，过滤其他变量,只返回dialog_image_files文件变量
      */
     function processInputNode(inputNodeData, findInputFileOnly) {
+        // form_input
         if (inputNodeData.tab.value === 'form_input') return inputNodeData;
+        // 以下就是普通的input
         const processedData = cloneDeep(inputNodeData);
-        let acceptType = 'all';
+        let acceptType = [];
 
         const groupParam = processedData.group_params.find(group =>
             group.params.some(param => {
@@ -201,9 +205,14 @@ const SelectVar = forwardRef(({
         if (!groupParam) return processedData;
 
         // 根据文件类型过滤参数
-        if (acceptType === 'file') {
+        if (!acceptType.includes('image')) {
             groupParam.params = groupParam.params.filter(param =>
                 param.key !== 'dialog_image_files'
+            );
+        }
+        if (!acceptType.includes('audio')) {
+            groupParam.params = groupParam.params.filter(param =>
+                param.key !== 'dialog_audio_files'
             );
         }
         // 如果只需要文件输入参数
