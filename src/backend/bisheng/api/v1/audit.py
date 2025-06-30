@@ -91,7 +91,7 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
                                                    group_ids=group_ids, start_date=start_date, end_date=end_date,
                                                    feedback=feedback, review_status=review_status,
                                                    sensitive_status=sensitive_status, page=page, page_size=page_size,
-                                                   keyword=keyword, category=['question', 'answer'])
+                                                   keyword=keyword, is_delete=None, category=['question', 'answer'])
     return resp_200(data={
         'data': data,
         'total': total

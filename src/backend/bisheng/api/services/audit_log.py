@@ -521,6 +521,7 @@ class AuditLogService:
                          feedback: str,
                          sensitive_status: List[SensitiveStatus] = None,
                          review_status: List[ReviewStatus] = None,
+                         is_delete: int = 0,
                          category: List[str] = None,
                          page: int = 1, page_size: int = 10, keyword=None) -> (list, int):
         # flag, filter_flow_ids = cls.get_filter_flow_ids(user, flow_ids, group_ids)
@@ -545,7 +546,7 @@ class AuditLogService:
         logger.info(f"get_session_list user_ids {user_ids} | group_ids {group_ids}")
         chat_ids = []
         if start_date or end_date:
-            chat_ids = cls.get_filter_chat_ids_by_time(flow_ids, start_date, end_date, category)
+            chat_ids = cls.get_filter_chat_ids_by_time(flow_ids, start_date, end_date, is_delete, category)
         if keyword:
             keyword2 = keyword.encode("unicode_escape").decode().replace("\\u", "%")
             where = select(ChatMessage).where(or_(
@@ -602,8 +603,8 @@ class AuditLogService:
 
     @classmethod
     def get_filter_chat_ids_by_time(cls,flow_ids:List[str], start_date: datetime = None, end_date: datetime = None,
-                                    category: List[str] = None):
-        chat_ids = ChatMessageDao.get_chat_id_by_time(flow_ids, start_date, end_date, category)
+                                    is_delete : int=0, category: List[str] = None):
+        chat_ids = ChatMessageDao.get_chat_id_by_time(flow_ids, start_date, end_date, is_delete, category)
         if len(chat_ids) == 0:
             chat_ids = [""]
         return chat_ids
@@ -677,7 +678,7 @@ class AuditLogService:
 
     @classmethod
     def session_export(cls, all_session: list[AppChatList], export_type: str = "", start_date: datetime=None, end_date: datetime=None):
-        excel_data = [["会话ID","应用名称","会话创建时间","用户名称","消息角色","组织架构",
+        excel_data = [["会话ID","应用名称","应用版本","应用更新时间","会话创建时间","用户名称","消息角色","组织架构",
                     "消息发送时间","用户消息文本内容","消息角色", "是否命中安全审查",  # 移除了第一次出现的点赞等列
                     "消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈","复制","是否命中安全审查"]]
         for session in all_session:
@@ -685,7 +686,7 @@ class AuditLogService:
             chat_id = session.chat_id
             where = select(ChatMessage).where(ChatMessage.flow_id == flow_id, ChatMessage.chat_id == chat_id)
             if start_date:
-                where = where.where(ChatMessage.update_time >= start_date)
+                where = where.where(ChatMessage.create_time >= start_date)
             if end_date:
                 where = where.where(ChatMessage.create_time <= end_date)
             with session_getter() as query_session:
@@ -702,6 +703,8 @@ class AuditLogService:
                             excel_data.append(c_qa)
                         c_qa = [session.chat_id,
                                 session.flow_name,
+                                msg.flow_version_name,
+                                msg.flow_update_time,
                                 session.create_time,
                                 session.user_name,
                                 "系统",

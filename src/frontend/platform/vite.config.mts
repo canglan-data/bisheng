@@ -50,7 +50,8 @@ proxyTargets['/custom_base/api'] = {
  * 内层网关访问 api或者前端静态资源需要去掉【custom】前缀
 */
 // const app_env = { BASE_URL: '/custom_base' }
-const app_env = { BASE_URL: '' }
+const app_env = { BASE_URL: '/platform' }
+// const app_env = { BASE_URL: '' }
 
 export default defineConfig(() => {
   return {
