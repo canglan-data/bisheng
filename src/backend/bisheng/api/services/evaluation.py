@@ -265,7 +265,12 @@ def add_evaluation_task(evaluation_id: int):
                     tweaks={},
                     index=0,
                     versions=[flow_version]))
-                one["answer"] = flow_result.get(flow_version.id)
+                try:
+                    one["answer"] = flow_result.get(flow_version.id)
+                    one["error"]
+                except Exception as e:
+                    one["answer"] = ""
+                    one["error"] = str(e)
                 current_progress += progress_increment
                 redis_client.set(redis_key, round(current_progress))
 
@@ -276,25 +281,36 @@ def add_evaluation_task(evaluation_id: int):
             gpts_agent = AssistantAgent(assistant_info=assistant, chat_id="")
             asyncio.run(gpts_agent.init_assistant())
             for index, one in enumerate(csv_data):
-                messages = asyncio.run(gpts_agent.run(one.get('question')))
-                if len(messages):
-                    one["answer"] = messages[0].content
+                try:
+                    messages = asyncio.run(gpts_agent.run(one.get('question')))
+                    if len(messages):
+                        one["answer"] = messages[0].content
+                        one["error"] = ""
+                except Exception as e:
+                    one["answer"] = ""
+                    one["error"] = str(e)
                 current_progress += progress_increment
                 redis_client.set(redis_key, round(current_progress))
 
         if evaluation.exec_type == ExecType.WORK_FLOW.value:
             for index, one in enumerate(csv_data):
-                answer = asyncio.run(WorkFlowService.run_workflow_1Q1A(evaluation.unique_id,evaluation.version,one.get('question')))
-                one["answer"] = answer
+                try:
+                    answer = asyncio.run(WorkFlowService.run_workflow_1Q1A(evaluation.unique_id,evaluation.version,one.get('question')))
+                    one["answer"] = answer
+                    one["error"] = ""
+                except Exception as e:
+                    one["answer"] = ""
+                    one["error"] = str(e)
                 current_progress += progress_increment
                 redis_client.set(redis_key, round(current_progress))
 
+        error_info = {str(one.get('question')):str(one.get('error')) for one in csv_data if len(str(one.get('error')))>0}
         _llm = LLMService.get_evaluation_llm_object()
         llm = LangchainLLM(_llm)
         data_samples = {
-            "question": [one.get('question') for one in csv_data],
+            "question": [str(one.get('question')) for one in csv_data],
             "answer": [one.get('answer') for one in csv_data],
-            "ground_truths": [[one.get('ground_truth')] for one in csv_data]
+            "ground_truths": [[str(one.get('ground_truth'))] for one in csv_data]
         }
         dataset = Dataset.from_dict(data_samples)
         answer_correctness_bisheng = AnswerCorrectnessBisheng(llm=llm)
@@ -314,7 +330,8 @@ def add_evaluation_task(evaluation_id: int):
             ("statements_num_overlap", "statements_num_overlap", 2),
             ("answer_recall", "recall", 3),
             ("answer_precision", "precision", 3),
-            ("answer_f1", "F1", 3)
+            ("answer_f1", "F1", 3),
+            ("error", "error", 1)
         ]
         row_list = []
         tmp_dict = defaultdict(int)
@@ -323,6 +340,9 @@ def add_evaluation_task(evaluation_id: int):
         for index, one in enumerate(question):
             row_data = {}
             for field, title, unit_type in columns:
+                if field == 'error':
+                    row_data[field] = error_info.get(one,'')
+                    continue
                 value = result.get(field)[index]
                 if unit_type != 1:
                     tmp_dict[field] += value
@@ -342,10 +362,11 @@ def add_evaluation_task(evaluation_id: int):
 
         df = pd.DataFrame(data=row_list, columns=[one[1] for one in columns])
         result_file_path = EvaluationService.upload_result_file(df)
-
         evaluation.result_score = json.dumps(total_dict)
         evaluation.status = EvaluationTaskStatus.success.value
         evaluation.result_file_path = result_file_path
+        if len(error_info) > 0:
+            raise Exception("执行中出现错误")
         EvaluationDao.update_evaluation(evaluation=evaluation)
         redis_client.delete(redis_key)
         logger.info(f'evaluation task success id={evaluation_id}')
@@ -353,5 +374,6 @@ def add_evaluation_task(evaluation_id: int):
     except Exception as e:
         logger.exception(f'evaluation task failed id={evaluation_id} {str(e)}')
         evaluation.status = EvaluationTaskStatus.failed.value
+        evaluation.failed_info = str(e)
         EvaluationDao.update_evaluation(evaluation=evaluation)
         redis_client.delete(redis_key)
