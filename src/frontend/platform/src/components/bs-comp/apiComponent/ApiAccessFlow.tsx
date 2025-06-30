@@ -7,7 +7,7 @@ import { getCurlCode, getPythonApiCode } from '@/constants';
 import { TabsContext } from '@/contexts/tabsContext';
 import { copyText } from '@/utils';
 import { Check, Clipboard } from 'lucide-react';
-import { useContext, useState } from 'react';
+import { useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
@@ -41,6 +41,8 @@ const ApiAccessFlow = () => {
         })
     }
 
+    const preUrl = [location.origin, __APP_ENV__.BASE_URL].filter(item => item).join('/');
+
     const scrollToSection = (params) => {
 
     }
@@ -48,7 +50,7 @@ const ApiAccessFlow = () => {
     const firstCode = `import requests
 import json
 
-url = "${location.origin}/api/v2/workflow/invoke"
+url = "${preUrl}/api/v2/workflow/invoke"
 
 payload = json.dumps({
    "workflow_id": "${id}",
@@ -74,11 +76,11 @@ print(response.text)# 输出工作流的响应`
                 <CardContent>
                     <h3 className='py-2' id="guide-word">1. 工作流请求执行接口</h3>
                     <h3 className="mb-2 bg-secondary px-4 py-2 inline-flex items-center rounded-md gap-1">
-                        <Badge>POST</Badge> <span className='hover:underline cursor-pointer' onClick={handleCopyLink}>{location.origin}/api/v2/workflow/invoke</span>
+                        <Badge>POST</Badge> <span className='hover:underline cursor-pointer' onClick={handleCopyLink}>{preUrl}/api/v2/workflow/invoke</span>
                     </h3>
                     <h3 className='py-2' id="guide-word">2. 工作流停止运行接口</h3>
                     <h3 className="mb-2 bg-secondary px-4 py-2 inline-flex items-center rounded-md gap-1">
-                        <Badge>POST</Badge> <span className='hover:underline cursor-pointer' onClick={handleCopyLink}>{location.origin}/api/v2/workflow/stop</span>
+                        <Badge>POST</Badge> <span className='hover:underline cursor-pointer' onClick={handleCopyLink}>{preUrl}/api/v2/workflow/stop</span>
                     </h3>
                 </CardContent>
             </Card>
@@ -490,8 +492,8 @@ print(response.text)# 输出工作流的响应`
             {
                 "key": "dialog_file_accept",  # 上传文件的格式限制
                 "type": "dialog_file_accept",
-                "value": "all"  # 允许的文件类型
-            }
+                "value": ['file', 'audio', 'image']  # 允许的文件类型
+            },
         ]
     }
 }`}
