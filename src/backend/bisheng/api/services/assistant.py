@@ -413,14 +413,14 @@ class AssistantService(BaseService, AssistantUtils):
         # 获取用户可见的所有工具列表
         user_company_ids = cls.get_company_members_by_uid(user.user_id)
         if is_preset is None:
-            all_tool_type = GptsToolsDao.get_user_tool_type_plus(user_company_ids, tool_type_ids_extra)
+            all_tool_type = GptsToolsDao.get_user_tool_type_plus(user_company_ids, extra_tool_type_ids_not = tool_type_ids_extra)
         elif is_preset == ToolPresetType.PRESET.value:
             # 获取预置工具列表
             all_tool_type = GptsToolsDao.get_preset_tool_type()
         else:
             # 获取用户可见的自定义工具列表
-            all_tool_type = GptsToolsDao.get_user_tool_type_plus(user_company_ids, tool_type_ids_extra, False,
-                                                            ToolPresetType(is_preset))
+            all_tool_type = GptsToolsDao.get_user_tool_type_plus(user_company_ids, None, False,
+                                                            ToolPresetType(is_preset),extra_tool_type_ids_not = tool_type_ids_extra)
         tool_type_id = [one.id for one in all_tool_type]
         res = []
         tool_type_children = {}
