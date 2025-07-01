@@ -386,8 +386,14 @@ class FlowDao(FlowBase):
         else:
             statement = statement.order_by(sub_query.c.update_time.desc())
         if user_ids:
-            statement = statement.where(sub_query.c.user_id.in_(user_ids))
-            count_statement = count_statement.where(sub_query.c.user_id.in_(user_ids))
+            if id_extra:
+                statement = statement.where(
+                    or_(sub_query.c.user_id.in_(user_ids), sub_query.c.id.in_(id_extra)))
+                count_statement = count_statement.where(
+                    or_(sub_query.c.user_id.in_(user_ids), sub_query.c.id.in_(id_extra)))
+            else:
+                statement = statement.where(sub_query.c.user_id.in_(user_ids))
+                count_statement = count_statement.where(sub_query.c.user_id.in_(user_ids))
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
         with session_getter() as session:
