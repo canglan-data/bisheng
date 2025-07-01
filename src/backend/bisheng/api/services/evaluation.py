@@ -59,6 +59,10 @@ class EvaluationService:
         assistant_ids = []
         # 版本ID列表
         flow_version_ids = []
+        # work_flow ID列表
+        work_flow_ids = []
+        # work_flow版本ID列表
+        work_flow_version_ids = []
 
         for one in res_evaluations:
             if one.exec_type == ExecType.FLOW.value:
@@ -67,10 +71,16 @@ class EvaluationService:
                     flow_version_ids.append(one.version)
             if one.exec_type == ExecType.ASSISTANT.value:
                 assistant_ids.append(one.unique_id)
+            if one.exec_type == ExecType.WORK_FLOW.value:
+                work_flow_ids.append(one.unique_id)
+                if one.version:
+                    work_flow_version_ids.append(one.version)
 
         flow_names = {}
         flow_versions = {}
         assistant_names = {}
+        work_flow_names = {}
+        work_flow_versions = {}
 
         if flow_ids:
             flows = FlowDao.get_flow_by_ids(flow_ids=flow_ids)
@@ -84,14 +94,26 @@ class EvaluationService:
             assistants = AssistantDao.get_assistants_by_ids(assistant_ids=assistant_ids)
             assistant_names = {str(one.id): one.name for one in assistants}
 
+        if work_flow_ids:
+            work_flows = FlowDao.get_flow_by_ids(flow_ids=work_flow_ids)
+            work_flow_names = {str(one.id): one.name for one in work_flows}
+
+        if work_flow_version_ids:
+            versions_work_flow = FlowVersionDao.get_list_by_ids(ids=work_flow_version_ids)
+            work_flow_versions = {one.id: one.name for one in versions_work_flow}
+
         for one in res_evaluations:
             evaluation_item = jsonable_encoder(one)
             if one.exec_type == ExecType.FLOW.value:
                 evaluation_item['unique_name'] = flow_names.get(one.unique_id)
+                if one.version:
+                    evaluation_item['version_name'] = flow_versions.get(one.version)
             if one.exec_type == ExecType.ASSISTANT.value:
                 evaluation_item['unique_name'] = assistant_names.get(one.unique_id)
-            if one.version:
-                evaluation_item['version_name'] = flow_versions.get(one.version)
+            if one.exec_type == ExecType.WORK_FLOW.value:
+                evaluation_item['unique_name'] = work_flow_names.get(one.unique_id)
+                if one.version:
+                    evaluation_item['version_name'] = work_flow_versions.get(one.version)
             if one.result_score:
                 evaluation_item['result_score'] = json.loads(one.result_score)
 

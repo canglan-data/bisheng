@@ -147,7 +147,7 @@ class RoleGroupService():
             for _, group_info in group_tree[level].items():
                 if group_info.parent_id == group.id:
                     child_group[group_info.id] = group_info
-            for _, group_info in child_group.items():
+            for _, group_info in list(child_group.items()):
                 child_group.update(self.get_child_groups(group_info, group_tree, max_level))
         return child_group
 
