@@ -100,8 +100,8 @@ class WorkFlowService(BaseService):
             if role_access:
                 flow_id_extra = [access.third_id for access in role_access]
             all_user_id = cls.get_company_members_by_uid(user.user_id)
-            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, flow_id_extra, page,
-                                               page_size,all_user_id)
+            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, page,
+                                               page_size,all_user_id,flow_id_extra)
 
         # 应用ID列表
         resource_ids = []
