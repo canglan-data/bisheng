@@ -66,7 +66,7 @@ class ChatMessage(MessageBase, table=True):
     receiver: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
     is_delete: int = Field(default=0, nullable=False, index=False)
     flow_version_name: str = Field(default="v0", description='应用版本')
-    flow_update_time:  Optional[datetime] = Field(default=None, sa_column=Column(
+    version_update_time:  Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP')))
 
 
@@ -318,14 +318,14 @@ class ChatMessageDao(MessageBase):
         if message.flow_id :
             flow = FlowDao.get_flow_by_id(message.flow_id)
             if flow:
-                message.flow_update_time = flow.update_time
                 flow_version = FlowVersionDao.get_version_by_flow(message.flow_id)
                 if flow_version:
+                    message.version_update_time = flow_version.update_time
                     message.flow_version_name = flow_version.name
             else:
                 assistant = AssistantDao.get_one_assistant(message.flow_id)
                 if assistant:
-                    message.flow_update_time = assistant.update_time
+                    message.version_update_time = assistant.update_time
                     message.flow_version_name = "v0"
 
         with session_getter() as session:
