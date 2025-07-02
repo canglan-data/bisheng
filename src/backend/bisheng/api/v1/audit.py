@@ -145,6 +145,15 @@ async def review_session_list(request: Request, login_user: UserPayload = Depend
                                                               description='like：点赞；dislike：点踩；copied：复制'),
                               review_status: Optional[int] = Query(default=None, description='审查状态')):
     """ 按照筛选条件重新分析下所有会话 """
+    if not login_user.is_admin():
+        all_group = UserGroupDao.get_user_audit_or_admin_group(login_user.user_id)
+        all_group = [str(one.group_id) for one in all_group]
+    else:
+        all_group = [str(one.id) for one in GroupDao.get_all_group()]
+    if len(group_ids) == 0:
+        group_ids = all_group
+    else:
+        group_ids = list(set(group_ids) & set(all_group))
     review_status = [ReviewStatus(review_status)] if review_status else []
     data, total = AuditLogService.review_session_list(login_user, flow_ids, user_ids, group_ids, start_date, end_date,
                                                       feedback, review_status)
