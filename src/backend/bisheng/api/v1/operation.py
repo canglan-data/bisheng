@@ -38,7 +38,10 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
     else:
         group_ids = list(set(group_ids) & set(all_group))
     if len(group_ids) == 0:
-        return UnAuthorizedError.return_resp()
+        return resp_200(data={
+            'data': [],
+            'total': 0
+        })
     start_date, end_date = validate_date_range(start_date, end_date)
     review_status = [ReviewStatus(review_status)] if review_status else []
     data, total = AuditLogService.get_session_list(login_user, flow_ids, user_ids, group_ids, start_date, end_date,

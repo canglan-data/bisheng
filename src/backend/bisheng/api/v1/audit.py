@@ -79,7 +79,10 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
     else:
         group_ids = list(set(group_ids) & set(all_group))
     if len(group_ids) == 0:
-        return UnAuthorizedError.return_resp()
+        return resp_200(data={
+        'data': [],
+        'total': 0
+    })
     start_date,end_date = validate_date_range(start_date,end_date)
     review_status = [ReviewStatus(review_status)] if review_status else []
     logger.info(f"get_session_list Flow IDs: {flow_ids} | Group IDs: {group_ids} | review_status : {review_status}")
