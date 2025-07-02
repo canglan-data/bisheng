@@ -388,7 +388,7 @@ def add_evaluation_task(evaluation_id: int):
         evaluation.status = EvaluationTaskStatus.success.value
         evaluation.result_file_path = result_file_path
         if len(error_info) > 0:
-            raise Exception("执行中出现错误")
+            raise Exception("\n".join(error_info.values()))
         EvaluationDao.update_evaluation(evaluation=evaluation)
         redis_client.delete(redis_key)
         logger.info(f'evaluation task success id={evaluation_id}')
