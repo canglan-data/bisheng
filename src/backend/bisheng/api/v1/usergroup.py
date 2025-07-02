@@ -103,6 +103,8 @@ async def get_all_group(*,login_user: UserPayload = Depends(get_login_user),
             raise HTTPException(status_code=500, detail='无查看权限')
     logger.debug(f'get_all_group groups: {groups},user_id: {login_user.user_id}')
     groups_res = RoleGroupService().get_group_list(groups)
+    if groups:
+        groups_res = [one for one in groups_res if one.id in groups]
     if keyword:
         groups_res = [one for one in groups_res if keyword in one.group_name]
         groups_res = sorted(groups_res, key=lambda group: group.group_name.index(keyword))
@@ -126,6 +128,8 @@ async def get_all_group(*,login_user: UserPayload = Depends(get_login_user),
         if not groups:
             raise HTTPException(status_code=500, detail='无查看权限')
     groups_res = RoleGroupService().get_group_list(groups)
+    if groups:
+        groups_res = [one for one in groups_res if one.id in groups]
     if keyword:
         groups_res = [one for one in groups_res if keyword in one.group_name]
         groups_res = sorted(groups_res, key=lambda group: group.group_name.index(keyword))
