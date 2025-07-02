@@ -11,7 +11,7 @@ from fastapi import UploadFile, HTTPException
 import pandas as pd
 from collections import defaultdict
 from copy import deepcopy
-
+import traceback
 from bisheng.api.services.user_service import UserPayload
 from bisheng.api.v1.schemas import (UnifiedResponseModel, resp_200, StreamData, BuildStatus)
 from bisheng.cache import InMemoryCache
@@ -396,6 +396,6 @@ def add_evaluation_task(evaluation_id: int):
     except Exception as e:
         logger.exception(f'evaluation task failed id={evaluation_id} {str(e)}')
         evaluation.status = EvaluationTaskStatus.failed.value
-        evaluation.failed_info = str(e)
+        evaluation.failed_info = str(e) + str(traceback.print_exc())
         EvaluationDao.update_evaluation(evaluation=evaluation)
         redis_client.delete(redis_key)
