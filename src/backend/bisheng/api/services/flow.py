@@ -43,11 +43,15 @@ class FlowService(BaseService):
         codes = set([str(g.code).split("|")[0] for g in group_infos if g.code])
         all_group_id = []
         for code in codes:
+            base_group = GroupDao.get_group_by_code(code)
+            if base_group:
+                all_group_id.append(base_group.id)
             group_info = GroupDao.get_child_groups(code)
             all_group_id.extend([g.id for g in group_info])
         all_user_id = UserGroupDao.get_groups_user(all_group_id)
         logger.info(f"FlowService get_company_members_by_uid user_id={user_id} all_user_id={all_user_id}")
         return list(set(all_user_id))
+
 
     @classmethod
     def get_version_list_by_flow(cls, user: UserPayload, flow_id: str) -> UnifiedResponseModel[List[FlowVersionRead]]:
