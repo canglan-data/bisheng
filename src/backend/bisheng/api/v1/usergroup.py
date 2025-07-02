@@ -20,6 +20,7 @@ from bisheng.database.models.role import RoleDao
 from bisheng.database.models.group import Group, GroupCreate, GroupRead
 from bisheng.database.models.user import User
 from bisheng.database.models.user_group import UserGroupDao, UserGroupRead
+from loguru import logger
 
 router = APIRouter(prefix='/group', tags=['Group'], dependencies=[Depends(get_login_user)])
 
@@ -100,7 +101,7 @@ async def get_all_group(*,login_user: UserPayload = Depends(get_login_user),
         # 不是任何用户组的管理员无查看权限
         if not groups:
             raise HTTPException(status_code=500, detail='无查看权限')
-
+    logger.debug(f'get_all_group groups: {groups},user_id: {login_user.user_id}')
     groups_res = RoleGroupService().get_group_list(groups)
     if keyword:
         groups_res = [one for one in groups_res if keyword in one.group_name]
