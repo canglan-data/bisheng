@@ -67,7 +67,8 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
         setChunks([])
         // 合并配置
         const { fileList, pageHeaderFooter, chunkOverlap, chunkSize, enableFormula, forceOcr, knowledgeId
-            , retainImages, separator, separatorRule } = rules
+            , retainImages, separator, separatorRule, chunkByChapter, chunkLevel, chunkAddChapter, headerChunkSize } = rules;
+
         const currentFile = fileList.find(file => file.id === selectId)
         captureAndAlertRequestErrorHoc(previewFileSplitApi({
             // 缓存(修改规则后需要清空缓存, 切换文件使用缓存)
@@ -87,7 +88,11 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
             retain_images: retainImages,
             enable_formula: enableFormula,
             force_ocr: forceOcr,
-            fileter_page_header_footer: pageHeaderFooter
+            fileter_page_header_footer: pageHeaderFooter,
+            enable_header_split: chunkByChapter,
+            header_split_max_level: chunkLevel,
+            enable_header_split_chunk_chapter: chunkAddChapter,
+            header_split_chunk_size: headerChunkSize
 
         }), err => {
             // 解析失败时,使用支持的原文件预览
@@ -102,7 +107,8 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
                 activeLabels: {},
                 chunkIndex: chunk.metadata.chunk_index,
                 page: chunk.metadata.page,
-                text: chunk.text
+                text: chunk.text,
+                extra: chunk.metadata.extra ? JSON.parse(chunk.metadata.extra) : {},
             })))
             setSelectIdSyncChunks(selectId)
 
@@ -127,10 +133,10 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
 
     // 更新分段
     const selectedBbox = useKnowledgeStore((state) => state.selectedBbox);
-    const handleChunkChange = (chunkIndex, text) => {
+    const handleChunkChange = (chunkIndex, text, title = '') => {
         const bbox = { chunk_bboxes: selectedBbox }
         updatePreviewChunkApi({
-            knowledge_id: Number(id), file_path: currentFile.filePath, chunk_index: chunkIndex, text, bbox: JSON.stringify(bbox)
+            knowledge_id: Number(id), file_path: currentFile.filePath, chunk_index: chunkIndex, text, bbox: JSON.stringify(bbox), chunk_chapter: title
         })
         setChunks(chunks => chunks.map(chunk => chunk.chunkIndex === chunkIndex ? { ...chunk, text } : chunk))
     }

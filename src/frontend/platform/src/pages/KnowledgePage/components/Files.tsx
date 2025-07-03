@@ -85,10 +85,12 @@ export default function Files({ onPreview }) {
                 strategy: ['', '']
             }
             const rule = JSON.parse(el.split_rule)
-            const { separator, separator_rule } = rule
+            const { separator, separator_rule, enable_header_split, header_split_max_level } = rule
             const data = separator.map((el, i) => `${separator_rule[i] === 'before' ? '✂️' : ''}${el}${separator_rule[i] === 'after' ? '✂️' : ''}`)
             return {
                 ...el,
+                enableHeaderSpilt: !!enable_header_split,
+                spiltLevel: header_split_max_level,
                 strategy: [data.length > 2 ? data.slice(0, 2).join(',') : '', data.join(',')]
             }
         })
@@ -100,6 +102,21 @@ export default function Files({ onPreview }) {
         const excel_rule = JSON.parse(el.split_rule).excel_rule
         if (!excel_rule) return el.strategy[1].replace(/\n/g, '\\n') // 兼容历史数据
         return ['XLSX', 'XLS', 'CSV'].includes(suffix) ? `每 ${excel_rule.slice_length} 行作为一个分段` : el.strategy[1].replace(/\n/g, '\\n')
+    }
+
+    const SpiltSeparator = (el) => {
+        if (el.enableHeaderSpilt) {
+            return `按层级切分，层级为${el.spiltLevel}`
+        } else {
+            return el.strategy[0] ? <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                        <TooltipTrigger>{el.strategy[0]}...</TooltipTrigger>
+                        <TooltipContent>
+                            <div className="max-w-96 text-left break-all whitespace-normal">{el.strategy[1].replace(/\n/g, '\\n')}</div>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider> : splitRuleDesc(el)
+        }
     }
 
     return <div className="relative">
@@ -172,14 +189,7 @@ export default function Files({ onPreview }) {
                             </TableCell>
                             <TableCell>{el.update_time.replace('T', ' ')}</TableCell>
                             <TableCell>
-                                {el.strategy[0] ? <TooltipProvider delayDuration={100}>
-                                    <Tooltip>
-                                        <TooltipTrigger>{el.strategy[0]}...</TooltipTrigger>
-                                        <TooltipContent>
-                                            <div className="max-w-96 text-left break-all whitespace-normal">{el.strategy[1].replace(/\n/g, '\\n')}</div>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider> : splitRuleDesc(el)}
+                                {SpiltSeparator(el)}
                             </TableCell>
                             <TableCell className="text-right">
                                 <Button variant="link" disabled={el.status !== 2} className="px-2 dark:disabled:opacity-80" onClick={() => onPreview(el.id)}>{t('view')}</Button>

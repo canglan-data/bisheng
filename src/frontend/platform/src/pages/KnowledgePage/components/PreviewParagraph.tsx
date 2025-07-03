@@ -23,45 +23,90 @@ export const MarkdownView = ({ noHead = false, data }) => {
             .replace(/(?<![\n\|])\n(?!\n)/g, '\n\n')
         , [data.text])
 
-    return <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-primary transition-shadow w-full">
-        {!noHead && <p className="text-sm text-gray-500 flex gap-2 mb-1">
-            <span>分段{data.chunkIndex + 1}</span>
-            <span>-</span>
-            <span>{data.text.length} 字符</span>
-        </p>}
-        <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeMathjax]}
-            linkTarget="_blank"
-            className="react-markdown inline-block break-all max-w-full text-sm text-gray-500"
-            components={{
-                code: ({ node, inline, className, children, ...props }) => {
-                    if (children.length) {
-                        if (children[0] === "▍") {
-                            return (<span className="form-modal-markdown-span"> ▍ </span>);
-                        }
-                        if (typeof children[0] === "string") {
-                            children[0] = children[0].replace("▍", "▍");
-                        }
-                    }
-                    // className 区分代码语言 python json js 
-                    const match = /language-(\w+)/.exec(className || "");
+    const hasChunkChapter = data.extra?.chunk_chapter !== undefined;
+    const chunkChapter = data.extra?.chunk_chapter || '';
 
-                    return !inline ? (
-                        <CodeBlock
-                            key={Math.random()}
-                            language={(match && match[1]) || ""}
-                            value={String(children).replace(/\n$/, "")}
-                            {...props}
-                        />
-                    ) : (
-                        <code className={className} {...props}> {children} </code>
-                    );
-                },
-            }}
-        >
-            {text}
-        </ReactMarkdown>
+    return <div>
+        {hasChunkChapter && <div className="p-3 bg-[#EFF0F2] rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-primary transition-shadow w-full mb-3">
+            {/* {!noHead && <p className="text-sm text-gray-500 flex gap-2 mb-1">
+                <span>标题{data.chunkIndex + 1}</span>
+                <span>-</span>
+                <span>{chunkChapter.length} 字符</span>
+            </p>} */}
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeMathjax]}
+                linkTarget="_blank"
+                className="react-markdown inline-block break-all max-w-full text-xm text-[#4E4F53]"
+                components={{
+                    code: ({ node, inline, className, children, ...props }) => {
+                        if (children.length) {
+                            if (children[0] === "▍") {
+                                return (<span className="form-modal-markdown-span"> ▍ </span>);
+                            }
+                            if (typeof children[0] === "string") {
+                                children[0] = children[0].replace("▍", "▍");
+                            }
+                        }
+                        // className 区分代码语言 python json js 
+                        const match = /language-(\w+)/.exec(className || "");
+
+                        return !inline ? (
+                            <CodeBlock
+                                key={Math.random()}
+                                language={(match && match[1]) || ""}
+                                value={String(children).replace(/\n$/, "")}
+                                {...props}
+                            />
+                        ) : (
+                            <code className={className} {...props}> {children} </code>
+                        );
+                    },
+                }}
+            >
+                {chunkChapter}
+            </ReactMarkdown>
+        </div>}
+        <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-primary transition-shadow w-full">
+            {!noHead && <p className="text-sm text-gray-500 flex gap-2 mb-1">
+                <span>分段{data.chunkIndex + 1}</span>
+                <span>-</span>
+                <span>{data.text.length} 字符</span>
+            </p>}
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeMathjax]}
+                linkTarget="_blank"
+                className="react-markdown inline-block break-all max-w-full text-sm text-gray-500"
+                components={{
+                    code: ({ node, inline, className, children, ...props }) => {
+                        if (children.length) {
+                            if (children[0] === "▍") {
+                                return (<span className="form-modal-markdown-span"> ▍ </span>);
+                            }
+                            if (typeof children[0] === "string") {
+                                children[0] = children[0].replace("▍", "▍");
+                            }
+                        }
+                        // className 区分代码语言 python json js 
+                        const match = /language-(\w+)/.exec(className || "");
+
+                        return !inline ? (
+                            <CodeBlock
+                                key={Math.random()}
+                                language={(match && match[1]) || ""}
+                                value={String(children).replace(/\n$/, "")}
+                                {...props}
+                            />
+                        ) : (
+                            <code className={className} {...props}> {children} </code>
+                        );
+                    },
+                }}
+            >
+                {text}
+            </ReactMarkdown>
+        </div>
     </div>
 }
 
@@ -182,9 +227,20 @@ const EditMarkdown = ({ data, active, fileSuffix, onClick, onDel, onChange, onPo
     const { appConfig } = useContext(locationContext)
 
     const [value, setValue] = useState(data.text) // 不支持动态更新,更新文本请重新创建该组件
+    const [titleValue, setTitleValue] = useState(data.extra?.chunk_chapter || '') // 不支持动态更新,更新文本请重新创建该组件
+
     const setDebounceValue = useCallback(debounce((value) => {
         setValue(value)
     }, 30), [setValue])
+
+    const setDebounceTitleValue = useCallback(debounce((value) => {
+        setTitleValue(value)
+    }, 30), [setTitleValue])
+
+    
+    const hasChunkChapter = data.extra?.chunk_chapter !== undefined;
+    const chunkChapter = data.extra?.chunk_chapter || '';
+
     // 强制覆盖chunk
     const needCoverData = useKnowledgeStore((state) => state.needCoverData);
     const vditorRef = useRef(null);
@@ -192,7 +248,7 @@ const EditMarkdown = ({ data, active, fileSuffix, onClick, onDel, onChange, onPo
         const { index, txt } = needCoverData
         if (data.chunkIndex === index) {
             vditorRef.current.setValue(txt)
-            onChange(data.chunkIndex, txt)
+            onChange(data.chunkIndex, txt, titleValue)
         }
     }, [needCoverData])
 
@@ -209,10 +265,77 @@ const EditMarkdown = ({ data, active, fileSuffix, onClick, onDel, onChange, onPo
         }
 
         if (data.text === newValue) return // 无需保存
-        onChange(data.chunkIndex, newValue)
+        onChange(data.chunkIndex, newValue, titleValue)
+    }
+    
+    const handleTitleBlur = (newValue, restore) => {
+        if (!value.trim() || newValue.trim() === '') {
+            setValue(data.text)
+            restore?.()
+            return toast({
+                variant: 'error',
+                title: '操作失败',
+                description: '标题不可为空',
+            })
+        }
+
+        if (data.text === newValue) return // 无需保存
+        onChange(data.chunkIndex, value, newValue)
     }
 
-    return <div
+    return <div>
+        <div
+            className={cn("group p-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-primary transition-shadow w-full",
+                active && 'border-primary')
+            }
+            onClick={(e) => {
+                e.stopPropagation()
+                onClick(data.chunkIndex)
+            }}
+        >
+            {/* chunk标题 */}
+            {hasChunkChapter && <div className="text-sm text-gray-500 flex gap-2 justify-between mb-1">
+                <div className="flex gap-2 items-center">
+                    <span>标题{data.chunkIndex + 1}</span>
+                    <span>-</span>
+                    <span>{chunkChapter.length} 字符</span>
+                    <div className="flex gap-2 justify-center items-center">
+                        {
+                            fileSuffix === 'pdf' && appConfig.enableEtl4lm && <Tip content={"点击定位到原文件"} side={"top"}  >
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className={cn("size-6 text-primary opacity-0 group-hover:opacity-100")}
+                                    onClick={onPositionClick}
+                                ><LocateFixed size={18} /></Button>
+                            </Tip>
+                        }
+                        {edit
+                            ? <div
+                                className={cn("size-6 text-primary flex justify-center items-center rounded-sm cursor-pointer opacity-0 group-hover:opacity-100", edit && 'bg-primary text-gray-50')}
+                                onClick={() => setEdit(!edit)}><FileCode size={18} /></div>
+                            : <Tip content={"点击展示此段落Markdown原文，进行编辑"} side={"top"}  >
+                                <div
+                                    className={cn("size-6 text-primary flex justify-center items-center rounded-sm cursor-pointer opacity-0 group-hover:opacity-100", edit && 'bg-primary text-gray-50')}
+                                    onClick={() => setEdit(!edit)}><FileCode size={18} /></div>
+                            </Tip>}
+                    </div>
+                </div>
+                <Tip content={"点击删除此分段"} side={"top"}  >
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        className={cn("size-6 text-primary opacity-0 group-hover:opacity-100")}
+                        onClick={() => onDel(data.chunkIndex, data.text)}
+                    ><CircleX size={18} /></Button>
+                </Tip>
+            </div>}
+            {/* 所见即所得Markdown编辑器 */}
+            <VditorEditor ref={vditorRef} hidden={edit} defalutValue={titleValue} onChange={setDebounceTitleValue} onBlur={handleTitleBlur} />
+            {/* 普通Markdown编辑器 */}
+            <AceEditorCom hidden={!edit} markdown={titleValue} onChange={setDebounceTitleValue} onBlur={handleTitleBlur} />
+        </div>
+    <div
         className={cn("group p-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-primary transition-shadow w-full",
             active && 'border-primary')
         }
@@ -241,14 +364,14 @@ const EditMarkdown = ({ data, active, fileSuffix, onClick, onDel, onChange, onPo
                         ? <div
                             className={cn("size-6 text-primary flex justify-center items-center rounded-sm cursor-pointer opacity-0 group-hover:opacity-100", edit && 'bg-primary text-gray-50')}
                             onClick={() => setEdit(!edit)}><FileCode size={18} /></div>
-                        : <Tip content={"点击展示Markdown原文，进行编辑"} side={"top"}  >
+                        : <Tip content={"点击展示此分段Markdown原文，进行编辑"} side={"top"}  >
                             <div
                                 className={cn("size-6 text-primary flex justify-center items-center rounded-sm cursor-pointer opacity-0 group-hover:opacity-100", edit && 'bg-primary text-gray-50')}
                                 onClick={() => setEdit(!edit)}><FileCode size={18} /></div>
                         </Tip>}
                 </div>
             </div>
-            <Tip content={"点击删除分段"} side={"top"}  >
+            <Tip content={"点击删除此分段"} side={"top"}  >
                 <Button
                     size="icon"
                     variant="ghost"
@@ -262,6 +385,7 @@ const EditMarkdown = ({ data, active, fileSuffix, onClick, onDel, onChange, onPo
         <VditorEditor ref={vditorRef} hidden={edit} defalutValue={value} onChange={setDebounceValue} onBlur={handleBlur} />
         {/* 普通Markdown编辑器 */}
         <AceEditorCom hidden={!edit} markdown={value} onChange={setDebounceValue} onBlur={handleBlur} />
+    </div>
     </div>
 }
 

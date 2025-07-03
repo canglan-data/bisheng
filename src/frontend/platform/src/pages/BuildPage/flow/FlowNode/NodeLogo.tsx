@@ -23,6 +23,7 @@ export const Colors = {
     'llm': 'bg-[#D9D7FF]',
     'rag': 'bg-[#BBDBFF]',
     'qa_retriever': 'bg-[#B8EEDF]',
+    'retriever': 'bg-[#EDC9E9]',
     'agent': 'bg-[#FFD89A]',
     'end': 'bg-red-400',
     'condition': 'bg-[#EDC9E9]',

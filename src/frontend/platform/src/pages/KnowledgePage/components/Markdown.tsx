@@ -13,8 +13,8 @@ const VditorEditor = forwardRef(({ edit, markdown, hidden }, ref) => {
 
     useEffect(() => {
         // console.log('markdown :>> ', markdown);
-        const processedMarkdown = markdown.replace(/^( {4,})/gm, '   ')
-        .replaceAll('(bisheng/', '(/bisheng/')
+        const processedMarkdown = markdown?.replace(/^( {4,})/gm, '   ')
+        .replaceAll('(bisheng/', '(/bisheng/') || ''
 
         if (!hidden && vditorRef.current && readyRef.current) {
             vditorRef.current.setValue(processedMarkdown);
@@ -92,29 +92,43 @@ const AceEditorCom = ({ markdown, hidden, onChange }) => {
     />
 }
 
-export default forwardRef(function Markdown({ edit, isUns, title, q, value }, ref) {
+export default forwardRef(function Markdown({ edit, isUns, title, q, value, chunkHeader }, ref) {
     const [val, setValue] = useState('')
+    const [cap, setCapter] = useState(undefined)
     const [isAce, setIsAce] = useState(false)
     const { t } = useTranslation('knowledge')
     useEffect(() => {
-        setValue(value)
-    }, [value])
+        setValue(value);
+        setCapter(chunkHeader);
+    }, [value, chunkHeader])
 
-    const vditorRef = useRef(null)
+    const valueVditorRef = useRef(null)
+    const capterVditorRef = useRef(null)
+
+    const hasChunkHeader = typeof chunkHeader === 'string';
 
     useImperativeHandle(ref, () => ({
         getValue() {
-            const _value = isAce ? val : vditorRef.current.getResult()
+            const _value = isAce ? val : valueVditorRef.current.getResult()
+            return _value
+        },
+        getCapter() {
+            if (!hasChunkHeader) return undefined;
+            const _value = isAce ? cap : capterVditorRef.current.getResult() 
             return _value
         },
         setValue(_value) {
             setValue(_value)
+        },
+        setCapter(_value) {
+            setCapter(_value)
         }
     }))
 
     const hangleCheckChagne = (checked) => {
         if (!checked) {
-            setValue(vditorRef.current.getResult())
+            setValue(valueVditorRef.current.getResult())
+            if (hasChunkHeader) setCapter(capterVditorRef.current.getResult())
         }
         setIsAce(!checked)
     }
@@ -132,10 +146,17 @@ export default forwardRef(function Markdown({ edit, isUns, title, q, value }, re
                 <Switch checked={!isAce} onCheckedChange={hangleCheckChagne} />
             </div>}
         </div>
-        <div className="border mb-2 h-[calc(100vh-104px)]">
-            {/* 编辑器 */}
-            <AceEditorCom hidden={!isAce} markdown={val} onChange={setValue} />
-            <VditorEditor ref={vditorRef} edit={edit} hidden={isAce} markdown={val} />
+        <div className="border mb-2 h-[calc(100vh-104px)] flex flex-col">
+            {hasChunkHeader && (
+                <div className="h-[10%] border-b">
+                    <AceEditorCom hidden={!isAce} markdown={cap} onChange={setCapter} />
+                    <VditorEditor ref={capterVditorRef} edit={edit} hidden={isAce} markdown={cap} />
+                </div>
+            )}
+            <div className={hasChunkHeader ? "h-[90%]" : "h-full"}>
+                <AceEditorCom hidden={!isAce} markdown={val} onChange={setValue} />
+                <VditorEditor ref={valueVditorRef} edit={edit} hidden={isAce} markdown={val} />
+            </div>
         </div>
     </div >
 });

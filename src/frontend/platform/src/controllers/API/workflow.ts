@@ -894,6 +894,63 @@ const workflowTemplate = [
         ]
     },
     {
+        "id": "knowledge_retriever_xxx",
+        "name": "文档知识库检索",
+        "description": "根据用户问题从知识库中检索相关内容，并生成检索结果。",
+        "type": "knowledge_retriever",
+        "v": "1",
+        "group_params": [
+            {
+                "name": "知识库检索设置",
+                "params": [
+                    {
+                        "key": "user_question",
+                        "label": "用户问题",
+                        "global": "self=user_prompt",
+                        "type": "user_question",
+                        "test": "var",
+                        "help": "当选择多个问题时，将会多次运行本节点，每次运行时从批量问题中取一项进行处理。",
+                        "linkage": "output_user_input",
+                        "value": [],
+                        "placeholder": "请选择用户问题",
+                        "required": true
+                    },
+                    {
+                        "key": "knowledge",
+                        "label": "检索范围",
+                        "type": "knowledge_select_multi",
+                        "placeholder": "请选择知识库",
+                        "value": {
+                            "type": "knowledge",
+                            "value": []
+                        },
+                        "required": true
+                    },
+                    {
+                        "key": "user_auth",
+                        "label": "用户知识库权限校验",
+                        "type": "switch",
+                        "value": false,
+                        "help": "开启后，只会对用户有使用权限的知识库进行检索。"
+                    },
+                    {
+                        "key": "max_chunk_size",
+                        "label": "检索结果长度",
+                        "type": "number",
+                        "value": 15000,
+                        "help": "通过此参数控制最终传给模型的知识库检索结果文本长度，超过模型支持的最大上下文长度可能会导致报错。"
+                    },
+                    {
+                        "key": "retrieved_result",
+                        "label": "检索结果",
+                        "type": "var",
+                        "global": "key",
+                    }
+                ]
+            }
+        ]
+    },
+    {
         "id": "report_xxx",
         "name": "报告",
         "description": "按照预设的word模板生成报告。",

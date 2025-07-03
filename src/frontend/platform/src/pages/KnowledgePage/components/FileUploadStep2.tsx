@@ -95,7 +95,7 @@ export default function FileUploadStep2({ step, resultFiles, isSubmitting, onNex
         }
         //  合并配置
         const { fileList, pageHeaderFooter, chunkOverlap, chunkSize, enableFormula, forceOcr
-            , retainImages, separator, separatorRule } = rules;
+            , retainImages, separator, separatorRule, chunkByChapter, chunkLevel, chunkAddChapter, headerChunkSize } = rules;
 
         const params = {
             knowledge_id: kid,
@@ -110,7 +110,11 @@ export default function FileUploadStep2({ step, resultFiles, isSubmitting, onNex
             retain_images: retainImages,
             enable_formula: enableFormula,
             force_ocr: forceOcr,
-            fileter_page_header_footer: pageHeaderFooter
+            fileter_page_header_footer: pageHeaderFooter,
+            enable_header_split: chunkByChapter,
+            header_split_max_level: chunkLevel,
+            enable_header_split_chunk_chapter: chunkAddChapter,
+            header_split_chunk_size: headerChunkSize
         }
 
         onNext(nextStep, params);
@@ -267,7 +271,15 @@ const useFileProcessingRules = (initialStrategies, resultFiles, kid) => {
             retainImages: true,
             enableFormula: true,
             forceOcr: true,
-            pageHeaderFooter: true
+            pageHeaderFooter: true,
+            // 是否按章节切分
+            chunkByChapter: false,
+            // 切分层级
+            chunkLevel: '3',
+            // 切片追加章节标题
+            chunkAddChapter: true,
+            // 层级切分下的size
+            headerChunkSize: "1000",
         });
     }, [resultFiles, kid, cellGeneralConfig]);
 

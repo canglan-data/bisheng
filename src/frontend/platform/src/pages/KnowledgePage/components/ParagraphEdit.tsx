@@ -29,6 +29,8 @@ const ParagraphEdit = ({
 }) => {
     const { id } = useParams();
     const [value, setValue] = useState('');
+    const [capter, setCapter] = useState('');
+    const [chunkHeader, setChunkHeader] = useState<undefined | string>(undefined);
     const [data, setData] = useState([]);
     const prevOvergapData = useRef(null);
     const { t } = useTranslation('knowledge')
@@ -47,6 +49,7 @@ const ParagraphEdit = ({
     const initData = (res) => {
         let labelsData = []
         let value = ''
+        let chunkChapter = undefined;
         const arrData = [...res.data]
         // 优先遍历prioritizedItem（放数组前面）
         // const prioritizedItem = arrData.find(item => item.metadata.chunk_index === chunkId);
@@ -61,8 +64,9 @@ const ParagraphEdit = ({
 
         const seenIds = new Set()
         arrData.forEach(chunk => {
-            const { bbox, chunk_index } = chunk.metadata
+            const { bbox, chunk_index, extra } = chunk.metadata
             const labels = bbox && JSON.parse(bbox).chunk_bboxes || []
+            const chunk_chapter = JSON.parse(extra)?.chunk_chapter;
 
             const active = chunk_index === chunkId
             const resData = labels.reduce((acc, label) => {
@@ -93,12 +97,15 @@ const ParagraphEdit = ({
 
             if (active) {
                 value = chunk.text
+                chunkChapter = chunk_chapter;
             }
         })
         setFileName(res.data[0].metadata.source)
         setData(labelsData)
         prevOvergapData.current = labelsData
         setValue(value)
+        setChunkHeader(chunkChapter)
+
         // 自动滚动到当前chunk
         setRandom(Math.random() / 10000)
     }
@@ -115,7 +122,17 @@ const ParagraphEdit = ({
     const handleSave = async () => {
         const _value = markDownRef.current.getValue().trim()
         setValue(_value)
-        if (!_value) return
+        if (!_value) return message({ variant: 'warning', description: t('inputNotEmpty') })
+
+        let _capture = markDownRef.current.getCapter()
+
+        const hasCapture = typeof _capture === 'string';
+
+        if (hasCapture) {
+            _capture = _capture.trim();
+            setCapter(_capture)
+            if (!_capture) return message({ variant: 'warning', description: t('inputNotEmpty') });
+        }
 
         const bbox = {
             chunk_bboxes: prevOvergapData.current.reduce((arr, item) => {
@@ -129,9 +146,9 @@ const ParagraphEdit = ({
         setLoading(true)
 
         const promise = chunks ? updatePreviewChunkApi({
-            knowledge_id: Number(id), file_path: oriFilePath, chunk_index: chunkId, text: _value, bbox: JSON.stringify(bbox)
+            knowledge_id: Number(id), file_path: oriFilePath, chunk_index: chunkId, text: _value, chunk_chapter: _capture, bbox: JSON.stringify(bbox)
         }) : updateChunkApi({
-            knowledge_id: Number(id), file_id: fileId, chunk_index: chunkId, text: _value, bbox: JSON.stringify(bbox)
+            knowledge_id: Number(id), file_id: fileId, chunk_index: chunkId, text: _value, chunk_chapter: _capture, bbox: JSON.stringify(bbox)
         })
         await captureAndAlertRequestErrorHoc(promise.then(res => {
             message({ variant: 'success', description: t('editSuccess') })
@@ -282,7 +299,7 @@ const ParagraphEdit = ({
         <div className="flex px-4 py-2 select-none">
             {/* left */}
             <div className="relative" style={{ width: leftPanelWidth }}>
-                <Markdown ref={markDownRef} edit={edit} isUns={isUns} title={fileName} q={chunkId + 1} value={value} />
+                <Markdown ref={markDownRef} edit={edit} isUns={isUns} title={fileName} q={chunkId + 1} value={value} chunkHeader={chunkHeader}/>
                 {!value && <p className="absolute left-0 text-red-500 text-xs mt-2">{t('inputNotEmpty')}</p>}
                 {!isUns && <div className="flex justify-end gap-4">
                     <Button className="px-6 h-8" variant="outline" onClick={onClose}>{t('cancel', { ns: 'bs' })}</Button>
