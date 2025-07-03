@@ -187,9 +187,9 @@ export const ResouceContent = ({ data, setOpen, fullScreen = false }) => {
     const [loading, setLoading] = useState(true)
     const handleAnwserInit = (words) => {
         setKeywords(words)
-        setLoading(false)
-        // if (words.length) {
-        // }
+        if (words.length) {
+            setLoading(false)
+        }
     }
 
 

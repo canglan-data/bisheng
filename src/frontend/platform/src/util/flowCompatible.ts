@@ -1,6 +1,6 @@
 import { generateUUID } from "@/components/bs-ui/utils";
 
-// 历史版本工作流转换脚本(最新v2)
+// 历史版本工作流转换脚本(最新v4)
 export const flowVersionCompatible = (flow) => {
 
     flow.nodes.forEach((node) => {
@@ -153,6 +153,16 @@ const comptibleAgent = (node) => {
         })
         node.v = 3
     }
+    
+    if (node.v == 3) {
+        node.group_params[3].params.unshift({
+            "key": "show_reason",
+            "label": "将模型思考过程展示在会话中",
+            "type": "switch",
+            "value": true,
+        });
+        node.v = 4
+    }
 }
 
 const comptibleRag = (node) => {
@@ -174,6 +184,15 @@ const comptibleRag = (node) => {
         })
 
         node.v = 2
+    }
+    if (node.v == 2) {
+        node.group_params[3].params.unshift({
+            "key": "show_reason",
+            "label": "将模型思考过程展示在会话中",
+            "type": "switch",
+            "value": true,
+        });
+        node.v = 3
     }
 }
 
@@ -209,5 +228,14 @@ const comptibleLLM = (node) => {
             help: "当使用多模态大模型时，可通过此功能传入图片，结合图像内容进行问答"
         })
         node.v = 3
+    }
+    if (node.v == 3) {
+        node.group_params[3].params.unshift({
+            "key": "show_reason",
+            "label": "将模型思考过程展示在会话中",
+            "type": "switch",
+            "value": true,
+        })
+        node.v = 4
     }
 }

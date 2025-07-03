@@ -65,6 +65,7 @@ class FlowBase(SQLModelSerializable):
 class Flow(FlowBase, table=True):
     id: str = Field(default_factory=generate_uuid, primary_key=True, unique=True)
     data: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    is_delete: int = Field(default=0, nullable=False, index=False)
 
 
 class FlowCreate(FlowBase):
@@ -115,7 +116,10 @@ class FlowDao(FlowBase):
     def delete_flow(cls, flow_info: Flow) -> Flow:
         from bisheng.database.models.flow_version import FlowVersion
         with session_getter() as session:
-            session.delete(flow_info)
+            # 删除flow
+            update_flow_statement = update(Flow).where(
+                Flow.id == flow_info.id).values(is_delete=1)
+            session.exec(update_flow_statement)
             # 删除对应的版本信息
             update_statement = update(FlowVersion).where(
                 FlowVersion.flow_id == flow_info.id).values(is_delete=1)
@@ -146,25 +150,25 @@ class FlowDao(FlowBase):
     @classmethod
     def get_flow_by_user(cls, user_id: int) -> List[Flow]:
         with session_getter() as session:
-            statement = select(Flow).where(Flow.user_id == user_id)
+            statement = select(Flow).where(Flow.user_id == user_id, Flow.is_delete == 0)
             return session.exec(statement).all()
 
     @classmethod
     def get_flow_by_name(cls, user_id: int, name: str) -> Optional[Flow]:
         with session_getter() as session:
-            statement = select(Flow).where(Flow.user_id == user_id, Flow.name == name)
+            statement = select(Flow).where(Flow.user_id == user_id, Flow.name == name, Flow.is_delete == 0)
             return session.exec(statement).first()
 
     @classmethod
     def get_flow_by_name_filter_self(cls, name: str, flow_id: Optional[str] = None) -> Optional[Flow]:
         with session_getter() as session:
-            statement = select(Flow).where(Flow.id != flow_id, Flow.name == name)
+            statement = select(Flow).where(Flow.id != flow_id, Flow.name == name, Flow.is_delete == 0)
             return session.exec(statement).first()
 
     @classmethod
     def get_flow_list_by_name(cls, name: str) -> List[Flow]:
         with session_getter() as session:
-            statement = select(Flow).where(Flow.name.like('%{}%'.format(name)))
+            statement = select(Flow).where(Flow.name.like('%{}%'.format(name))).where(Flow.is_delete == 0)
             return session.exec(statement).all()
 
     @classmethod
@@ -175,7 +179,7 @@ class FlowDao(FlowBase):
                                                       RoleAccess.type == AccessType.FLOW.value,
                                                       RoleAccess.third_id == Flow.id),
                                                  isouter=True)
-
+        statment = statment.where(Flow.is_delete == 0)
         if name:
             statment = statment.where(Flow.name.like('%' + name + '%'))
         if page_num and page_size and page_num != 'undefined':
@@ -189,7 +193,7 @@ class FlowDao(FlowBase):
     def get_count_by_filters(cls, filters) -> int:
         with session_getter() as session:
             count_statement = session.query(func.count(Flow.id))
-            return session.exec(count_statement.where(*filters)).scalar()
+            return session.exec(count_statement.where(*filters).where(Flow.is_delete == 0)).scalar()
 
     @classmethod
     def get_flows(cls,
@@ -205,7 +209,7 @@ class FlowDao(FlowBase):
             # data 数据量太大，对mysql 有影响
             statement = select(Flow.id, Flow.user_id, Flow.name, Flow.status, Flow.create_time,
                                Flow.logo, Flow.update_time, Flow.description, Flow.guide_word,
-                               Flow.flow_type)
+                               Flow.flow_type).where(Flow.is_delete == 0)
             if extra_ids and isinstance(extra_ids, List):
                 statement = statement.where(or_(Flow.id.in_(extra_ids), Flow.user_id == user_id))
             elif not extra_ids:
@@ -235,7 +239,7 @@ class FlowDao(FlowBase):
                     flow_ids: List[str] = None,
                     flow_type: Optional[int] = None) -> int:
         with session_getter() as session:
-            count_statement = session.query(func.count(Flow.id))
+            count_statement = session.query(func.count(Flow.id)).filter(Flow.is_delete == 0)
             if extra_ids and isinstance(extra_ids, List):
                 count_statement = count_statement.filter(
                     or_(Flow.id.in_(extra_ids), Flow.user_id == user_id))
@@ -260,7 +264,7 @@ class FlowDao(FlowBase):
         with session_getter() as session:
             statement = select(Flow.id, Flow.user_id, Flow.name, Flow.status, Flow.create_time,
                                Flow.logo, Flow.update_time, Flow.description,
-                               Flow.guide_word).where(Flow.status == FlowStatus.ONLINE.value)
+                               Flow.guide_word).where(Flow.status == FlowStatus.ONLINE.value, Flow.is_delete == 0)
             if flow_ids:
                 statement = statement.where(Flow.id.in_(flow_ids))
             if keyword:
@@ -306,8 +310,8 @@ class FlowDao(FlowBase):
         通过技能ID过滤技能列表，只返回简略信息，不包含data
         """
         statement = select(Flow.id, Flow.user_id, Flow.name, Flow.status, Flow.create_time,
-                           Flow.update_time, Flow.description, Flow.guide_word)
-        count_statement = select(func.count(Flow.id))
+                           Flow.update_time, Flow.description, Flow.guide_word).where(Flow.is_delete == 0)
+        count_statement = select(func.count(Flow.id)).where(Flow.is_delete == 0)
         if flow_ids:
             statement = statement.where(Flow.id.in_(flow_ids))
             count_statement = count_statement.where(Flow.id.in_(flow_ids))
@@ -343,14 +347,17 @@ class FlowDao(FlowBase):
                      flow_type: int = None,
                      user_id: int = None,
                      id_extra: list = None,
+                     is_delete: int = 0,
                      page: int = 0,
                      limit: int = 0,
                      user_ids:list = None,
                      id_extra_not: list = None,) -> (List[Dict], int):
         """ 获取所有的应用 包含技能、助手、工作流 """
-        sub_query = select(
-            Flow.id, Flow.name, Flow.description, Flow.flow_type, Flow.logo, Flow.user_id,
-            Flow.status, Flow.create_time, Flow.update_time).union_all(
+        flow_statement = select(Flow.id, Flow.name, Flow.description, Flow.flow_type, Flow.logo, Flow.user_id,
+            Flow.status, Flow.create_time, Flow.update_time)
+        if is_delete is not None:
+            flow_statement = flow_statement.where(Flow.is_delete == is_delete)
+        sub_query = flow_statement.union_all(
                 select(Assistant.id, Assistant.name, Assistant.desc, FlowType.ASSISTANT.value,
                        Assistant.logo, Assistant.user_id, Assistant.status, Assistant.create_time,
                        Assistant.update_time).where(Assistant.is_delete == 0)).subquery()

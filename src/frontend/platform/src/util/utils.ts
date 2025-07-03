@@ -483,19 +483,19 @@ export function contentToPlainText(content) {
 }
 
 export function optimizeForTTS(text) {
-  if (!text) return '';
+    if (!text) return '';
     
-  return text
-    // 合并连续空白字符
-    .replace(/\s+/g, ' ')
-    // 处理特殊符号
-    .replace(/\.{3,}/g, '省略号')
-    .replace(/…/g, '省略号')
-    .replace(/#/g, '井号')
-    .replace(/\*/g, '星号')
-    // 去除首尾空白
-    .trim();
-}
+    return text
+      // 合并连续空白字符
+      .replace(/\s+/g, ' ')
+      // 处理特殊符号
+      .replace(/\.{3,}/g, '省略号')
+      .replace(/…/g, '省略号')
+      .replace(/#/g, '井号')
+      .replace(/\*/g, '星号')
+      // 去除首尾空白
+      .trim();
+  }
   
 export function formatTTSText(text) {
     return optimizeForTTS(contentToPlainText(text));
