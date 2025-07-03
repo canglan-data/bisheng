@@ -58,6 +58,9 @@ class WorkFlowService(BaseService):
         codes = set([str(g.code).split("|")[0] for g in group_infos if g.code])
         all_group_id = []
         for code in codes:
+            base_group = GroupDao.get_group_by_code(code)
+            if base_group:
+                all_group_id.append(base_group.id)
             group_info = GroupDao.get_child_groups(code)
             all_group_id.extend([g.id for g in group_info])
         all_user_id = UserGroupDao.get_groups_user(all_group_id)
@@ -97,8 +100,8 @@ class WorkFlowService(BaseService):
             if role_access:
                 flow_id_extra = [access.third_id for access in role_access]
             all_user_id = cls.get_company_members_by_uid(user.user_id)
-            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, flow_id_extra, page,
-                                               page_size,all_user_id)
+            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, page,
+                                               page_size,all_user_id,flow_id_extra)
 
         # 应用ID列表
         resource_ids = []
@@ -334,10 +337,6 @@ class WorkFlowService(BaseService):
                     type='text',
                     required=True,
                     value=''
-                ),
-                WorkflowInputItem(
-                    key='dialog_files_content',
-                    type='dialog_file',
                 )
             ]
             for one in event_input_schema.get('value', []):
@@ -492,6 +491,3 @@ class WorkFlowService(BaseService):
                 out_put = even.output_schema.message
                 break
         return out_put
-
-
-

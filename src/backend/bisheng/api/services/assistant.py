@@ -41,7 +41,7 @@ class AssistantService(BaseService, AssistantUtils):
 
 
     @classmethod
-    def get_company_members_by_uid(cls, user_id: int) -> List[int]:
+    def get_company_members_by_uid(cls,user_id: int) -> List[int]:
         user_groups = UserGroupDao.get_user_group(user_id)
         if not user_groups:
             return []
@@ -50,11 +50,15 @@ class AssistantService(BaseService, AssistantUtils):
         codes = set([str(g.code).split("|")[0] for g in group_infos if g.code])
         all_group_id = []
         for code in codes:
+            base_group = GroupDao.get_group_by_code(code)
+            if base_group:
+                all_group_id.append(base_group.id)
             group_info = GroupDao.get_child_groups(code)
             all_group_id.extend([g.id for g in group_info])
         all_user_id = UserGroupDao.get_groups_user(all_group_id)
         logger.info(f"AssistantService get_company_members_by_uid user_id={user_id} all_user_id={all_user_id}")
         return list(set(all_user_id))
+
 
     @classmethod
     def get_assistant(cls,
@@ -407,15 +411,16 @@ class AssistantService(BaseService, AssistantUtils):
                 if role_access:
                     tool_type_ids_extra = [int(access.third_id) for access in role_access]
         # 获取用户可见的所有工具列表
+        user_company_ids = cls.get_company_members_by_uid(user.user_id)
         if is_preset is None:
-            all_tool_type = GptsToolsDao.get_user_tool_type(user.user_id, tool_type_ids_extra)
+            all_tool_type = GptsToolsDao.get_user_tool_type_plus(user_company_ids, extra_tool_type_ids_not = tool_type_ids_extra)
         elif is_preset == ToolPresetType.PRESET.value:
             # 获取预置工具列表
             all_tool_type = GptsToolsDao.get_preset_tool_type()
         else:
             # 获取用户可见的自定义工具列表
-            all_tool_type = GptsToolsDao.get_user_tool_type(user.user_id, tool_type_ids_extra, False,
-                                                            ToolPresetType(is_preset))
+            all_tool_type = GptsToolsDao.get_user_tool_type_plus(user_company_ids, None, False,
+                                                            ToolPresetType(is_preset),extra_tool_type_ids_not = tool_type_ids_extra)
         tool_type_id = [one.id for one in all_tool_type]
         res = []
         tool_type_children = {}

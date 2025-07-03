@@ -228,7 +228,7 @@ class AssistantDao(AssistantBase):
 
     @classmethod
     def filter_assistant_by_id(cls, assistant_ids: List[str], keywords: str = None, page: int = 0,
-                               limit: int = 0) -> (List[Assistant], int):
+                               limit: int = 0,user_ids:List[int]=None) -> (List[Assistant], int):
         """
         根据关键字和助手id过滤出对应的助手
         """
@@ -246,6 +246,9 @@ class AssistantDao(AssistantBase):
                 Assistant.name.like(f'%{keywords}%'),
                 Assistant.desc.like(f'%{keywords}%')
             ))
+        if user_ids:
+            statement = statement.where(Assistant.user_id.in_(user_ids))
+            count_statement = count_statement.where(Assistant.user_id.in_(user_ids))
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
         statement = statement.order_by(Assistant.update_time.desc())

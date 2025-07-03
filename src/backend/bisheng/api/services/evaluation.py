@@ -59,6 +59,10 @@ class EvaluationService:
         assistant_ids = []
         # 版本ID列表
         flow_version_ids = []
+        # work_flow ID列表
+        work_flow_ids = []
+        # work_flow版本ID列表
+        work_flow_version_ids = []
 
         for one in res_evaluations:
             if one.exec_type == ExecType.FLOW.value:
@@ -67,10 +71,16 @@ class EvaluationService:
                     flow_version_ids.append(one.version)
             if one.exec_type == ExecType.ASSISTANT.value:
                 assistant_ids.append(one.unique_id)
+            if one.exec_type == ExecType.WORK_FLOW.value:
+                work_flow_ids.append(one.unique_id)
+                if one.version:
+                    work_flow_version_ids.append(one.version)
 
         flow_names = {}
         flow_versions = {}
         assistant_names = {}
+        work_flow_names = {}
+        work_flow_versions = {}
 
         if flow_ids:
             flows = FlowDao.get_flow_by_ids(flow_ids=flow_ids)
@@ -84,14 +94,26 @@ class EvaluationService:
             assistants = AssistantDao.get_assistants_by_ids(assistant_ids=assistant_ids)
             assistant_names = {str(one.id): one.name for one in assistants}
 
+        if work_flow_ids:
+            work_flows = FlowDao.get_flow_by_ids(flow_ids=work_flow_ids)
+            work_flow_names = {str(one.id): one.name for one in work_flows}
+
+        if work_flow_version_ids:
+            versions_work_flow = FlowVersionDao.get_list_by_ids(ids=work_flow_version_ids)
+            work_flow_versions = {one.id: one.name for one in versions_work_flow}
+
         for one in res_evaluations:
             evaluation_item = jsonable_encoder(one)
             if one.exec_type == ExecType.FLOW.value:
                 evaluation_item['unique_name'] = flow_names.get(one.unique_id)
+                if one.version:
+                    evaluation_item['version_name'] = flow_versions.get(one.version)
             if one.exec_type == ExecType.ASSISTANT.value:
                 evaluation_item['unique_name'] = assistant_names.get(one.unique_id)
-            if one.version:
-                evaluation_item['version_name'] = flow_versions.get(one.version)
+            if one.exec_type == ExecType.WORK_FLOW.value:
+                evaluation_item['unique_name'] = work_flow_names.get(one.unique_id)
+                if one.version:
+                    evaluation_item['version_name'] = work_flow_versions.get(one.version)
             if one.result_score:
                 evaluation_item['result_score'] = json.loads(one.result_score)
 
@@ -265,7 +287,12 @@ def add_evaluation_task(evaluation_id: int):
                     tweaks={},
                     index=0,
                     versions=[flow_version]))
-                one["answer"] = flow_result.get(flow_version.id)
+                try:
+                    one["answer"] = flow_result.get(flow_version.id)
+                    one["error"]
+                except Exception as e:
+                    one["answer"] = ""
+                    one["error"] = str(e)
                 current_progress += progress_increment
                 redis_client.set(redis_key, round(current_progress))
 
@@ -276,25 +303,36 @@ def add_evaluation_task(evaluation_id: int):
             gpts_agent = AssistantAgent(assistant_info=assistant, chat_id="")
             asyncio.run(gpts_agent.init_assistant())
             for index, one in enumerate(csv_data):
-                messages = asyncio.run(gpts_agent.run(one.get('question')))
-                if len(messages):
-                    one["answer"] = messages[0].content
+                try:
+                    messages = asyncio.run(gpts_agent.run(one.get('question')))
+                    if len(messages):
+                        one["answer"] = messages[0].content
+                        one["error"] = ""
+                except Exception as e:
+                    one["answer"] = ""
+                    one["error"] = str(e)
                 current_progress += progress_increment
                 redis_client.set(redis_key, round(current_progress))
 
         if evaluation.exec_type == ExecType.WORK_FLOW.value:
             for index, one in enumerate(csv_data):
-                answer = asyncio.run(WorkFlowService.run_workflow_1Q1A(evaluation.unique_id,evaluation.version,one.get('question')))
-                one["answer"] = answer
+                try:
+                    answer = asyncio.run(WorkFlowService.run_workflow_1Q1A(evaluation.unique_id,evaluation.version,one.get('question')))
+                    one["answer"] = answer
+                    one["error"] = ""
+                except Exception as e:
+                    one["answer"] = ""
+                    one["error"] = str(e)
                 current_progress += progress_increment
                 redis_client.set(redis_key, round(current_progress))
 
+        error_info = {str(one.get('question')):str(one.get('error')) for one in csv_data if len(str(one.get('error')))>0}
         _llm = LLMService.get_evaluation_llm_object()
         llm = LangchainLLM(_llm)
         data_samples = {
-            "question": [one.get('question') for one in csv_data],
+            "question": [str(one.get('question')) for one in csv_data],
             "answer": [one.get('answer') for one in csv_data],
-            "ground_truths": [[one.get('ground_truth')] for one in csv_data]
+            "ground_truths": [[str(one.get('ground_truth'))] for one in csv_data]
         }
         dataset = Dataset.from_dict(data_samples)
         answer_correctness_bisheng = AnswerCorrectnessBisheng(llm=llm)
@@ -314,7 +352,8 @@ def add_evaluation_task(evaluation_id: int):
             ("statements_num_overlap", "statements_num_overlap", 2),
             ("answer_recall", "recall", 3),
             ("answer_precision", "precision", 3),
-            ("answer_f1", "F1", 3)
+            ("answer_f1", "F1", 3),
+            ("error", "error", 1)
         ]
         row_list = []
         tmp_dict = defaultdict(int)
@@ -323,6 +362,9 @@ def add_evaluation_task(evaluation_id: int):
         for index, one in enumerate(question):
             row_data = {}
             for field, title, unit_type in columns:
+                if field == 'error':
+                    row_data[field] = error_info.get(one,'')
+                    continue
                 value = result.get(field)[index]
                 if unit_type != 1:
                     tmp_dict[field] += value
@@ -342,10 +384,11 @@ def add_evaluation_task(evaluation_id: int):
 
         df = pd.DataFrame(data=row_list, columns=[one[1] for one in columns])
         result_file_path = EvaluationService.upload_result_file(df)
-
         evaluation.result_score = json.dumps(total_dict)
         evaluation.status = EvaluationTaskStatus.success.value
         evaluation.result_file_path = result_file_path
+        if len(error_info) > 0:
+            raise Exception("执行中出现错误")
         EvaluationDao.update_evaluation(evaluation=evaluation)
         redis_client.delete(redis_key)
         logger.info(f'evaluation task success id={evaluation_id}')
@@ -353,5 +396,6 @@ def add_evaluation_task(evaluation_id: int):
     except Exception as e:
         logger.exception(f'evaluation task failed id={evaluation_id} {str(e)}')
         evaluation.status = EvaluationTaskStatus.failed.value
+        evaluation.failed_info = str(e)
         EvaluationDao.update_evaluation(evaluation=evaluation)
         redis_client.delete(redis_key)
