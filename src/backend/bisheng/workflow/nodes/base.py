@@ -13,6 +13,8 @@ from bisheng.workflow.common.node import BaseNodeData, NodeType
 from bisheng.workflow.edges.edges import EdgeBase
 from bisheng.workflow.graph.graph_state import GraphState
 from bisheng.workflow.nodes.prompt_template import PromptTemplateParser
+from bisheng.database.models.workflow_node_logs import WorkflowNodeLog, LogType, WorkflowNodeLogDao
+import traceback
 
 
 class BaseNode(ABC):
@@ -199,6 +201,11 @@ class BaseNode(ABC):
             self.current_step += 1
         except Exception as e:
             reason = str(e)
+            try:
+                self.save_node_logs({"error_log": str(e), "location": f"{traceback.format_exc()}"},
+                                    log_type=LogType.ERROR.value)
+            except Exception as e:
+                pass
             raise e
         finally:
             # 输出节点的结束日志由fake节点输出, 因为需要等待用户先输入完成，才能正确显示日志
@@ -206,6 +213,10 @@ class BaseNode(ABC):
                 self.callback_manager.on_node_end(data=NodeEndData(
                     unique_id=exec_id, node_id=self.id, name=self.name, reason=reason, log_data=log_data,
                     input_data=self.other_node_variable))
+        try:
+            self.save_node_logs({"parse_log": log_data})
+        except Exception as e:
+            print(f'save node log error: {e}')
         return state
 
     async def arun(self, state: dict) -> Any:
@@ -213,3 +224,25 @@ class BaseNode(ABC):
 
     def stop(self):
         self.stop_flag = True
+
+    def save_node_logs(self, logs, log_type=LogType.NORMAL.value):
+        """
+        保存节点的日志
+        :param logs:
+        :return:
+        """
+        if not logs:
+            return
+        chat_id = ""
+        if self.callback_manager and hasattr(self.callback_manager, 'chat_id'):
+            chat_id = self.callback_manager.chat_id
+        log_data = WorkflowNodeLog(
+            flow_id=self.workflow_id,
+            node_id=self.id,
+            node_name=self.name,
+            log_type=log_type,
+            log_data=logs,
+            user_id=self.user_id,
+            chat_id=chat_id,
+        )
+        WorkflowNodeLogDao.insert_one(log_data)
