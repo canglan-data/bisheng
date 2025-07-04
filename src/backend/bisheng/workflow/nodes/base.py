@@ -241,7 +241,7 @@ class BaseNode(ABC):
             node_id=self.id,
             node_name=self.name,
             log_type=log_type,
-            log_data=logs,
+            logs=logs,
             user_id=self.user_id,
             chat_id=chat_id,
         )

@@ -22,7 +22,7 @@ class LogType(IntEnum):
 class WorkflowNodeLogBase(SQLModelSerializable):
     flow_id: str = Field(index=True, description='工作流ID')
     chat_id: str = Field(index=True, description='会话ID')
-    log_type: LogType = Field(default=LogType.NORMAL, description='日志类型')
+    log_type: int = Field(default=0, description='日志类型')
     logs: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON), description='JSON格式的日志内容')
     node_id: Optional[str] = Field(default=None, index=True, description='节点ID')
     node_name: Optional[str] = Field(default=None, index=True, description='节点名称')
