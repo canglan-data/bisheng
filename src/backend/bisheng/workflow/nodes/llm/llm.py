@@ -32,9 +32,8 @@ class LLMNode(BaseNode):
         self._user_prompt_list = []
         self._batch_variable_list = []
         self._log_reasoning_content = []
-
         self._enable_web_search = self.node_params.get('enable_web_search', False)
-        self._show_reason = self.node_params.get('show_reason', False)
+        self._show_reason = self.node_params.get('show_reason', True)
 
         # 初始化llm对象
         self._stream = True

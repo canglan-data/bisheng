@@ -78,12 +78,11 @@ def _get_qwen_params(params: dict, server_config: dict, model_config: dict) -> d
     show_reason = model_config.get('show_reason', False)
     params['model_kwargs'] = {
         'enable_search': enable_web_search,
-        # 'enable_thinking': show_reason,
         'search_options': {
             'forced_search': enable_web_search
         },
         'temperature': params.pop('temperature', 0.3),
-        'enable_thinking': False,
+        'enable_thinking': show_reason,
     }
     # params['extra_body'] = params.get('extra_body', {})
     # params['extra_body']['enable_thinking'] = show_reason
@@ -211,7 +210,7 @@ class BishengLLM(BaseChatModel):
         self.top_p = kwargs.get('top_p', 1)
         self.cache = kwargs.get('cache', True)
         self.enable_web_search = kwargs.get('enable_web_search', False)
-        self.show_reason = kwargs.get('show_reason', False)
+        self.show_reason = kwargs.get('show_reason', True)
 
         # 是否忽略模型是否上线的检查
         ignore_online = kwargs.get('ignore_online', False)
@@ -265,12 +264,8 @@ class BishengLLM(BaseChatModel):
         model_config['enable_web_search'] = self.get_enable_web_search()
         if server_info.type == LLMServerType.TENCENT.value:
             default_params['extra_body'] = {'enable_enhancement': self.get_enable_web_search()}
-        if server_info.type == LLMServerType.QWEN.value:
-            # default_params['extra_body'] = {'enable_thinking': self.get_show_reason()}
-            default_params['extra_body'] = {'enable_thinking': False}
-        # model_config['show_reason'] = self.get_show_reason()
-        model_config['show_reason'] = False
-
+        model_config['show_reason'] = self.get_show_reason()
+        logger.info(f"model_info: {model_info} model_config: {model_config}")
         params = params_handler(default_params, server_config, model_config)
 
         return params
