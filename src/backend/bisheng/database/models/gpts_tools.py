@@ -237,10 +237,7 @@ class GptsToolsDao(GptsToolsBase):
         else:
             filters.append(GptsToolsType.user_id.in_(user_ids))
         if extra_tool_type_ids_not:
-            filters.append(or_(
-                GptsToolsType.id.not_in_(extra_tool_type_ids_not),
-                GptsToolsType.user_id.in_(user_ids)
-            ))
+            filters.append(GptsToolsType.id.not_in(extra_tool_type_ids_not))
         if include_preset:
             filters.append(GptsToolsType.is_preset == ToolPresetType.PRESET.value)
         if is_preset is not None:

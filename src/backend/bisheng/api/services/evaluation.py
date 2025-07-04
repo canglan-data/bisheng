@@ -11,7 +11,7 @@ from fastapi import UploadFile, HTTPException
 import pandas as pd
 from collections import defaultdict
 from copy import deepcopy
-
+import traceback
 from bisheng.api.services.user_service import UserPayload
 from bisheng.api.v1.schemas import (UnifiedResponseModel, resp_200, StreamData, BuildStatus)
 from bisheng.cache import InMemoryCache
@@ -289,7 +289,7 @@ def add_evaluation_task(evaluation_id: int):
                     versions=[flow_version]))
                 try:
                     one["answer"] = flow_result.get(flow_version.id)
-                    one["error"]
+                    one["error"] = ""
                 except Exception as e:
                     one["answer"] = ""
                     one["error"] = str(e)
@@ -388,7 +388,10 @@ def add_evaluation_task(evaluation_id: int):
         evaluation.status = EvaluationTaskStatus.success.value
         evaluation.result_file_path = result_file_path
         if len(error_info) > 0:
-            raise Exception("执行中出现错误")
+            e = ""
+            for e in error_info:
+                e += f'{e}:{error_info.get(e)}\n'
+            raise Exception(e)
         EvaluationDao.update_evaluation(evaluation=evaluation)
         redis_client.delete(redis_key)
         logger.info(f'evaluation task success id={evaluation_id}')
@@ -396,6 +399,6 @@ def add_evaluation_task(evaluation_id: int):
     except Exception as e:
         logger.exception(f'evaluation task failed id={evaluation_id} {str(e)}')
         evaluation.status = EvaluationTaskStatus.failed.value
-        evaluation.failed_info = str(e)
+        evaluation.failed_info = str(e) + str(traceback.format_exc())
         EvaluationDao.update_evaluation(evaluation=evaluation)
         redis_client.delete(redis_key)
