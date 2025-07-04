@@ -61,7 +61,7 @@ class RoleGroupService():
                 tmp_group_dict[group_id] = groups_dict[group_id]
                 tmp_group_dict.update(self.get_child_groups(groups_dict[group_id], group_tree))
             groups_dict = tmp_group_dict
-
+        logger.debug(f'get_group_list group_ids: {group_ids}, groups_dict: {groups_dict}')
         # 查询user
         user_admin = UserGroupDao.get_groups_admins(list(groups_dict.keys()))
         user_operation = UserGroupDao.get_groups_operations(list(groups_dict.keys()))
@@ -84,6 +84,7 @@ class RoleGroupService():
                 if user.group_id == group.id
             ]
             group.parent_group_path = self.get_parent_group_path(group, group_tree)
+        logger.debug(f'get_group_list groups_dict: {groups_dict}')
         return list(groups_dict.values())
 
     def get_all_children(self, group: GroupRead, group_tree: dict, max_level: int = None):
@@ -147,7 +148,7 @@ class RoleGroupService():
             for _, group_info in group_tree[level].items():
                 if group_info.parent_id == group.id:
                     child_group[group_info.id] = group_info
-            for _, group_info in child_group.items():
+            for _, group_info in list(child_group.items()):
                 child_group.update(self.get_child_groups(group_info, group_tree, max_level))
         return child_group
 
@@ -347,8 +348,11 @@ class RoleGroupService():
         return GroupDao.get_group_by_ids(group_ids)
 
     def get_group_and_child_group_member(self,group_id) -> List[int]:
+        logger.debug(f"get_group_and_child_group_member: {group_id}")
         child_groups = GroupDao.get_all_child_groups_by_id([group_id])
-        group_member = UserGroupDao.get_groups_users([x.id for x in child_groups])
+        logger.debug(f"child_groups: {child_groups}")
+        group_member = UserGroupDao.get_groups_users([x.id for x in child_groups]+[group_id])
+        logger.debug(f"group_member: {group_member}")
         return [one.user_id for one in group_member]
 
 
@@ -470,6 +474,8 @@ class RoleGroupService():
         #     return [], 0
         # flow_ids = [resource.third_id for resource in resource_list]
         user_ids = self.get_group_and_child_group_member(group_id)
+        if not user_ids:
+            return [], 0
         res = []
         flow_type_value = flow_type.value if flow_type else FlowType.FLOW.value
         data, total = FlowDao.filter_flows_by_ids(None, keyword, page_num, page_size, flow_type_value,user_ids)
@@ -492,6 +498,8 @@ class RoleGroupService():
         # 查询知识库
         res = []
         user_ids = self.get_group_and_child_group_member(group_id)
+        if not user_ids:
+            return [], 0
         data, total = KnowledgeDao.filter_knowledge_by_ids(None, keyword, page_num, page_size,user_ids)
         db_user_ids = {one.user_id for one in data}
         user_map = self.get_user_map(db_user_ids)
@@ -509,6 +517,8 @@ class RoleGroupService():
         #     return [], 0
         # assistant_ids = [resource.third_id for resource in resource_list]  # 查询助手
         user_ids = self.get_group_and_child_group_member(group_id)
+        if not user_ids:
+            return [], 0
         res = []
         data, total = AssistantDao.filter_assistant_by_id(None, keyword, page_num, page_size,user_ids)
         for one in data:
@@ -524,6 +534,8 @@ class RoleGroupService():
         #     return [], 0
         # tool_ids = [int(resource.third_id) for resource in resource_list]
         user_ids = self.get_group_and_child_group_member(group_id)
+        if not user_ids:
+            return [], 0
         res = []
         # 查询工具
         data, total = GptsToolsDao.filter_tool_types_by_ids(None, keyword, page_num, page_size,user_ids)
@@ -616,7 +628,9 @@ class RoleGroupService():
         else:
             # 查询下是否是其他用户组的管理员
             user_groups = UserGroupDao.get_user_admin_group(login_user.user_id)
+            logger.info(f"get_group_roles {str(user_groups)},{login_user.user_id}")
             user_group_ids = [one.group_id for one in user_groups if one.is_group_admin]
+            logger.info(f"get_group_roles group_ids: {str(group_ids)} user_group_ids: {str(user_group_ids)}")
             if group_ids:
                 group_ids = list(set(group_ids) & set(user_group_ids))
             else:

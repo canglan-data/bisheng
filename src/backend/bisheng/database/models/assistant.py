@@ -228,7 +228,7 @@ class AssistantDao(AssistantBase):
 
     @classmethod
     def filter_assistant_by_id(cls, assistant_ids: List[str], keywords: str = None, page: int = 0,
-                               limit: int = 0,user_ids: List[int] = None) -> (List[Assistant], int):
+                               limit: int = 0,user_ids:List[int]=None) -> (List[Assistant], int):
         """
         根据关键字和助手id过滤出对应的助手
         """

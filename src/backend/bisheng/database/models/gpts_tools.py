@@ -222,8 +222,35 @@ class GptsToolsDao(GptsToolsBase):
             return session.exec(statement).all()
 
     @classmethod
+    def get_user_tool_type_plus(cls, user_ids: List[int], extra_tool_type_ids: List[int] = None, include_preset: bool = True,
+                           is_preset: ToolPresetType = None,extra_tool_type_ids_not: List[int] = None) -> List[GptsToolsType]:
+        """
+        获取用户可见的所有工具类别
+        """
+        statement = select(GptsToolsType).where(GptsToolsType.is_delete == 0)
+        filters = []
+        if extra_tool_type_ids:
+            filters.append(or_(
+                GptsToolsType.id.in_(extra_tool_type_ids),
+                GptsToolsType.user_id.in_(user_ids)
+            ))
+        else:
+            filters.append(GptsToolsType.user_id.in_(user_ids))
+        if extra_tool_type_ids_not:
+            filters.append(GptsToolsType.id.not_in(extra_tool_type_ids_not))
+        if include_preset:
+            filters.append(GptsToolsType.is_preset == ToolPresetType.PRESET.value)
+        if is_preset is not None:
+            statement = statement.where(GptsToolsType.is_preset == is_preset.value)
+        statement = statement.where(or_(*filters))
+        statement = statement.order_by(func.field(GptsToolsType.is_preset,
+                                                  ToolPresetType.PRESET.value).desc() ,GptsToolsType.update_time.desc())
+        with session_getter() as session:
+            return session.exec(statement).all()
+
+    @classmethod
     def filter_tool_types_by_ids(cls, tool_type_ids: List[int], keyword: Optional[str] = None, page: int = 0,
-                                 limit: int = 0, include_preset: bool = False,user_ids:List[int] = None) -> (List[GptsToolsType], int):
+                                 limit: int = 0, include_preset: bool = False,user_ids:List[int]=None) -> (List[GptsToolsType], int):
         """
         根据工具类别id过滤工具类别
         """
