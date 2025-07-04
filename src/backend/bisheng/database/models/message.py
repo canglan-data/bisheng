@@ -12,6 +12,9 @@ from bisheng.database.models.base import SQLModelSerializable
 from bisheng.database.models.session import ReviewStatus
 from bisheng.database.models.user_group import UserGroup
 from bisheng.database.models.session import MessageSession
+from bisheng.database.models.assistant import AssistantDao
+from bisheng.database.models.flow import FlowDao
+from bisheng.database.models.flow_version import FlowVersionDao
 from bisheng.utils.sysloger import syslog_client
 
 
@@ -61,6 +64,10 @@ class MessageBase(SQLModelSerializable):
 class ChatMessage(MessageBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     receiver: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    is_delete: int = Field(default=0, nullable=False, index=False)
+    flow_version_name: str = Field(default="v0", description='应用版本')
+    version_update_time:  Optional[datetime] = Field(default=None, sa_column=Column(
+        DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP')))
 
 
 class ChatMessageRead(MessageBase):
@@ -82,7 +89,7 @@ class MessageDao(MessageBase):
     @classmethod
     def static_msg_liked(cls, liked: int, flow_id: str, create_time_begin: datetime,
                          create_time_end: datetime):
-        base_condition = select(func.count(ChatMessage.id)).where(ChatMessage.liked == liked)
+        base_condition = select(func.count(ChatMessage.id)).where(ChatMessage.liked == liked, ChatMessage.is_delete == 0)
 
         if flow_id:
             base_condition = base_condition.where(ChatMessage.flow_id == flow_id)
@@ -110,12 +117,12 @@ class MessageDao(MessageBase):
             exclude_chat_ids: List[str] = None,
     ) -> Tuple[List[Dict], int]:
         with session_getter() as session:
-            count_stat = select(func.count(func.distinct(ChatMessage.chat_id)))
+            count_stat = select(func.count(func.distinct(ChatMessage.chat_id))).where(ChatMessage.is_delete == 0)
             sql = select(ChatMessage.chat_id, ChatMessage.user_id, ChatMessage.flow_id,
                          func.min(ChatMessage.create_time).label('create_time'),
                          func.sum(case((ChatMessage.liked == 1, 1), else_=0)),
                          func.sum(case((ChatMessage.liked == 2, 1), else_=0)),
-                         func.sum(case((ChatMessage.copied == 1, 1), else_=0)))
+                         func.sum(case((ChatMessage.copied == 1, 1), else_=0))).where(ChatMessage.is_delete == 0)
 
             if flow_ids:
                 count_stat = count_stat.where(ChatMessage.flow_id.in_(flow_ids))
@@ -195,8 +202,8 @@ class ChatMessageDao(MessageBase):
 
     @classmethod
     def get_latest_message_by_chatid(cls, chat_id: str):
-        statement = select(ChatMessage).where(ChatMessage.chat_id == chat_id).order_by(
-            ChatMessage.id.desc()).limit(1)
+        statement = select(ChatMessage).where(ChatMessage.chat_id == chat_id,
+                                              ChatMessage.is_delete == 0).order_by(ChatMessage.id.desc()).limit(1)
         with session_getter() as session:
             res = session.exec(statement).all()
             if res:
@@ -213,7 +220,8 @@ class ChatMessageDao(MessageBase):
         获取每个会话最近的一次消息内容
         """
         statement = select(ChatMessage.chat_id,
-                           func.max(ChatMessage.id)).where(ChatMessage.chat_id.in_(chat_ids))
+                           func.max(ChatMessage.id)).where(ChatMessage.chat_id.in_(chat_ids),
+                                                           ChatMessage.is_delete == 0)
         if category:
             statement = statement.where(ChatMessage.category == category)
         if exclude_category:
@@ -233,7 +241,7 @@ class ChatMessageDao(MessageBase):
                                 category_list: list = None,
                                 limit: int = 10) -> List[ChatMessage]:
         with session_getter() as session:
-            statement = select(ChatMessage).where(ChatMessage.chat_id == chat_id)
+            statement = select(ChatMessage).where(ChatMessage.chat_id == chat_id, ChatMessage.is_delete == 0)
             if category_list:
                 statement = statement.where(ChatMessage.category.in_(category_list))
             statement = statement.limit(limit).order_by(ChatMessage.create_time.asc())
@@ -244,28 +252,31 @@ class ChatMessageDao(MessageBase):
         with session_getter() as session:
             statement = select(ChatMessage.chat_id,
                                ChatMessage.flow_id).where(ChatMessage.flow_id.in_(flow_id)).where(
-                                   not_(ChatMessage.chat_id.in_(chat_id))).group_by(
+                                   not_(ChatMessage.chat_id.in_(chat_id))).where(ChatMessage.is_delete == 0).group_by(
                                        ChatMessage.chat_id, ChatMessage.flow_id)
             return session.exec(statement).all()
 
     @classmethod
     def get_msg_by_chat_id(cls, chat_id: str):
         with session_getter() as session:
-            statement = select(ChatMessage).where(ChatMessage.chat_id == chat_id).order_by(ChatMessage.id.asc())
+            statement = select(ChatMessage).where(ChatMessage.chat_id == chat_id,
+                                                  ChatMessage.is_delete == 0).order_by(ChatMessage.id.asc())
             return session.exec(statement).all()
 
     @classmethod
     def get_msg_by_flow(cls, flow_id: str):
         with session_getter() as session:
             # sql = text("select chat_id,count(*) as chat_count from chatmessage where flow_id=:flow_id group by chat_id") # noqa
-            st = select(ChatMessage.chat_id).where(ChatMessage.flow_id == flow_id).group_by(
+            st = select(ChatMessage.chat_id).where(ChatMessage.flow_id == flow_id,
+                                                   ChatMessage.is_delete == 0).group_by(
                 ChatMessage.chat_id)
             return session.exec(st).all()
 
     @classmethod
     def get_msg_by_flows(cls, flow_id: List[str]):
         with session_getter() as session:
-            st = select(ChatMessage.chat_id).where(ChatMessage.flow_id.in_(flow_id)).group_by(
+            st = select(ChatMessage.chat_id).where(ChatMessage.flow_id.in_(flow_id),
+                                                   ChatMessage.is_delete == 0).group_by(
                 ChatMessage.chat_id)
             return session.exec(st).all()
 
@@ -274,9 +285,10 @@ class ChatMessageDao(MessageBase):
         if user_id is None or chat_id is None:
             logger.info('delete_param_error user_id={} chat_id={}', user_id, chat_id)
             return False
-
-        statement = delete(ChatMessage).where(ChatMessage.chat_id == chat_id,
-                                              ChatMessage.user_id == user_id)
+        statement = update(ChatMessage).where(ChatMessage.chat_id == chat_id,
+                                              ChatMessage.user_id == user_id).values(is_delete=1)
+        # statement = delete(ChatMessage).where(ChatMessage.chat_id == chat_id,
+        #                                       ChatMessage.user_id == user_id)
 
         with session_getter() as session:
             session.exec(statement)
@@ -288,9 +300,10 @@ class ChatMessageDao(MessageBase):
         if user_id is None or message_id is None:
             logger.info('delete_param_error user_id={} chat_id={}', user_id, message_id)
             return False
-
-        statement = delete(ChatMessage).where(ChatMessage.id == message_id,
-                                              ChatMessage.user_id == user_id)
+        statement = update(ChatMessage).where(ChatMessage.id == message_id,
+                                              ChatMessage.user_id == user_id).values(is_delete=1)
+        # statement = delete(ChatMessage).where(ChatMessage.id == message_id,
+        #                                       ChatMessage.user_id == user_id)
 
         with session_getter() as session:
             session.exec(statement)
@@ -302,6 +315,19 @@ class ChatMessageDao(MessageBase):
         statement = update(MessageSession).where(MessageSession.chat_id == message.chat_id).values(
             update_time = datetime.now(),
         )
+        if message.flow_id :
+            flow = FlowDao.get_flow_by_id(message.flow_id)
+            if flow:
+                flow_version = FlowVersionDao.get_version_by_flow(message.flow_id)
+                if flow_version:
+                    message.version_update_time = flow_version.update_time
+                    message.flow_version_name = flow_version.name
+            else:
+                assistant = AssistantDao.get_one_assistant(message.flow_id)
+                if assistant:
+                    message.version_update_time = assistant.update_time
+                    message.flow_version_name = "v0"
+
         with session_getter() as session:
             session.exec(statement)
             session.add(message)
@@ -335,7 +361,8 @@ class ChatMessageDao(MessageBase):
     @classmethod
     def get_message_by_id(cls, message_id: int) -> Optional[ChatMessage]:
         with session_getter() as session:
-            return session.exec(select(ChatMessage).where(ChatMessage.id == message_id)).first()
+            return session.exec(select(ChatMessage).where(ChatMessage.id == message_id,
+                                                          ChatMessage.is_delete == 0)).first()
 
     @classmethod
     def update_message(cls, message_id: int, user_id: int, message: str):
@@ -371,7 +398,7 @@ class ChatMessageDao(MessageBase):
 
     @classmethod
     def get_all_message_by_chat_ids(cls, chat_ids: List[str]) -> List[ChatMessage]:
-        statement = select(ChatMessage).where(ChatMessage.chat_id.in_(chat_ids)).order_by(
+        statement = select(ChatMessage).where(ChatMessage.chat_id.in_(chat_ids), ChatMessage.is_delete == 0).order_by(
             ChatMessage.create_time.asc())
         with session_getter() as session:
             return session.exec(statement).all()
@@ -389,7 +416,7 @@ class ChatMessageDao(MessageBase):
     def get_chat_info_group_by_app(cls, flow_ids: List[str], start_date: datetime, end_date: datetime, order_field: str,
                                    order_type: str, page: int, page_size: int,user_ids: List[str]=None):
         """ 获取会话的一些信息，根据技能来聚合 """
-        count_stat = select(func.count(func.distinct(ChatMessage.flow_id)))
+        count_stat = select(func.count(func.distinct(ChatMessage.flow_id))).where(ChatMessage.is_delete == 0)
         sql = select(
             ChatMessage.flow_id,
             func.min(ChatMessage.user_id),
@@ -398,7 +425,7 @@ class ChatMessageDao(MessageBase):
             func.sum(case((ChatMessage.category != 'question', 1), else_=0)).label('output_num'),
             func.sum(case((ChatMessage.review_status == ReviewStatus.VIOLATIONS.value, 1), else_=0)).label(
                 'violations_num')
-        )
+        ).where(ChatMessage.is_delete == 0)
         if flow_ids:
             sql = sql.where(ChatMessage.flow_id.in_(flow_ids))
             count_stat = count_stat.where(ChatMessage.flow_id.in_(flow_ids))
@@ -438,8 +465,10 @@ class ChatMessageDao(MessageBase):
 
     @classmethod
     def get_chat_id_by_time(cls, flow_ids: List[str]=None, start_time: datetime=None, end_time: datetime=None,
-                            category: List[str] = None):
+                            is_delete: int=0, category: List[str] = None):
         statement = select(func.distinct(ChatMessage.chat_id))
+        if is_delete is not None:
+            statement = statement.where(ChatMessage.is_delete == is_delete)
         if flow_ids:
             statement = statement.where(ChatMessage.flow_id.in_(flow_ids))
         if start_time:
@@ -462,7 +491,7 @@ class ChatMessageDao(MessageBase):
             ChatMessage.flow_id == flow_id,
             ChatMessage.chat_id == chat_id,
             ChatMessage.liked == 1  # 筛选 liked 为 1 的记录
-        )
+        ).where(ChatMessage.is_delete == 0)
 
         # 添加时间范围筛选条件
         if start_time:
@@ -482,7 +511,7 @@ class ChatMessageDao(MessageBase):
             ChatMessage.flow_id == flow_id,
             ChatMessage.chat_id == chat_id,
             ChatMessage.liked == 2
-        )
+        ).where(ChatMessage.is_delete == 0)
 
         # 添加时间范围筛选条件
         if start_time:
@@ -502,7 +531,7 @@ class ChatMessageDao(MessageBase):
             ChatMessage.flow_id == flow_id,
             ChatMessage.chat_id == chat_id,
             ChatMessage.liked != 2
-        )
+        ).where(ChatMessage.is_delete == 0)
 
         # 添加时间范围筛选条件
         if start_time:
@@ -522,7 +551,7 @@ class ChatMessageDao(MessageBase):
             ChatMessage.flow_id == flow_id,
             ChatMessage.chat_id == chat_id,
             ChatMessage.copied == 1
-        )
+        ).where(ChatMessage.is_delete == 0)
 
         # 添加时间范围筛选条件
         if start_time:

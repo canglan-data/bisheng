@@ -592,7 +592,7 @@ class RoleGroupService():
                 return [], 0
             resource_ids = [one.third_id for one in group_resources]
 
-        return FlowDao.get_all_apps(keyword, id_list=resource_ids, page=page, limit=page_size)
+        return FlowDao.get_all_apps(keyword, id_list=resource_ids, page=page, limit=page_size, is_delete=None)
 
     def get_operation_resources(self, request: Request, login_user: UserPayload, keyword: str, page: int,
                              page_size: int) -> (list, int):
@@ -615,7 +615,7 @@ class RoleGroupService():
                 return [], 0
             resource_ids = [one.third_id for one in group_resources]
 
-        return FlowDao.get_all_apps(keyword, id_list=resource_ids, page=page, limit=page_size)
+        return FlowDao.get_all_apps(keyword, id_list=resource_ids, page=page, limit=page_size, is_delete=None)
 
     def get_group_roles(self, login_user: UserPayload, group_ids: List[int], keyword: str, page: int, page_size: int,
                         include_parent: bool) -> (list, int):

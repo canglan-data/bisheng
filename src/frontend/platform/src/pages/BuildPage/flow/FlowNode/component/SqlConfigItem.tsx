@@ -3,13 +3,14 @@ import { Label } from "@/components/bs-ui/label";
 import { Switch } from "@/components/bs-ui/switch";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next"; // 引入国际化
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger } from "@/components/bs-ui/select";
 
 export default function SqlConfigItem({ data, onChange, onValidate }) {
     const { t } = useTranslation('flow'); // 使用国际化
     const [values, setValues] = useState(data.value);
     const [errors, setErrors] = useState({});
 
-    const { db_address, db_name, db_username, db_password, open } = values;
+    const { db_type, db_address, db_name, db_username, db_password, open } = values;
 
     // 校验方法
     const handleValidate = () => {
@@ -19,6 +20,11 @@ export default function SqlConfigItem({ data, onChange, onValidate }) {
         const errorMessages = [];
 
         const validations = [
+            {
+                key: "db_type",
+                value: db_type,
+                requiredMsg: t("dbAddressRequired"), // 数据库地址不可为空
+            },
             {
                 key: "db_address",
                 value: db_address,
@@ -86,8 +92,23 @@ export default function SqlConfigItem({ data, onChange, onValidate }) {
             {/* 配置表单 */}
             {open && (
                 <>
+                    {/* 数据库类型 */}
+                    <Label className="flex items-center bisheng-label">{t("dbType")}</Label> {/* 数据库类型 */}
+                    <Select value={db_type} onValueChange={(value) => handleChange("db_type", value)}>
+                        <SelectTrigger className={`w-[290px] mt-2 ${errors.db_type ? "border-red-500" : ""}`}>
+                            {(db_type ? <div className="text-foreground inline-flex flex-1 flex-row justify-between items-center">
+                            <span>{db_type}</span>
+                        </div> : '请选择')}
+                        </SelectTrigger>
+                        <SelectContent className="max-w-[290px] break-all">
+                            <SelectGroup>
+                                <SelectItem value={'MYSQL'}>MYSQL</SelectItem>
+                                <SelectItem value={'DB2'}>DB2</SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
                     {/* 数据库地址 */}
-                    <Label className="flex items-center bisheng-label">{t("dbAddress")}</Label> {/* 数据库地址 */}
+                    <Label className="flex items-center bisheng-label mt-4">{t("dbAddress")}</Label> {/* 数据库地址 */}
                     <Input
                         className={`mt-2 nodrag ${errors.db_address ? "border-red-500" : ""}`}
                         value={db_address}

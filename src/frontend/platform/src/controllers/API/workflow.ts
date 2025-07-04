@@ -400,7 +400,7 @@ const workflowTemplate = [
         "name": "大模型",
         "description": "调用大模型回答用户问题或者处理任务。",
         "type": "llm",
-        "v": "3",
+        "v": "4",
         "tab": {
             "value": "single",
             "options": [
@@ -494,6 +494,12 @@ const workflowTemplate = [
                 "name": "输出",
                 "params": [
                     {
+                        "key": "show_reason",
+                        "label": "将模型思考过程展示在会话中",
+                        "type": "switch",
+                        "value": true,
+                    },
+                    {
                         "key": "output_user",
                         "label": "将输出结果展示在会话中",
                         "type": "switch",
@@ -517,7 +523,7 @@ const workflowTemplate = [
         "name": "助手",
         "description": "AI 自主进行任务规划，选择合适的知识库、数据库或工具进行调用。",
         "type": "agent",
-        "v": "3",
+        "v": "4",
         "tab": {
             "value": "single",
             "options": [
@@ -671,6 +677,12 @@ const workflowTemplate = [
                 "name": "输出",
                 "params": [
                     {
+                        "key": "show_reason",
+                        "label": "将模型思考过程展示在会话中",
+                        "type": "switch",
+                        "value": true,
+                    },
+                    {
                         "key": "output_user",
                         "label": "将输出结果展示在会话中",
                         "type": "switch",
@@ -749,7 +761,7 @@ const workflowTemplate = [
         "name": "文档知识库问答",
         "description": "根据用户问题从知识库中检索相关内容，结合检索结果调用大模型生成最终结果，支持多个问题并行执行。",
         "type": "rag",
-        "v": "2",
+        "v": "3",
         "group_params": [
             {
                 "name": "知识库检索设置",
@@ -856,6 +868,12 @@ const workflowTemplate = [
             {
                 "name": "输出",
                 "params": [
+                    {
+                        "key": "show_reason",
+                        "label": "将模型思考过程展示在会话中",
+                        "type": "switch",
+                        "value": true,
+                    },
                     {
                         "key": "output_user",
                         "label": "将输出结果展示在会话中",
