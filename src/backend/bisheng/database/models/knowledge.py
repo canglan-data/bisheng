@@ -36,6 +36,7 @@ class KnowledgeBase(SQLModelSerializable):
     index_name: Optional[str] = Field(default=None, index=False)
     state: Optional[int] = Field(index=False, default=KnowledgeState.PUBLISHED.value,
                                  description='0 为未发布，1 为已发布, 2 为复制中')
+    parse_strategy_id: Optional[int] = Field(default=0)
     create_time: Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP')))
     update_time: Optional[datetime] = Field(default=None, sa_column=Column(
