@@ -9,6 +9,8 @@ RUN poetry config virtualenvs.create false
 RUN pip install soundfile==0.13.1 -i https://mirrors.huaweicloud.com/repository/pypi/simple
 RUN pip install tencentcloud-sdk-python-hunyuan==3.0.1394 -i https://mirrors.huaweicloud.com/repository/pypi/simple
 RUN pip install 'volcengine-python-sdk[ark]'==3.0.11 -i https://mirrors.huaweicloud.com/repository/pypi/simple
+RUN pip install ibm_db==3.2.6 -i https://mirrors.huaweicloud.com/repository/pypi/simple
+RUN pip install ibm_db_sa==0.4.2 -i https://mirrors.huaweicloud.com/repository/pypi/simple
 # RUN pip install --user volcengine==1.0.188
 # RUN poetry update --without dev
 

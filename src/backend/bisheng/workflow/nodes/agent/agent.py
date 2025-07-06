@@ -78,10 +78,10 @@ class AgentNode(BaseNode):
         ]
 
         # 是否支持nl2sql
-        self.db_type = self._sql_agent.get('db_type', 'mysql')  # 默认仍支持 MySQL
         self._sql_agent = self.node_params.get('sql_agent')
+        self.db_type = self._sql_agent.get('db_type', 'MYSQL')  # 默认仍支持 MySQL
         self._sql_address = ''
-        if self.db_type == 'db2':
+        if self.db_type == 'DB2':
             # DB2 连接格式（依赖 ibm_db 驱动）
             # 格式：db2+ibm_db://用户名:密码@主机:端口/数据库名
             self._sql_address = (
@@ -151,10 +151,10 @@ class AgentNode(BaseNode):
             }
         }
         tools = load_tools(tool_params=tool_params, llm=self._llm)
-        if self.db_type == 'db2':
-            for i in range(len(tools)):
-                tools[i].api_wrapper.query_check = self.init_db2_query_check(tools[i])
-        return load_tools(tool_params=tool_params, llm=self._llm)
+        # if self.db_type == 'db2':
+        #     for i in range(len(tools)):
+        #         tools[i].api_wrapper.query_check = self.init_db2_query_check(tools[i].api_wrapper)
+        return tools
 
     def _init_knowledge_tools(self, knowledge_retriever: dict):
         if not self._knowledge_ids:
