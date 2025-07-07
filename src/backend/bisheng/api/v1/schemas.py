@@ -464,8 +464,8 @@ class KnowledgeLLMConfig(BaseModel):
     abstract_prompt: Optional[str] = Field(None, description='摘要提示词')
 
 class VoiceLLMConfig(BaseModel):
-    tts_model_id: Optional[int] = Field(description='文字转语音模型')
-    stt_model_id: Optional[int] = Field(description='语音转文字模型')
+    tts_model_id: Optional[int] = Field(None,description='文字转语音模型')
+    stt_model_id: Optional[int] = Field(None,description='语音转文字模型')
 
 
 class AssistantLLMItem(BaseModel):
