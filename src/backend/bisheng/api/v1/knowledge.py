@@ -80,6 +80,12 @@ async def preview_file_chunk(*,
             data={
                 'parse_type': parse_type,
                 'file_url': file_share_url,
+                'split_rule': {
+                    # 当启用enable_header_split，文档不满足层级切分条件时，下游会修改req_data.enable_header_split
+                    # 这里返回实际是否进行了层级切分，使前端知晓
+                    'enable_header_split': req_data.enable_header_split,
+                    'enable_header_split_chunk_chapter': req_data.enable_header_split_chunk_chapter
+                },
                 'chunks': res,
                 'partitions': partitions
             })
@@ -303,11 +309,12 @@ async def update_knowledge_chunk(request: Request,
                                  knowledge_id: int = Body(..., embed=True, description='知识库ID'),
                                  file_id: int = Body(..., embed=True, description='文件ID'),
                                  chunk_index: int = Body(..., embed=True, description='分块索引号'),
+                                 chunk_chapter: Optional[str] = Body(default="", embed=True, description='分块索引号'),
                                  text: str = Body(..., embed=True, description='分块内容'),
                                  bbox: str = Body(default='', embed=True, description='分块框选位置')):
     """ 更新知识库分块内容 """
     KnowledgeService.update_knowledge_chunk(request, login_user, knowledge_id, file_id,
-                                            chunk_index, text, bbox)
+                                            chunk_index, text, bbox, chunk_chapter=chunk_chapter)
     return resp_200()
 
 

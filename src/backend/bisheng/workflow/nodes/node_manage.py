@@ -1,3 +1,5 @@
+import loguru
+
 from bisheng.workflow.common.node import NodeType
 from bisheng.workflow.nodes.agent.agent import AgentNode
 from bisheng.workflow.nodes.code.code import CodeNode
@@ -8,6 +10,7 @@ from bisheng.workflow.nodes.llm.llm import LLMNode
 from bisheng.workflow.nodes.output.output import OutputNode
 from bisheng.workflow.nodes.qa_retriever.qa_retriever import QARetrieverNode
 from bisheng.workflow.nodes.rag.rag import RagNode
+from bisheng.workflow.nodes.knowledge_retriever.knowledge_retriever import KnowledgeRetrieverNode
 from bisheng.workflow.nodes.report.report import ReportNode
 from bisheng.workflow.nodes.start.start import StartNode
 from bisheng.workflow.nodes.stt.stt import STTNode
@@ -21,6 +24,7 @@ NODE_CLASS_MAP = {
     NodeType.OUTPUT.value: OutputNode,
     NodeType.TOOL.value: ToolNode,
     NodeType.RAG.value: RagNode,
+    NodeType.KNOWLEDGE_RETRIEVER.value: KnowledgeRetrieverNode,
     NodeType.REPORT.value: ReportNode,
     NodeType.QA_RETRIEVER.value: QARetrieverNode,
     NodeType.CONDITION.value: ConditionNode,

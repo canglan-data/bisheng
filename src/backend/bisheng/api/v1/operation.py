@@ -79,7 +79,6 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
     start_date, end_date = validate_date_range(start_date, end_date)
     review_status = [ReviewStatus(review_status)] if review_status else []
     all_session, total = AuditLogService.get_session_list(user=login_user, flow_ids=flow_ids, user_ids=user_ids,
-                                                          group_ids=group_ids, start_date=start_date,
                                                           group_ids=group_ids, start_date=start_date, is_delete=None,
                                                           end_date=end_date, category=['question', 'answer'],
                                                    feedback=feedback, review_status=review_status, page=page, page_size=page_size, keyword=keyword)
