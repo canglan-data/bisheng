@@ -301,6 +301,9 @@ def _parse_knowledge_file(file_id: int, preview_cache_key: str = None, callback_
     # 获取切分规则
     file_rule = FileProcessBase(**json.loads(db_file.split_rule))
     logger.debug("parse_knowledge_file_celery_start", file_id)
+
+    old_enable_header_split = file_rule.enable_header_split  # 当前层级切分规则
+
     process_file_task(db_knowledge,
                       db_files=[db_file],
                       separator=file_rule.separator,
@@ -313,7 +316,16 @@ def _parse_knowledge_file(file_id: int, preview_cache_key: str = None, callback_
                       retain_images=file_rule.retain_images,
                       enable_formula=file_rule.enable_formula,
                       force_ocr=file_rule.force_ocr,
-                      filter_page_header_footer=file_rule.filter_page_header_footer)
+                      filter_page_header_footer=file_rule.filter_page_header_footer,
+                      split_rule=file_rule,
+                      )
+
+    if old_enable_header_split and not file_rule.enable_header_split:
+        logger.debug(f"parse_knowledge_file update enable_header_split file_id={file_id} file_name={db_file.file_name}")
+        # 选用层级切分，但最终未按层级切分的情况，更新enable_header_split
+        db_file.split_rule = file_rule.model_dump_json()
+        KnowledgeFileDao.update(db_file)
+
     logger.debug("parse_knowledge_file_celery_over", file_id)
     return db_file, db_knowledge
 
