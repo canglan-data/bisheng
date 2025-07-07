@@ -227,7 +227,7 @@ class KnowledgeDao(KnowledgeBase):
                                 keyword: str = None,
                                 page: int = 0,
                                 limit: int = 0,
-                                user_ids:List[int]=None) -> (List[Knowledge], int):
+                                user_ids:List[int] = None) -> (List[Knowledge], int):
         """
         根据关键字和知识库id过滤出对应的知识库
 

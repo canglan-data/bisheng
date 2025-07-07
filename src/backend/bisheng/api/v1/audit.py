@@ -129,7 +129,8 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
     all_session, total = AuditLogService.get_session_list(user=login_user, flow_ids=flow_ids, user_ids=user_ids, group_ids=group_ids,
                                                           start_date=start_date, end_date=end_date,
                                                    feedback=feedback, review_status=review_status, sensitive_status=sensitive_status,
-                                                          page=page, page_size=page_size, keyword=keyword, category=['question', 'answer'])
+                                                          page=page, page_size=page_size, keyword=keyword, category=['question', 'answer'],
+                                                          is_delete=None)
     url = AuditLogService.session_export(all_session, 'audit', start_date, end_date)
     return resp_200(data={"file": url})
 
@@ -145,6 +146,15 @@ async def review_session_list(request: Request, login_user: UserPayload = Depend
                                                               description='like：点赞；dislike：点踩；copied：复制'),
                               review_status: Optional[int] = Query(default=None, description='审查状态')):
     """ 按照筛选条件重新分析下所有会话 """
+    if not login_user.is_admin():
+        all_group = UserGroupDao.get_user_audit_or_admin_group(login_user.user_id)
+        all_group = [str(one.group_id) for one in all_group]
+    else:
+        all_group = [str(one.id) for one in GroupDao.get_all_group()]
+    if len(group_ids) == 0:
+        group_ids = all_group
+    else:
+        group_ids = list(set(group_ids) & set(all_group))
     review_status = [ReviewStatus(review_status)] if review_status else []
     data, total = AuditLogService.review_session_list(login_user, flow_ids, user_ids, group_ids, start_date, end_date,
                                                       feedback, review_status)
@@ -165,6 +175,15 @@ def export_session_messages(login_user: UserPayload = Depends(get_login_user),
                                                             description='like：点赞；dislike：点踩；copied：复制'),
                             sensitive_status: Optional[int] = Query(default=None, description='敏感词审查状态')):
     """ 导出会话详情列表的csv文件 """
+    if not login_user.is_admin():
+        all_group = UserGroupDao.get_user_audit_or_admin_group(login_user.user_id)
+        all_group = [str(one.group_id) for one in all_group]
+    else:
+        all_group = [str(one.id) for one in GroupDao.get_all_group()]
+    if len(group_ids) == 0:
+        group_ids = all_group
+    else:
+        group_ids = list(set(group_ids) & set(all_group))
     url = AuditLogService.export_session_messages(login_user, flow_ids, user_ids, group_ids, start_date, end_date,
                                                   feedback, sensitive_status)
     return resp_200(data={
@@ -240,6 +259,15 @@ def get_session_messages(login_user: UserPayload = Depends(get_login_user),
                                                          description='like：点赞；dislike：点踩；copied：复制'),
                          sensitive_status: Optional[int] = Query(default=None, description='敏感词审查状态')):
     """ 导出会话详情列表的数据 """
+    if not login_user.is_admin():
+        all_group = UserGroupDao.get_user_audit_or_admin_group(login_user.user_id)
+        all_group = [str(one.group_id) for one in all_group]
+    else:
+        all_group = [str(one.id) for one in GroupDao.get_all_group()]
+    if len(group_ids) == 0:
+        group_ids = all_group
+    else:
+        group_ids = list(set(group_ids) & set(all_group))
     result = AuditLogService.get_session_messages(user=login_user, flow_ids=flow_ids, user_ids=user_ids,
                                                   group_ids=group_ids, start_date=start_date, end_date=end_date,
                                                feedback=feedback, sensitive_status=sensitive_status)
