@@ -434,7 +434,7 @@ class LLMService:
     @classmethod
     def update_voice_llm(cls, request: Request, login_user: UserPayload, data: VoiceLLMConfig) \
             -> VoiceLLMConfig:
-        """ 更新知识库相关的默认模型配置 """
+        """ 更新语音相关的默认模型配置 """
         config = ConfigDao.get_config(ConfigKeyEnum.VOICE_LLM)
         if config:
             config.value = json.dumps(data.dict())
