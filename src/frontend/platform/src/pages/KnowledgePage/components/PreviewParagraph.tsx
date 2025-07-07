@@ -3,7 +3,7 @@ import { Button } from "@/components/bs-ui/button";
 import { useToast } from "@/components/bs-ui/toast/use-toast";
 import Tip from "@/components/bs-ui/tooltip/tip";
 import { CodeBlock } from "@/modals/formModal/chatMessage/codeBlock";
-import { cn } from "@/util/utils";
+import { cn, removeLineBreaks } from "@/util/utils";
 import { debounce } from "lodash-es";
 import { CircleX, FileCode, LocateFixed } from "lucide-react";
 import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
@@ -111,7 +111,7 @@ export const MarkdownView = ({ noHead = false, data }) => {
 }
 
 // 原始编辑
-const AceEditorCom = ({ markdown, hidden, onChange, onBlur }) => {
+const AceEditorCom = ({ markdown, hidden, onChange, onBlur, className = '', fontSize = 14 }) => {
     if (hidden) return null
 
     return <AceEditor
@@ -120,7 +120,7 @@ const AceEditorCom = ({ markdown, hidden, onChange, onBlur }) => {
         theme={"github"}
         highlightActiveLine={false}
         showPrintMargin={false}
-        fontSize={14}
+        fontSize={fontSize}
         showGutter={false}
         enableLiveAutocompletion
         name="CodeEditor"
@@ -129,7 +129,7 @@ const AceEditorCom = ({ markdown, hidden, onChange, onBlur }) => {
             // 为空时恢复上一次数据
         })}
         onValidate={(e) => console.error('ace validate :>> ', e)}
-        className="h-full w-full min-h-80 text-gray-500"
+        className={cn('h-full w-full min-h-80 text-gray-500', className)}
     />
 }
 
@@ -234,7 +234,11 @@ const EditMarkdown = ({ data, active, fileSuffix, onClick, onDel, onChange, onPo
     }, 30), [setValue])
 
     const setDebounceTitleValue = useCallback(debounce((value) => {
-        setTitleValue(value)
+        // 去除回车和空格
+        const newValue = removeLineBreaks(value) || '';
+        // 最大输入1000字
+        if (newValue.length >= 1000) return;
+        setTitleValue(removeLineBreaks(value))
     }, 30), [setTitleValue])
 
     
@@ -284,8 +288,8 @@ const EditMarkdown = ({ data, active, fileSuffix, onClick, onDel, onChange, onPo
     }
 
     return <div>
-        <div
-            className={cn("group p-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-primary transition-shadow w-full",
+        {hasChunkChapter && <div
+            className={cn("group p-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-primary transition-shadow w-full bg-[#EFF0F2]",
                 active && 'border-primary')
             }
             onClick={(e) => {
@@ -293,48 +297,11 @@ const EditMarkdown = ({ data, active, fileSuffix, onClick, onDel, onChange, onPo
                 onClick(data.chunkIndex)
             }}
         >
-            {/* chunk标题 */}
-            {hasChunkChapter && <div className="text-sm text-gray-500 flex gap-2 justify-between mb-1">
-                <div className="flex gap-2 items-center">
-                    <span>标题{data.chunkIndex + 1}</span>
-                    <span>-</span>
-                    <span>{chunkChapter.length} 字符</span>
-                    <div className="flex gap-2 justify-center items-center">
-                        {
-                            fileSuffix === 'pdf' && appConfig.enableEtl4lm && <Tip content={"点击定位到原文件"} side={"top"}  >
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className={cn("size-6 text-primary opacity-0 group-hover:opacity-100")}
-                                    onClick={onPositionClick}
-                                ><LocateFixed size={18} /></Button>
-                            </Tip>
-                        }
-                        {edit
-                            ? <div
-                                className={cn("size-6 text-primary flex justify-center items-center rounded-sm cursor-pointer opacity-0 group-hover:opacity-100", edit && 'bg-primary text-gray-50')}
-                                onClick={() => setEdit(!edit)}><FileCode size={18} /></div>
-                            : <Tip content={"点击展示此段落Markdown原文，进行编辑"} side={"top"}  >
-                                <div
-                                    className={cn("size-6 text-primary flex justify-center items-center rounded-sm cursor-pointer opacity-0 group-hover:opacity-100", edit && 'bg-primary text-gray-50')}
-                                    onClick={() => setEdit(!edit)}><FileCode size={18} /></div>
-                            </Tip>}
-                    </div>
-                </div>
-                <Tip content={"点击删除此分段"} side={"top"}  >
-                    <Button
-                        size="icon"
-                        variant="ghost"
-                        className={cn("size-6 text-primary opacity-0 group-hover:opacity-100")}
-                        onClick={() => onDel(data.chunkIndex, data.text)}
-                    ><CircleX size={18} /></Button>
-                </Tip>
-            </div>}
             {/* 所见即所得Markdown编辑器 */}
-            <VditorEditor ref={vditorRef} hidden={edit} defalutValue={titleValue} onChange={setDebounceTitleValue} onBlur={handleTitleBlur} />
+            {/* <VditorEditor ref={vditorRef} hidden={edit} defalutValue={titleValue} onChange={setDebounceTitleValue} onBlur={handleTitleBlur} /> */}
             {/* 普通Markdown编辑器 */}
-            <AceEditorCom hidden={!edit} markdown={titleValue} onChange={setDebounceTitleValue} onBlur={handleTitleBlur} />
-        </div>
+            <AceEditorCom hidden={false} markdown={titleValue} onChange={setDebounceTitleValue} onBlur={handleTitleBlur} className="min-h-6 bg-[#EFF0F2] text-black font-bold" fontSize={18} />
+        </div>}
     <div
         className={cn("group p-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-primary transition-shadow w-full",
             active && 'border-primary')
@@ -384,7 +351,7 @@ const EditMarkdown = ({ data, active, fileSuffix, onClick, onDel, onChange, onPo
         {/* 所见即所得Markdown编辑器 */}
         <VditorEditor ref={vditorRef} hidden={edit} defalutValue={value} onChange={setDebounceValue} onBlur={handleBlur} />
         {/* 普通Markdown编辑器 */}
-        <AceEditorCom hidden={!edit} markdown={value} onChange={setDebounceValue} onBlur={handleBlur} />
+        <AceEditorCom hidden={!edit} markdown={value} onChange={setDebounceValue} onBlur={handleBlur} fontSize={14} />
     </div>
     </div>
 }

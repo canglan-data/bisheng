@@ -554,3 +554,8 @@ export function truncateString(str, maxLength) {
     // 截取字符串并添加省略号
     return str.substring(0, maxLength) + '...';
 }
+
+export function removeLineBreaks(str) {
+  // 使用正则表达式替换所有换行符
+  return str.replace(/[\r\n]+/g, '');
+}

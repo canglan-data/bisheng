@@ -72,6 +72,8 @@
     "markdownPreview": "markdown预览",
     "editSuccess": "修改成功",
     "inputNotEmpty": "输入内容不可为空",
+    "contextNotEmpty": "分段内容不可为空",
+    "titleNotEmpty": "分段标题不可为空",
     "segmentRangeDetected": "检测到分段范围调整，",
     "overwriteSegment": "覆盖分段内容",
     "backToPosition": "回到定位",

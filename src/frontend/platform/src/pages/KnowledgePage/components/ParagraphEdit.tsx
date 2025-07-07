@@ -33,6 +33,7 @@ const ParagraphEdit = ({
     const [chunkHeader, setChunkHeader] = useState<undefined | string>(undefined);
     const [data, setData] = useState([]);
     const prevOvergapData = useRef(null);
+    
     const { t } = useTranslation('knowledge')
 
     const labelTextRef = useLabelTexts(fileId, partitions)
@@ -121,19 +122,21 @@ const ParagraphEdit = ({
     const [loading, setLoading] = useState(false)
     const handleSave = async () => {
         const _value = markDownRef.current.getValue().trim()
+
         setValue(_value)
-        if (!_value) return message({ variant: 'warning', description: t('inputNotEmpty') })
+        if (!_value) return message({ variant: 'warning', description: t('contextNotEmpty') })
 
         let _capture = markDownRef.current.getCapter()
-
+        
         const hasCapture = typeof _capture === 'string';
-
+        
         if (hasCapture) {
             _capture = _capture.trim();
             setCapter(_capture)
-            if (!_capture) return message({ variant: 'warning', description: t('inputNotEmpty') });
+            if (!_capture) return message({ variant: 'warning', description: t('titleNotEmpty') });
         }
 
+        
         const bbox = {
             chunk_bboxes: prevOvergapData.current.reduce((arr, item) => {
                 if (item.active) {
@@ -227,6 +230,7 @@ const ParagraphEdit = ({
             }
         })
         console.log('JSON. :>> ', JSON.stringify(str));
+        // TODO: 这里在做什么!!
         setValue(str)
         markDownRef.current.setValue(str) // fouceupdate
         prevOvergapData.current = data
@@ -300,7 +304,7 @@ const ParagraphEdit = ({
             {/* left */}
             <div className="relative" style={{ width: leftPanelWidth }}>
                 <Markdown ref={markDownRef} edit={edit} isUns={isUns} title={fileName} q={chunkId + 1} value={value} chunkHeader={chunkHeader}/>
-                {!value && <p className="absolute left-0 text-red-500 text-xs mt-2">{t('inputNotEmpty')}</p>}
+                {!value && <p className="absolute left-0 text-red-500 text-xs mt-2">{t('contextNotEmpty')}</p>}
                 {!isUns && <div className="flex justify-end gap-4">
                     <Button className="px-6 h-8" variant="outline" onClick={onClose}>{t('cancel', { ns: 'bs' })}</Button>
                     <Button className="px-6 h-8" disabled={loading} onClick={handleSave}><LoadIcon className={`mr-1 ${loading ? '' : 'hidden'}`} />{t('save', { ns: 'bs' })}</Button>

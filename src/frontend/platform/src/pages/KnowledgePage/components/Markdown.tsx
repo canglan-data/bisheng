@@ -1,3 +1,4 @@
+import { Input } from "@/components/bs-ui/input";
 import { Label } from "@/components/bs-ui/label";
 import { Switch } from "@/components/bs-ui/switch";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
@@ -96,15 +97,16 @@ export default forwardRef(function Markdown({ edit, isUns, title, q, value, chun
     const [val, setValue] = useState('')
     const [cap, setCapter] = useState(undefined)
     const [isAce, setIsAce] = useState(false)
+    const [isEditing, setIsEditing] = useState(false); // 控制标题是否处于编辑状态
     const { t } = useTranslation('knowledge')
     useEffect(() => {
-        setValue(value);
-        setCapter(chunkHeader);
+        setValue(value)
+        setCapter(chunkHeader)
     }, [value, chunkHeader])
 
     const valueVditorRef = useRef(null)
     const capterVditorRef = useRef(null)
-
+    
     const hasChunkHeader = typeof chunkHeader === 'string';
 
     useImperativeHandle(ref, () => ({
@@ -114,7 +116,7 @@ export default forwardRef(function Markdown({ edit, isUns, title, q, value, chun
         },
         getCapter() {
             if (!hasChunkHeader) return undefined;
-            const _value = isAce ? cap : capterVditorRef.current.getResult() 
+            const _value = cap;
             return _value
         },
         setValue(_value) {
@@ -133,30 +135,55 @@ export default forwardRef(function Markdown({ edit, isUns, title, q, value, chun
         setIsAce(!checked)
     }
 
+    const handleClick = () => {
+        setIsEditing(true); // 点击时进入编辑模式
+    };
+
+    const handleBlur = () => {
+        setIsEditing(false); // 失去焦点时退出编辑模式
+    };
+
+    const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+        handleBlur(); // 按 Enter 键保存并退出编辑
+    }
+    };
+    
     {/* markdown */ }
     return <div >
-        <div className="flex justify-between items-center mb-2 h-10">
+        <div className="flex justify-between items-center mb-2 h-10 gap-4">
             <Label>
                 <span className="text-red-500">*</span>
                 #{q} {t('splitContent')}
             </Label>
             {!isUns && <span>{title}</span>}
+            {/* TODO */}
+            {hasChunkHeader && <div className="flex-1">
+            {isEditing ? (
+                <Input
+                    type="text"
+                    maxLength={1000}
+                    value={cap}
+                    onChange={(e) => setCapter(e.target.value)}
+                    autoFocus
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
+                />
+                ) : (
+                <div className="cursor-pointer hover:bg-gray-100 p-1 rounded whitespace-nowrap overflow-hidden text-ellipsis max-w-[54ch]" onClick={handleClick}>
+                    {cap || '点击编辑标题'} {/* 如果 cap 为空则显示"点击编辑" */}
+                </div>
+            )}
+        </div>}
             {edit && <div className="flex items-center gap-2">
                 <Label>{t('markdownPreview')}</Label>
                 <Switch checked={!isAce} onCheckedChange={hangleCheckChagne} />
             </div>}
         </div>
-        <div className="border mb-2 h-[calc(100vh-104px)] flex flex-col">
-            {hasChunkHeader && (
-                <div className="h-[10%] border-b">
-                    <AceEditorCom hidden={!isAce} markdown={cap} onChange={setCapter} />
-                    <VditorEditor ref={capterVditorRef} edit={edit} hidden={isAce} markdown={cap} />
-                </div>
-            )}
-            <div className={hasChunkHeader ? "h-[90%]" : "h-full"}>
-                <AceEditorCom hidden={!isAce} markdown={val} onChange={setValue} />
-                <VditorEditor ref={valueVditorRef} edit={edit} hidden={isAce} markdown={val} />
-            </div>
+        <div className="border mb-2 h-[calc(100vh-104px)]">
+            {/* 编辑器 */}
+            <AceEditorCom hidden={!isAce} markdown={val} onChange={setValue} />
+            <VditorEditor ref={valueVditorRef} edit={edit} hidden={isAce} markdown={val} />
         </div>
     </div >
 });
