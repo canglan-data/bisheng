@@ -459,8 +459,8 @@ class KnowledgeLLMConfig(BaseModel):
     qa_similar_model_id: Optional[int] = Field(None, description='QA知识库相似问模型的ID')
 
 class VoiceLLMConfig(BaseModel):
-    tts_model_id: Optional[int] = Field(description='文字转语音模型')
-    stt_model_id: Optional[int] = Field(description='语音转文字模型')
+    tts_model_id: Optional[int] = Field(None, description='文字转语音模型')
+    stt_model_id: Optional[int] = Field(None, description='语音转文字模型')
 
 
 class AssistantLLMItem(BaseModel):
