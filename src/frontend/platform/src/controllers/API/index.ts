@@ -161,6 +161,23 @@ export async function copyLibDatabase(knowledge_id) {
 }
 
 /**
+ * 获取解析策略列表
+ */
+export async function getParseStrategyList({ page, pageSize = 20, name = '' }) {
+  return await axios.get(`/api/v1/parse-strategy`, { params: {
+    keyword: name,
+    pageSize,
+    page,
+  }});
+}
+
+/**
+ * 获取解析策略列表
+ */
+export async function deleteParseStrategy(id: string) {
+  return await axios.delete(`/api/v1/parse-strategy/${id}`);
+}
+/**
  * 获取知识库下文件列表
  */
 export async function readFileByLibDatabase({ id, page, pageSize = 20, name = '', status, file_ids }) {

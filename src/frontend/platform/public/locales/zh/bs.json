@@ -318,6 +318,7 @@
     "idAlreadyExistsMessage": "该ID已存在"
   },
   "lib": {
+    "id": "id",
     "knowledgeBaseId": "知识库ID",
     "enterLibraryName": "请输入知识库名称",
     "libraryNameLimit": "知识库名称字数不得超过30字",
@@ -326,6 +327,8 @@
     "descriptionLimit": "知识库描述字数不得超过200字",
     "createLibrary": "创建知识库",
     "libraryName": "知识库名称",
+    "libraryParseSetting": "知识库解析策略设置",
+    "ParseName": "解析策略名称",
     "description": "描述",
     "model": "模型",
     "fileData": "文档知识库",
@@ -335,8 +338,15 @@
     "createUser": "创建用户",
     "details": "详情",
     "confirmDeleteLibrary": "确认删除该知识库?",
+    "confirmDeleteParse": "确认删除该解析策略?",
+    "createParseStrategy": "创建知识库解析策略",
+    "editParseStrategy": "修改知识库解析策略",
+    "save": "保存",
+    "cearte": "创建",
     "copy": "复制",
-    "copying": "复制中"
+    "back": "返回",
+    "copying": "复制中",
+    "cancel": "取消"
   },
   "evaluation": {
     "id": "任务ID",

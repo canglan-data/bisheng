@@ -67,7 +67,7 @@ const ParagraphEdit = ({
         arrData.forEach(chunk => {
             const { bbox, chunk_index, extra } = chunk.metadata
             const labels = bbox && JSON.parse(bbox).chunk_bboxes || []
-            const chunk_chapter = JSON.parse(extra)?.chunk_chapter;
+            const chunk_chapter = (extra && JSON.parse(extra)?.chunk_chapter) || undefined;
 
             const active = chunk_index === chunkId
             const resData = labels.reduce((acc, label) => {

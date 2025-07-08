@@ -25,6 +25,7 @@ import { useToast } from "@/components/bs-ui/toast/use-toast";
 import { getKnowledgeModelConfig, getModelListApi } from "@/controllers/API/finetune";
 import AutoPagination from "../../components/bs-ui/pagination/autoPagination";
 import { useTable } from "../../util/hook";
+import { SettingIcon } from "@/components/bs-icons";
 
 function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
     const { t } = useTranslation()
@@ -178,7 +179,9 @@ export default function KnowledgeFile() {
     const [open, setOpen] = useState(false);
     const { user } = useContext(userContext);
     const [modelNameMap, setModelNameMap] = useState({})
+    const [parseSetting, setParseSettingModel] = useState(false)
     const { message } = useToast()
+    const navigate = useNavigate()
 
     const { page, pageSize, data: datalist, total, loading, setPage, search, reload } = useTable({ cancelLoadingWhenReload: true }, (param) =>
         readFileLibDatabase({ ...param, name: param.keyword })
@@ -258,6 +261,10 @@ export default function KnowledgeFile() {
             <div className="h-[calc(100vh-128px)] overflow-y-auto pb-20">
                 <div className="flex justify-end gap-4 items-center absolute right-0 top-[-44px]">
                     <SearchInput placeholder="知识库或文件名称" onChange={(e) => search(e.target.value)} />
+                    {user.role === 'admin' && <Button className="text-red-500" onClick={() => navigate('/filelib/parseSetting')} variant="secondary">
+                        <SettingIcon className="text-red-500" />
+                        {t('lib.libraryParseSetting')}
+                    </Button>}
                     <Button className="px-8 text-[#FFFFFF]" onClick={() => setOpen(true)}>{t('create')}</Button>
                 </div>
                 <Table>
