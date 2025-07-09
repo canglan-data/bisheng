@@ -50,6 +50,8 @@ export interface ModelExtra {
   providerType: string;
   // 是否具有联网能力
   hasOnlineCapacity: boolean;
+  // 是否具有控制模型开关能力
+  hasShowReason: boolean;
 }
 
 interface ModelStore {
@@ -97,6 +99,7 @@ const useModelStore = create<ModelStore>((set, get) => ({
             ...item,
             providerType: curr.type,
             hasOnlineCapacity: ['qwen', 'tencent', 'moonshot'].includes(curr.type),
+            hasShowReason: (item.model_name || '').includes('qwen3')
           })
         })
         return [...prev, ...models]

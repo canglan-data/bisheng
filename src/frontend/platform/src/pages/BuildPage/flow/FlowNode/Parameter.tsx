@@ -24,6 +24,7 @@ import VarTextareaItem from "./component/VarTextareaItem";
 import VarTextareaUploadItem from "./component/VarTextareaUploadItem";
 import ImagePromptItem from "./component/ImagePromptItem";
 import OnlineSwitchItem from "./component/OnlineSwitchItem";
+import ShowReasonItem from "./component/ShowReasonItem";
 
 // 节点表单项
 export default function Parameter({ node, nodeId, item, onOutPutChange, onStatusChange, onFouceUpdate, onVarEvent }
@@ -88,7 +89,9 @@ export default function Parameter({ node, nodeId, item, onOutPutChange, onStatus
         case 'switch':
             return <SwitchItem data={item} onChange={handleOnNewValue} />;
         case 'online_switch':
-            return <OnlineSwitchItem data={item} onChange={handleOnNewValue}  node={node} item={item} />;
+            return <OnlineSwitchItem data={item} onChange={handleOnNewValue} node={node} item={item} />;
+        case 'show_reason_switch':
+            return <ShowReasonItem data={item} onChange={handleOnNewValue} node={node} item={item} />;
         case 'var_select':
             return <VarSelectSingleItem
                 nodeId={nodeId}

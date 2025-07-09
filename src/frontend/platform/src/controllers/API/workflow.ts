@@ -554,7 +554,7 @@ const workflowTemplate = [
                     {
                         "key": "show_reason",
                         "label": "将模型思考过程展示在会话中",
-                        "type": "switch",
+                        "type": "show_reason_switch",
                         "value": true,
                     },
                     {
@@ -737,7 +737,7 @@ const workflowTemplate = [
                     {
                         "key": "show_reason",
                         "label": "将模型思考过程展示在会话中",
-                        "type": "switch",
+                        "type": "show_reason_switch",
                         "value": true,
                     },
                     {
@@ -929,7 +929,7 @@ const workflowTemplate = [
                     {
                         "key": "show_reason",
                         "label": "将模型思考过程展示在会话中",
-                        "type": "switch",
+                        "type": "show_reason_switch",
                         "value": true,
                     },
                     {
