@@ -416,7 +416,6 @@ class BishengLLM(BaseChatModel):
             run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
             **kwargs: Any,
     ) -> ChatResult:
-        logger.debug("11111"*10000)
         try:
             messages, kwargs = self.parse_kwargs(messages, kwargs)
             if self.server_info.type == LLMServerType.MOONSHOT.value:
