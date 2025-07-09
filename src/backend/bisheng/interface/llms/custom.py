@@ -82,11 +82,9 @@ def _get_qwen_params(params: dict, server_config: dict, model_config: dict) -> d
             'forced_search': enable_web_search
         },
         'temperature': params.pop('temperature', 0.3),
-        'enable_thinking': show_reason,
     }
-    # params['extra_body'] = params.get('extra_body', {})
-    # params['extra_body']['enable_thinking'] = show_reason
-
+    if not show_reason:
+        params['model_kwargs']['enable_thinking'] = False
     if params.get('max_tokens'):
         params['model_kwargs']['max_tokens'] = params.get('max_tokens')
     return params
@@ -265,9 +263,9 @@ class BishengLLM(BaseChatModel):
         if server_info.type == LLMServerType.TENCENT.value:
             default_params['extra_body'] = {'enable_enhancement': self.get_enable_web_search()}
         model_config['show_reason'] = self.get_show_reason()
-        logger.info(f"model_info: {model_info} model_config: {model_config}")
+        logger.info(f"model_info: {model_info} model_config: {model_config} default_params: {default_params}")
         params = params_handler(default_params, server_config, model_config)
-
+        logger.debug(f'get_llm_params: {params}')
         return params
 
         # params = {}
@@ -418,6 +416,7 @@ class BishengLLM(BaseChatModel):
             run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
             **kwargs: Any,
     ) -> ChatResult:
+        logger.debug("11111"*10000)
         try:
             messages, kwargs = self.parse_kwargs(messages, kwargs)
             if self.server_info.type == LLMServerType.MOONSHOT.value:

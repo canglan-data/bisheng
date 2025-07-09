@@ -79,7 +79,7 @@ class AgentNode(BaseNode):
 
         # 是否支持nl2sql
         self._sql_agent = self.node_params.get('sql_agent')
-        self.db_type = self._sql_agent.get('db_type', 'MYSQL')  # 默认仍支持 MySQL
+        self.db_type = self._sql_agent.get('db_type', None)  # 默认仍支持 MySQL
         self._sql_address = ''
         if self.db_type == 'DB2':
             # DB2 连接格式（依赖 ibm_db 驱动）
@@ -90,7 +90,7 @@ class AgentNode(BaseNode):
                 f'{self._sql_agent["db_address"]}/'
                 f'{self._sql_agent["db_name"]}'
             )
-        else:
+        elif self.db_type == 'MYSQL':
             # 保留原 MySQL 连接格式
             self._sql_address = (
                 f'mysql+pymysql://{self._sql_agent["db_username"]}:'
