@@ -107,7 +107,7 @@ const useModelStore = create<ModelStore>((set, get) => ({
     console.log('models', models);
     
     return  {
-      [type === MODEL_TYPE.MODEL ? 'models': 'agentModel']: models,
+      [type === MODEL_TYPE.MODEL ? 'models': 'agentModels']: models,
     };
   }),
 

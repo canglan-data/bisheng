@@ -10,7 +10,12 @@ export default function OnlineSwitchItem({ data, onChange, node, item }) {
     const [value, setValue] = useState(data.value)
     
     const modelList = node.type === 'agent' ? agentModels : models;
-    const modelId = node.group_params?.[1]?.params?.[0]?.value;
+    let modelId = null;
+    if (['agent', 'llm'].includes(node.type)) {
+        modelId = node.group_params?.[1]?.params?.[0]?.value;
+    } else if (node.type === 'rag') {
+        modelId = node.group_params?.[1]?.params?.[2]?.value;
+    }
     let hasShowReason =  modelList.find(item => item.id === modelId)?.hasShowReason;
     
     
