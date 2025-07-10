@@ -91,7 +91,7 @@ def update_voice_llm(
         login_user: UserPayload = Depends(get_admin_user),
         data: VoiceLLMConfig = Body(..., description="语音模型配置"),
 ) -> UnifiedResponseModel[VoiceLLMConfig]:
-    """ 更新知识库相关的默认模型配置 """
+    """ 更新语音相关的默认模型配置 """
     ret = LLMService.update_voice_llm(request, login_user, data)
     return resp_200(data=ret)
 

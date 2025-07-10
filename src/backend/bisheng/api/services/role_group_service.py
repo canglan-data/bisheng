@@ -61,7 +61,7 @@ class RoleGroupService():
                 tmp_group_dict[group_id] = groups_dict[group_id]
                 tmp_group_dict.update(self.get_child_groups(groups_dict[group_id], group_tree))
             groups_dict = tmp_group_dict
-
+        logger.debug(f'get_group_list group_ids: {group_ids}, groups_dict: {groups_dict}')
         # 查询user
         user_admin = UserGroupDao.get_groups_admins(list(groups_dict.keys()))
         user_operation = UserGroupDao.get_groups_operations(list(groups_dict.keys()))
@@ -84,6 +84,7 @@ class RoleGroupService():
                 if user.group_id == group.id
             ]
             group.parent_group_path = self.get_parent_group_path(group, group_tree)
+        logger.debug(f'get_group_list groups_dict: {groups_dict}')
         return list(groups_dict.values())
 
     def get_all_children(self, group: GroupRead, group_tree: dict, max_level: int = None):

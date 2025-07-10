@@ -118,7 +118,7 @@ const SelectGroup = ({
         <SelectContent
             id={idRef.current}
             // position="popper"
-            className={contentClassName + ' overflow-visible'}
+            className={contentClassName + 'max-h-60 overflow-hidden'}
             avoidCollisions={false}
             headNode={
                 <div className="p-2">
@@ -126,7 +126,7 @@ const SelectGroup = ({
                 </div>
             }
         >
-            <div >
+            <div className="overflow-y-auto max-h-60">
                 <div className="p-2">{renderTree(options)}</div>
             </div>
         </SelectContent>
