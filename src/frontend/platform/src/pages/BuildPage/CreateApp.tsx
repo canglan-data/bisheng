@@ -233,7 +233,7 @@ ${t('build.exampleTwo', { ns: 'bs' })}
                         <label htmlFor="name" className="bisheng-label">
                             {appType === AppType.ASSISTANT ? t('assistantAvatar') : t('workflowAvatar')}
                         </label>
-                        <Avator value={formData.url} className="mt-3" onChange={uploadAvator}>
+                        <Avator value={__APP_ENV__.BASE_URL + formData.url} className="mt-3" onChange={uploadAvator}>
                             <AssistantIcon className="bg-primary w-8 h-8 rounded-sm" />
                         </Avator>
                     </div>
