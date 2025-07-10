@@ -277,7 +277,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
                             <TableRow>
                                 <TableHead>{t('system.assistantName')}</TableHead>
                                 <TableHead>{t('system.creator')}</TableHead>
-                                <TableHead className="text-right w-[75px]">{t('system.usePermission')}</TableHead>
+                                <TableHead className="text-right w-[75px]">{t('system.useNoPermission')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -309,7 +309,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
                             <TableRow>
                                 <TableHead>{t('system.skillName')}</TableHead>
                                 <TableHead>{t('system.creator')}</TableHead>
-                                <TableHead className="text-right w-[75px]">{t('system.usePermission')}</TableHead>
+                                <TableHead className="text-right w-[75px]">{t('system.useNoPermission')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -341,7 +341,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
                             <TableRow>
                                 <TableHead>工作流名称</TableHead>
                                 <TableHead>{t('system.creator')}</TableHead>
-                                <TableHead className="text-right w-[75px]">{t('system.usePermission')}</TableHead>
+                                <TableHead className="text-right w-[75px]">{t('system.useNoPermission')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -408,7 +408,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
                             <TableRow>
                                 <TableHead>{t('tools.toolName')}</TableHead>
                                 <TableHead>{t('system.creator')}</TableHead>
-                                <TableHead className="text-right w-[75px]">{t('system.usePermission')}</TableHead>
+                                <TableHead className="text-right w-[75px]">{t('system.useNoPermission')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

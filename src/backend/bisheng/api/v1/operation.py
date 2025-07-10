@@ -12,6 +12,7 @@ from bisheng.database.models.group import GroupDao
 from bisheng.database.models.session import ReviewStatus
 from bisheng.database.models.user_group import UserGroupDao
 from bisheng.utils.util import validate_date_range
+from loguru import logger
 
 router = APIRouter(prefix='/operation', tags=['Operation'])
 
@@ -33,6 +34,7 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
         all_group = [str(one.group_id) for one in all_group]
     else:
         all_group = [str(one.id) for one in GroupDao.get_all_group()]
+    logger.debug(f'get_session_list group_ids: {group_ids},all_group: {all_group} user_id: {login_user.user_id}')
     if len(group_ids) == 0:
         group_ids = all_group
     else:
@@ -79,7 +81,6 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
     start_date, end_date = validate_date_range(start_date, end_date)
     review_status = [ReviewStatus(review_status)] if review_status else []
     all_session, total = AuditLogService.get_session_list(user=login_user, flow_ids=flow_ids, user_ids=user_ids,
-                                                          group_ids=group_ids, start_date=start_date,
                                                           group_ids=group_ids, start_date=start_date, is_delete=None,
                                                           end_date=end_date, category=['question', 'answer'],
                                                    feedback=feedback, review_status=review_status, page=page, page_size=page_size, keyword=keyword)

@@ -101,14 +101,17 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
         }).then(res => {
             if (!res) return setLoading(false)
             if (res === 'canceled') return
-            console.log("previewFileSplitApi:", res)
             res && setChunks(res.chunks.map(chunk => ({
                 bbox: chunk.metadata.bbox,
                 activeLabels: {},
                 chunkIndex: chunk.metadata.chunk_index,
                 page: chunk.metadata.page,
-                text: chunk.text,
                 extra: chunk.metadata.extra ? JSON.parse(chunk.metadata.extra) : {},
+                // 替换掉markdown中图片的BASE_URL
+                text: chunk.text.replaceAll(
+                    /(!\[[^\]]*\]\()\/bisheng(\/[^)]*\))/g,
+                    `$1${__APP_ENV__.BASE_URL}/bisheng$2`
+                )
             })))
             setSelectIdSyncChunks(selectId)
 

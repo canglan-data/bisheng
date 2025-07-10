@@ -158,7 +158,7 @@ const comptibleAgent = (node) => {
         node.group_params[3].params.unshift({
             "key": "show_reason",
             "label": "将模型思考过程展示在会话中",
-            "type": "switch",
+            "type": "show_reason_switch",
             "value": true,
         });
         node.v = 4
@@ -189,7 +189,7 @@ const comptibleRag = (node) => {
         node.group_params[3].params.unshift({
             "key": "show_reason",
             "label": "将模型思考过程展示在会话中",
-            "type": "switch",
+            "type": "show_reason_switch",
             "value": true,
         });
         node.v = 3
@@ -233,7 +233,7 @@ const comptibleLLM = (node) => {
         node.group_params[3].params.unshift({
             "key": "show_reason",
             "label": "将模型思考过程展示在会话中",
-            "type": "switch",
+            "type": "show_reason_switch",
             "value": true,
         })
         node.v = 4

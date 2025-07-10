@@ -464,9 +464,8 @@ class KnowledgeLLMConfig(BaseModel):
     abstract_prompt: Optional[str] = Field(None, description='摘要提示词')
 
 class VoiceLLMConfig(BaseModel):
-    tts_model_id: Optional[int] = Field(description='文字转语音模型')
-    stt_model_id: Optional[int] = Field(description='语音转文字模型')
-
+    tts_model_id: Optional[int] = Field(None, description='文字转语音模型')
+    stt_model_id: Optional[int] = Field(None, description='语音转文字模型')
 
 class AssistantLLMItem(BaseModel):
     model_id: Optional[int] = Field(None, description='模型的ID')
@@ -549,6 +548,11 @@ class FileProcessBase(BaseModel):
     excel_rule: Optional[ExcelRule] = Field(default=None, description="excel rule")
     cache: Optional[bool] = Field(default=True, description='预览文档时，是否从缓存获取数据')
 
+    enable_header_split: Optional[int] = Field(default=0, description='启用层级切分')
+    enable_header_split_chunk_chapter: Optional[int] = Field(default=1, description='层级切分追加章节标题')
+    header_split_max_level: Optional[int] = Field(default=3, description='层级切分最大层级')
+    header_split_chunk_size: Optional[int] = Field(default=1000, description='层级chunk长度')
+
     @model_validator(mode='before')
     @classmethod
     def check_separator_rule(cls, values: Any):
@@ -602,6 +606,7 @@ class UpdatePreviewFileChunk(BaseModel):
     knowledge_id: int = Field(..., description='知识库ID')
     file_path: str = Field(..., description='文件路径')
     text: str = Field(..., description='文本块内容')
+    chunk_chapter: Optional[str] = Field(default="", description='文本块所属章节, 在metadata.extra里')
     chunk_index: int = Field(..., description='文本块索引, 在metadata里')
     bbox: Optional[str] = Field(default='', description='文本块bbox信息')
 

@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, BinaryIO
 import requests
 from bisheng_langchain.rag.extract_info import extract_title
 from bisheng_langchain.text_splitter import ElemCharacterTextSplitter
+from bisheng.api.services.header_text_splitter import HeaderTextSplitter, can_use_header_text_split
 from langchain.embeddings.base import Embeddings
 from langchain.schema.document import Document
 from langchain.text_splitter import CharacterTextSplitter
@@ -38,7 +39,7 @@ from bisheng.api.services.patch_130 import (
     combine_multiple_md_files_to_raw_texts,
 )
 from bisheng.api.utils import md5_hash
-from bisheng.api.v1.schemas import ExcelRule
+from bisheng.api.v1.schemas import ExcelRule, FileProcessBase
 from bisheng.cache.redis import redis_client
 from bisheng.cache.utils import file_download
 from bisheng.database.base import session_getter
@@ -59,6 +60,7 @@ from bisheng.interface.initialize.loading import instantiate_vectorstore
 from bisheng.settings import settings
 from bisheng.utils.embedding import decide_embeddings
 from bisheng.utils.minio_client import minio_client
+from bisheng.utils import json2dict
 
 filetype_load_map = {
     "txt": TextLoader,
@@ -90,6 +92,10 @@ class KnowledgeUtils:
         res = f"{{<file_title>{metadata.get('source', '')}</file_title>\n"
         if metadata.get("title", ""):
             res += f"<file_abstract>{metadata.get('title', '')}</file_abstract>\n"
+
+        extra = json2dict(metadata.get("extra", {}))
+        if extra.get("chunk_chapter", ""):
+            res += f"<paragraph_chapter>{extra.get('chunk_chapter', '')}</paragraph_chapter>\n"
         res += f"<paragraph_content>{chunk}</paragraph_content>}}"
         return res
 
@@ -220,6 +226,7 @@ def process_file_task(
         enable_formula: int = 1,
         force_ocr: int = 0,
         filter_page_header_footer: int = 0,
+        split_rule: FileProcessBase = None,
 ):
     """处理知识文件任务"""
     try:
@@ -241,6 +248,7 @@ def process_file_task(
             enable_formula=enable_formula,
             force_ocr=force_ocr,
             filter_page_header_footer=filter_page_header_footer,
+            split_rule=split_rule,
         )
     except Exception as e:
         logger.exception("process_file_task error")
@@ -379,6 +387,7 @@ def addEmbedding(
         enable_formula: int = 1,
         force_ocr: int = 0,
         filter_page_header_footer: int = 0,
+        split_rule: FileProcessBase = None,
 ):
     """将文件加入到向量和es库内"""
 
@@ -420,6 +429,7 @@ def addEmbedding(
                 enable_formula=enable_formula,
                 force_ocr=force_ocr,
                 filter_page_header_footer=filter_page_header_footer,
+                split_rule=split_rule,
             )
             db_file.status = KnowledgeFileStatus.SUCCESS.value
         except Exception as e:
@@ -459,6 +469,7 @@ def add_file_embedding(
         enable_formula: int = 1,
         force_ocr: int = 0,
         filter_page_header_footer: int = 0,
+        split_rule: FileProcessBase = None,
 ):
     # download original file
     logger.info(
@@ -476,9 +487,9 @@ def add_file_embedding(
     # Convert split_rule string to dict if needed
     excel_rule = ExcelRule()
     if db_file.split_rule and isinstance(db_file.split_rule, str):
-        split_rule = json.loads(db_file.split_rule)
-        if "excel_rule" in split_rule:
-            excel_rule = ExcelRule(**split_rule["excel_rule"])
+        split_rule_dict = json.loads(db_file.split_rule)
+        if "excel_rule" in split_rule_dict:
+            excel_rule = ExcelRule(**split_rule_dict["excel_rule"])
     # # extract text from file
     texts, metadatas, parse_type, partitions = read_chunk_text(
         filepath,
@@ -493,6 +504,7 @@ def add_file_embedding(
         force_ocr=force_ocr,
         filter_page_header_footer=filter_page_header_footer,
         excel_rule=excel_rule,
+        split_rule=split_rule,
     )
     if len(texts) == 0:
         raise ValueError("文件解析为空")
@@ -533,11 +545,13 @@ def add_file_embedding(
         f"chunk_split file={db_file.id} file_name={db_file.file_name} size={len(texts)}"
     )
     for metadata in metadatas:
+        extra_new = json2dict(extra_meta)
+        extra_new.update(json2dict(metadata.get('extra', {})))
         metadata.update(
             {
                 "file_id": db_file.id,
                 "knowledge_id": f"{db_file.knowledge_id}",
-                "extra": extra_meta or "",
+                "extra": json.dumps(extra_new, ensure_ascii=False),
             }
         )
 
@@ -656,6 +670,9 @@ def read_chunk_text(
         force_ocr: int = 1,
         filter_page_header_footer: int = 0,
         excel_rule: ExcelRule = None,
+        # 层级切分feature引入split_rule参数，这里FileProcessBase展开参数越来越多，难以维护
+        # 建议后续统一使用FileProcessBase对象承载
+        split_rule: FileProcessBase = None,
 ) -> (List[str], List[dict], str, Any):  # type: ignore
     """
     0：chunks text
@@ -815,6 +832,27 @@ def read_chunk_text(
             one.metadata["title"] = parse_document_title(title)
         logger.info("file_extract_title=success timecost={}", time.time() - t)
 
+    use_header_split = split_rule and split_rule.enable_header_split and file_extension_name in ["doc", "docx", "md"]
+    if use_header_split:
+        if can_use_header_text_split(documents):
+            logger.info(f"use_header_text_splitter start file_name={file_name}")
+
+            splitter = HeaderTextSplitter(
+                separators=separator,
+                separator_rule=separator_rule,
+                chunk_size=split_rule.header_split_chunk_size,
+                chunk_overlap=0,
+                is_separator_regex=True,
+                split_max_level=split_rule.header_split_max_level,
+                enable_chunk_chapter=split_rule.enable_header_split_chunk_chapter)
+            texts = splitter.split_documents(documents)
+
+            raw_texts, metadatas = make_header_split_result(documents=texts, file_name=file_name)
+            return raw_texts, metadatas, parse_type, partitions
+        else:
+            split_rule.enable_header_split = 0  # 不满足层级切分条件按通用规则切分
+            logger.info(f"can_use_header_text_splitter check_result=False file_name={file_name}")
+
     if file_extension_name in ["xls", "xlsx", "csv"]:
         for one in texts:
             one.metadata["title"] = documents[0].metadata.get("title", "")
@@ -841,6 +879,37 @@ def read_chunk_text(
     ]
     logger.info(f"file_chunk_over file_name=={file_name}")
     return raw_texts, metadatas, parse_type, partitions
+
+
+def make_header_split_result(documents: List[Document], file_name: str):
+    raw_texts = []
+    metadatas = []
+
+    for t_index, t in enumerate(documents):
+        raw_texts.append(t.page_content)
+
+        extra = {}
+        # 有chunk_chapter_list字段时表示启用了标题追加，才填充chunk_chapter数据
+        # 前端判断存在chunk_chapter字段时才展示和编辑标题
+        if 'chunk_chapter_list' in t.metadata:
+            chunk_chapter_list = t.metadata.get("chunk_chapter_list", [])
+            extra['chunk_chapter'] = " ".join(chunk_chapter_list)
+
+        item = {
+            "bbox": json.dumps({"chunk_bboxes": t.metadata.get("chunk_bboxes", "")}),
+            "page": (
+                t.metadata["chunk_bboxes"][0].get("page")
+                if t.metadata.get("chunk_bboxes", None)
+                else t.metadata.get("page", 0)
+            ),
+            "source": file_name,
+            "title": t.metadata.get("title", ""),
+            "chunk_index": t_index,
+            "extra": json.dumps(extra, ensure_ascii=False),
+        }
+        metadatas.append(item)
+
+    return raw_texts, metadatas
 
 
 def text_knowledge(
