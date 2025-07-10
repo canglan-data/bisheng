@@ -92,5 +92,13 @@ syslog_conf:
   log_format: "%(asctime)s %(levelname)s %(name)s: %(message)s"
   date_format: "%b %d %H:%M:%S"
 
+aliyun_text_moderation_conf:
+  access_key_id: "LTAI5tLd3ykkFuE4wHVoCje6"
+  access_key_secret: "GqDeNCcXHIrVJau3V17rRh0aMAhEVy"
+  endpoint: "green-cip.cn-beijing.aliyuncs.com"
+  region_id: "cn-beijing"
+  connect_timeout: 10000
+  read_timeout: 3000
+
 domain:
   web_domain: "123.57.174.112:3001"
