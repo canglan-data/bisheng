@@ -12,6 +12,8 @@ from bisheng.database.models.base import SQLModelSerializable
 from bisheng.database.models.session import ReviewStatus
 from bisheng.database.models.user_group import UserGroup
 from bisheng.database.models.session import MessageSession
+from bisheng.database.models.assistant import Assistant
+from bisheng.database.models.flow import Flow
 from bisheng.utils.sysloger import syslog_client
 
 
@@ -541,12 +543,21 @@ class ChatMessageDao(MessageBase):
         """ 获取会话的一些信息，根据技能来聚合 """
         count_stat = select(func.count(func.distinct(func.concat(ChatMessage.flow_id,UserGroup.group_id)))).select_from(ChatMessage
             ).join(UserGroup, ChatMessage.user_id == UserGroup.user_id)
+        stmt_assistant = select(Assistant.id)
+        stmt_flow = select(Flow.id)
+        with session_getter() as session:
+            assistant_id_list = session.scalars(stmt_assistant).all()
+            flow_id_list = session.scalars(stmt_flow).all()
+        all_ids = list(set(assistant_id_list) | set(flow_id_list))
+
         total_session_stat = select(
             func.count(func.distinct(func.concat(ChatMessage.chat_id, ChatMessage.flow_id, UserGroup.group_id)))
         ).select_from(
             ChatMessage
         ).join(
             UserGroup, ChatMessage.user_id == UserGroup.user_id
+        ).where(
+            ChatMessage.flow_id.in_(all_ids)
         )
         # 构建主查询，明确指定连接的起始表和连接条件
         sql = select(
@@ -619,6 +630,8 @@ class ChatMessageDao(MessageBase):
         print("get_chat_info_group Compiled SQL:", sql.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
         print("get_chat_info_group Compiled SQL Count:",
               count_stat.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
+        print("get_chat_info_group Compiled SQL Count:",
+              total_session_stat.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
         with session_getter() as session:
             res_list = session.exec(sql).all()
             total = session.scalar(count_stat)
