@@ -20,6 +20,7 @@ from bisheng.database.models.role import RoleDao
 from bisheng.database.models.group import Group, GroupCreate, GroupRead
 from bisheng.database.models.user import User
 from bisheng.database.models.user_group import UserGroupDao, UserGroupRead
+from loguru import logger
 
 router = APIRouter(prefix='/group', tags=['Group'], dependencies=[Depends(get_login_user)])
 
@@ -100,8 +101,10 @@ async def get_all_group(*,login_user: UserPayload = Depends(get_login_user),
         # 不是任何用户组的管理员无查看权限
         if not groups:
             raise HTTPException(status_code=500, detail='无查看权限')
-
+    logger.debug(f'get_all_group groups: {groups},user_id: {login_user.user_id}')
     groups_res = RoleGroupService().get_group_list(groups)
+    if groups:
+        groups_res = [one for one in groups_res if one.id in groups]
     if keyword:
         groups_res = [one for one in groups_res if keyword in one.group_name]
         groups_res = sorted(groups_res, key=lambda group: group.group_name.index(keyword))
@@ -125,6 +128,8 @@ async def get_all_group(*,login_user: UserPayload = Depends(get_login_user),
         if not groups:
             raise HTTPException(status_code=500, detail='无查看权限')
     groups_res = RoleGroupService().get_group_list(groups)
+    if groups:
+        groups_res = [one for one in groups_res if one.id in groups]
     if keyword:
         groups_res = [one for one in groups_res if keyword in one.group_name]
         groups_res = sorted(groups_res, key=lambda group: group.group_name.index(keyword))
@@ -389,7 +394,7 @@ async def get_audit_resources(*, request: Request, login_user: UserPayload = Dep
 
 @router.get("/roles")
 async def get_group_roles(*,
-                          group_id: list[str] = Query(None, description="用户组ID列表，不传则查询所有有权限的角色列表"),
+                          group_id: list[int] = Query(None, description="用户组ID列表，不传则查询所有有权限的角色列表"),
                           keyword: str = Query(None, description="搜索关键字"),
                           include_parent: bool = Query(False, description="是否包含父用户组绑定的角色"),
                           page: int = 0,

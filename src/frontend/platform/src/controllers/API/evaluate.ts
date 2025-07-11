@@ -26,6 +26,7 @@ export type Evaluation = {
     unique_name: string,
     version_name: string,
     user_name: string,
+    failed_info: string,
 }
 
 /**
