@@ -73,6 +73,10 @@ export default function ParseStrategyDetail({editId, onBack}: {editId: string, o
     }, [editId])
 
     const handleSubmit = () => {
+        if (!data.name) return message({
+            variant: 'error',
+            description: '请输入解析策略名称'
+        })
         const { 
             pageHeaderFooter, 
             chunkOverlap, 
