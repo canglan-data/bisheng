@@ -12,7 +12,7 @@ from bisheng.utils import generate_uuid
 from bisheng.utils.minio_client import MinioClient
 from bisheng_langchain.vectorstores import ElasticKeywordsSearch
 from loguru import logger
-from pymilvus import connections, Collection, exceptions
+from pymilvus import Collection, Milvus, MilvusException
 
 
 @celery_app.task(acks_late=True)
@@ -163,44 +163,40 @@ def copy_vector(
     # 迁移 vectordb
     embedding = FakeEmbedding()
     source_col = source_konwledge.collection_name
-
-    # 连接到 Milvus
-    connections.connect("default", host="localhost", port="19530")  # 根据实际配置修改
-
-    # 获取 Collection 对象
-    source_collection = Collection(source_col)
-    target_collection = Collection(target_knowledge.collection_name)
-
-    # 查询数据
-    fields = [s.name for s in source_collection.schema.fields if s.name != 'pk']
-    source_data = source_collection.query(
+    source_milvus: Milvus = decide_vectorstores(source_col, 'Milvus', embedding)
+    # 当前es 不包含vector
+    fields = [s.name for s in source_milvus.col.schema.fields if s.name != 'pk']
+    source_data = source_milvus.col.query(
         expr=f"file_id=={source_file_id} && knowledge_id=='{source_konwledge.id}'",
         output_fields=fields,
     )
     for data in source_data:
         data['knowledge_id'] = str(target_knowledge.id)
         data['file_id'] = target_file_id
+    milvus_db: Milvus = decide_vectorstores(target_knowledge.collection_name, 'Milvus', embedding)
+    if milvus_db:
+        insert_milvus(source_data, fields, milvus_db)
 
-    if target_collection:
-        insert_milvus(source_data, fields, target_collection)
-
-    # Elasticsearch 部分保持不变
     es_db = decide_vectorstores(target_knowledge.index_name, 'ElasticKeywordsSearch', embedding)
     if es_db:
         insert_es(source_data, es_db)
 
 
-def insert_milvus(li: List, fields: list, target_collection: Collection):
+def insert_milvus(li: List, fields: list, target: Milvus):
     total_count = len(li)
     batch_size = 1000
     res_list = []
     for i in range(0, total_count, batch_size):
+        # Grab end index
         end = min(i + batch_size, total_count)
+        # Convert dict to list of lists batch for insertion
         insert_list = [[data[x] for data in li[i:end]] for x in fields]
+        # Insert into the collection.
         try:
-            res = target_collection.insert(insert_list, timeout=100)
+            res: Collection
+            res = target.col.insert(insert_list, timeout=100)
             res_list.extend(res.primary_keys)
-        except exceptions.MilvusException as e:
+        except MilvusException as e:
             logger.error('Failed to insert batch starting at entity: %s/%s', i, total_count)
             raise e
     logger.info('copy_done pk_size={}', len(res_list))
