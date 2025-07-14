@@ -15,6 +15,7 @@ from bisheng.database.models.session import MessageSession
 from bisheng.database.models.assistant import AssistantDao
 from bisheng.database.models.flow import FlowDao
 from bisheng.database.models.flow_version import FlowVersionDao
+from bisheng.utils.aliyun_text_moderation import AliyunTextModeration
 from bisheng.utils.sysloger import syslog_client
 
 
@@ -334,6 +335,11 @@ class ChatMessageDao(MessageBase):
             session.commit()
             session.refresh(message)
             syslog_client.log_chat_message(message.to_dict())
+        if message.category == "question":
+            try:
+                AliyunTextModeration.moderate_text(str(message.message))
+            except Exception as e:
+                logger.error(e)
         return message
 
     @classmethod
@@ -342,6 +348,12 @@ class ChatMessageDao(MessageBase):
         statement = update(MessageSession).where(MessageSession.chat_id.in_(chat_ids)).values(
             update_time=datetime.now(),
         )
+        for message in messages:
+            if message.category == "question":
+                try:
+                    AliyunTextModeration.moderate_text(str(message.message))
+                except Exception as e:
+                    logger.error(e)
         with session_getter() as session:
             session.execute(statement)
             session.add_all(messages)
