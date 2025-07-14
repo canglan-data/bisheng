@@ -70,11 +70,25 @@ export default function FileUploadStep2({ step, resultFiles, isSubmitting, defau
     useEffect(() => {
         if (defaultParseStrategy) {
             const { cellGeneralConfig, ..._rules } = defaultParseStrategy;
-            console.log('set defaultParseStrategy', defaultParseStrategy, resultFiles);
             // PreviewResult
             setCellGeneralConfig(cellGeneralConfig);
             const rules = {
-                ..._rules,
+                separator: _rules.separator,
+                separatorRule: _rules.separator_rule,
+                chunkSize: _rules.chunk_size,
+                chunkOverlap: _rules.chunk_overlap,
+                retainImages: _rules.retain_images,
+                enableFormula: _rules.enable_formula,
+                forceOcr: _rules.force_ocr,
+                pageHeaderFooter: _rules.fileter_page_header_footer,
+                // 是否按章节切分
+                chunkByChapter: _rules.enable_header_split,
+                // 切分层级
+                chunkLevel: _rules.header_split_max_level,
+                // 切片追加章节标题
+                chunkAddChapter: _rules.enable_header_split_chunk_chapter,
+                // 层级切分下的size
+                headerChunkSize: _rules.header_split_chunk_size,
                 knowledgeId: kid,
                 fileList: resultFiles.map(file => ({
                     id: file.id,
@@ -87,8 +101,6 @@ export default function FileUploadStep2({ step, resultFiles, isSubmitting, defau
                     } : {}
                 })),
             };
-            console.log('rules', rules);
-            
             setRules(rules);
             setApplyRule({
                 applyEachCell,
@@ -314,8 +326,23 @@ const useFileProcessingRules = (initialStrategies, resultFiles, kid) => {
             // 层级切分下的size
             headerChunkSize: "1000",
         });
-    }, [resultFiles, kid, cellGeneralConfig]);
+    }, [resultFiles, kid]);
 
+    useEffect(() => {
+        setRules({
+            ...rules,
+            fileList: resultFiles.map(file => ({
+                id: file.id,
+                filePath: file.file_path,
+                fileName: file.fileName,
+                suffix: file.suffix,
+                fileType: file.fileType,
+                excelRule: file.fileType === 'table' ? {
+                    ...cellGeneralConfig
+                } : {}
+            })),
+        })
+    }, [cellGeneralConfig])
     return {
         rules,
         setRules,
