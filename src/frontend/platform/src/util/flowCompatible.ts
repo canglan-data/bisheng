@@ -155,7 +155,7 @@ const comptibleAgent = (node) => {
     }
     
     if (node.v == 3) {
-        node.group_params[3].params.unshift({
+        node.group_params[6].params.unshift({
             "key": "show_reason",
             "label": "将模型思考过程展示在会话中",
             "type": "show_reason_switch",
@@ -186,7 +186,7 @@ const comptibleRag = (node) => {
         node.v = 2
     }
     if (node.v == 2) {
-        node.group_params[3].params.unshift({
+        node.group_params[2].params.unshift({
             "key": "show_reason",
             "label": "将模型思考过程展示在会话中",
             "type": "show_reason_switch",
