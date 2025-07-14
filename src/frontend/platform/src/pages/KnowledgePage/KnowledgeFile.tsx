@@ -27,6 +27,7 @@ import AutoPagination from "../../components/bs-ui/pagination/autoPagination";
 import { useTable } from "../../util/hook";
 import { SettingIcon } from "@/components/bs-icons";
 import { QuestionTooltip } from "@/components/bs-ui/tooltip";
+import FilterByParseStrategy from "@/components/bs-comp/filterTableDataComponent/FilterByParseStrategy";
 
 function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
     const { t } = useTranslation()
@@ -36,7 +37,7 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
     const descRef = useRef(null)
     const [modal, setModal] = useState(null)
     const [options, setOptions] = useState([])
-    const [parseStrategy, setParseStrategy] = useState(null)
+    const [parseStrategy, setParseStrategy] = useState([])
     const [parseStrategyList, setParseStrategyList] = useState([])
     const [isSubmitting, setIsSubmitting] = useState(false) // 新增loading状态
 
@@ -66,22 +67,14 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
                 return {
                     ...item,
                     value: item.id,
-                    label: <p>{item.name}</p>
                 }
             })
             parseStrategyList.data.forEach(item => {
                 parseStrategyMap[item.id] = item.name
             })
-            const _parseStrategy = parseStrategyList.data.find(item => !!item.is_default);
             setParseStrategyList(newParseStrategyList);
             setOptions(embeddings)
             setModal(_model)
-            setParseStrategy(_parseStrategy ? [{
-                ..._parseStrategy,
-                value: _parseStrategy.id,
-                label: <p>{_parseStrategy.name}</p>
-
-            }] : []);
             onLoadEnd(models, parseStrategyMap)
         }).catch(error => {  // 添加错误处理
             toast({
@@ -91,6 +84,13 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
         })
     }, [])
 
+    useEffect(() => {
+        const _parseStrategy = parseStrategyList.find(item => !!item.is_default)
+        setParseStrategy(_parseStrategy ? [{
+            value: _parseStrategy.id,
+            label: <div>{_parseStrategy.name}</div>
+        }] : []);
+    }, [open])
     const { toast } = useToast()
     const [error, setError] = useState({ name: false, desc: false })
 
@@ -136,7 +136,6 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
             description: list
         });
     }
-
     return <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[625px]">
             <DialogHeader>
@@ -175,16 +174,10 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
                     <label htmlFor="roleAndTasks" className="bisheng-label">知识库解析策略
                         <QuestionTooltip content={'选择“自定义策略”，后续上传文件可以自定义解析策略；选择其他策略，后续上传文件将使用配置的策略进行解析。'} />
                     </label>
-                    {
-                        <Cascader
-                            defaultValue={parseStrategy}
-                            placholder="请配置知识库解析策略"
-                            options={parseStrategyList}
-                            onChange={(a, val) => {
-                                setParseStrategy(val)
-                            }}
-                        />
-                    }
+                    <FilterByParseStrategy value={parseStrategy} onChange={value => {
+                        setParseStrategy(value);
+                        console.log(value);
+                    }}/>
                 </div>
             </div>
             <DialogFooter>
