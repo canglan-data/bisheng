@@ -20,6 +20,7 @@ import AutoPagination from "@/components/bs-ui/pagination/autoPagination";
 import { bsConfirm } from "@/components/bs-ui/alertDialog/useConfirm";
 import { captureAndAlertRequestErrorHoc } from "@/controllers/request";
 import ParseStrategyDetail from "./ParseStrategyDetail";
+import { message } from "@/components/bs-ui/toast/use-toast";
 
 export default function ParseSettingModelConfig() {
     const { t } = useTranslation()
@@ -38,6 +39,10 @@ export default function ParseSettingModelConfig() {
             desc: t('lib.confirmDeleteParse'),
             onOk(next) {
                 captureAndAlertRequestErrorHoc(deleteParseStrategy(id).then(res => {
+                    message({
+                        variant: 'success',
+                        description: '删除成功'
+                    })
                     reload();
                 }));
                 next()
@@ -45,7 +50,10 @@ export default function ParseSettingModelConfig() {
         })
     }
 
-    if (showDetatilModel) return <ParseStrategyDetail editId={editId} onBack={() => {setShowDetatilModel(false)}} />
+    if (showDetatilModel) return <ParseStrategyDetail editId={editId} onBack={() => {
+        setShowDetatilModel(false);
+        reload();
+    }} />
     
     return <div className="px-2 py-4 size-full pb-20 relative overflow-y-auto">
         <div className="">
@@ -63,6 +71,7 @@ export default function ParseSettingModelConfig() {
                 <div className="flex justify-end gap-4 items-center right-0 top-[-44px]">
                     <SearchInput placeholder="搜索解析策略名称" onChange={(e) => search(e.target.value)} />
                     <Button className="px-8 text-[#FFFFFF]" onClick={() => {
+                        setEditId('');
                         setShowDetatilModel(true);
                     }}>{t('create')}</Button>
                 </div>
@@ -83,7 +92,12 @@ export default function ParseSettingModelConfig() {
                             <TableRow key={el.id}>
                                 <TableCell>{el.id}</TableCell>
                                 <TableCell className="font-medium">
-                                    <div className=" truncate-multiline">{el.name}</div>
+                                    {/* TODO: 如果是默认的需要搞一个标签 */}
+                                    <div className="truncate-multiline flex items-center">
+                                        {el.name}
+                                        {el.is_default && <label className="text-xm bg-[#E0E7F7] text-pirmary block">默认</label>}
+                                    </div>
+                                    
                                 </TableCell>
                                 <TableCell>{el.create_time.replace('T', ' ')}</TableCell>
                                 <TableCell className=" break-all">
@@ -93,8 +107,6 @@ export default function ParseSettingModelConfig() {
                                     // @ts-ignore
                                     window.parsename = [el.name, el.description];
                                 }}>
-                                    {/* TODO： 修改跳转地址 */}
-                                    {/* <Link to={`/filelib/${el.id}`} className="no-underline hover:underline text-primary" onClick={() => { }}>{t('lib.details')}</Link> */}
                                     <Button variant="link" onClick={() => {
                                         setShowDetatilModel(true);
                                         setEditId(el.id);

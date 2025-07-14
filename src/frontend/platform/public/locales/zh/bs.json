@@ -342,12 +342,15 @@
     "confirmDeleteParse": "确认删除该解析策略?",
     "createParseStrategy": "创建知识库解析策略",
     "editParseStrategy": "修改知识库解析策略",
+    "defaultParseStrategy": "默认解析策略",
     "save": "保存",
     "cearte": "创建",
     "copy": "复制",
     "back": "返回",
     "copying": "复制中",
-    "cancel": "取消"
+    "cancel": "取消",
+    "defaultStrategy": "文档文件",
+    "customStrategy": "表格文件"
   },
   "evaluation": {
     "id": "任务ID",

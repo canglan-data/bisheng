@@ -34,9 +34,13 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
     const [selectId, setSelectId] = useState(''); // 当前选择文件id
     const [syncChunksSelectId, setSelectIdSyncChunks] = useState(''); // 当前选择文件id(与chunk更新保持同步)
     useEffect(() => {
-        const file = rules.fileList[0]
-        setSelectId(file.id)
-    }, [])
+        console.log('PreviewResult rules', rules);
+        
+        const file = rules?.fileList[0]
+        setSelectId(file?.id)
+    }, [rules])
+    console.log('rules', rules);
+    
     const currentFile = useMemo(() => {  // 当前选择文件
         const _currentFile = rules.fileList.find(file => file.id === selectId)
         // 触发keydown事件,切换tab

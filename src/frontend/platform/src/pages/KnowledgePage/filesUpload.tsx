@@ -2,15 +2,16 @@ import { Button } from "@/components/bs-ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/bs-ui/dialog";
 import StepProgress from "@/components/bs-ui/step";
 import { useToast } from "@/components/bs-ui/toast/use-toast";
-import { retryKnowledgeFileApi, subUploadLibFile } from "@/controllers/API";
+import { getParseStrategy, retryKnowledgeFileApi, subUploadLibFile } from "@/controllers/API";
 import { captureAndAlertRequestErrorHoc } from "@/controllers/request";
 import { ChevronLeft } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import FileUploadStep1 from "./components/FileUploadStep1";
 import FileUploadStep2 from "./components/FileUploadStep2";
 import FileUploadStep4 from "./components/FileUploadStep4";
+import { escapeRegExp } from "lodash-es";
 
 const StepLabels = [
     '上传文件',
@@ -28,6 +29,8 @@ export default function FilesUpload() {
     // 文件列表
     const [resultFiles, setResultFiles] = useState([])
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // 是否有默认解析策略
+    const [defaultParseStrategy, setDefaultParseStrategy] = useState(null);
     
     const _tempConfigRef = useRef({})
     // 保存知识库
@@ -78,6 +81,17 @@ export default function FilesUpload() {
         _tempConfigRef.current = _config
     }
 
+    useEffect(() => {
+        // 获取默认切分策略详情
+        const libParseStrategyId = localStorage.getItem('libParseStrategy');
+        if (libParseStrategyId) {
+            getParseStrategy(libParseStrategyId).then((res) => {
+                console.log('res', res);
+                setDefaultParseStrategy(res.content);
+            })
+        }
+    }, [])
+
     // 默认配置保存
     const handleSaveByDefaultConfig = async (_config) => {
         await captureAndAlertRequestErrorHoc(subUploadLibFile(_config).then(res => {
@@ -118,6 +132,23 @@ export default function FilesUpload() {
         }))
     }
 
+    // 存在defaultParseStrategy则不展示分段策略
+    const StepLabels = defaultParseStrategy ? [
+        '上传文件',
+        '原文对比',
+        '数据处理'
+    ] : [
+        '上传文件',
+        '分段策略',
+        '原文对比',
+        '数据处理'
+    ];
+
+    // 存在defaultParseStrategy，步数偏移量为1
+    const offset = defaultParseStrategy ? 1 : 0;
+
+    console.log('currentStep + offset', currentStep + offset);
+    
     return <div className="relative h-full flex flex-col">
         <div className="pt-4 px-4">
             {/* back */}
@@ -155,13 +186,14 @@ export default function FilesUpload() {
                     />
 
                     <FileUploadStep2
-                        step={currentStep}
+                        step={(currentStep + offset)}
                         resultFiles={resultFiles}
                         isSubmitting={isSubmitting}
                         onNext={(step, _config) => {
-                            step === 3 ? setCurrentStep(step) : handleSave(_config)
+                            (step + offset) === 3 ? setCurrentStep(step) : handleSave(_config)
                         }}
                         onPrev={() => setCurrentStep(currentStep - 1)}
+                        defaultParseStrategy={defaultParseStrategy}
                     />
                     {currentStep === 4 && <FileUploadStep4 data={resultFiles} />}
                 </div>

@@ -18,10 +18,11 @@ export default function Header() {
 
     useEffect(() => {
         // @ts-ignore
-        const [libname, libdesc] = window.libname || [] // 临时记忆
+        const [libname, libdesc, libParseStrategy] = window.libname || [] // 临时记忆
         if (libname) {
             localStorage.setItem('libname', libname)
             localStorage.setItem('libdesc', libdesc)
+            localStorage.setItem('libParseStrategy', libParseStrategy)
         }
         setLibInfo({ name: libname || localStorage.getItem('libname'), desc: libdesc || localStorage.getItem('libdesc') })
     }, [])

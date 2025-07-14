@@ -24,6 +24,7 @@ interface IProps {
     step: number
     resultFiles: FileItem[]
     isSubmitting: boolean
+    defaultParseStrategy: null | Object
     onNext: (step: number, config?: any) => void
     onPrev: () => void
 }
@@ -38,7 +39,7 @@ const initialStrategies = [
     { id: '2', regex: '\\n', position: 'after', rule: '单换行后切分，用于分隔普通换行' }
 ];
 
-export default function FileUploadStep2({ step, resultFiles, isSubmitting, onNext, onPrev }: IProps) {
+export default function FileUploadStep2({ step, resultFiles, isSubmitting, defaultParseStrategy, onNext, onPrev }: IProps) {
     const { id: kid } = useParams()
     const { t } = useTranslation('knowledge')
     const setSelectedChunkIndex = useKnowledgeStore((state) => state.setSelectedChunkIndex);
@@ -65,6 +66,38 @@ export default function FileUploadStep2({ step, resultFiles, isSubmitting, onNex
         strategies,
         setStrategies
     } = useFileProcessingRules(initialStrategies, resultFiles, kid);
+
+    useEffect(() => {
+        if (defaultParseStrategy) {
+            const { cellGeneralConfig, ..._rules } = defaultParseStrategy;
+            console.log('set defaultParseStrategy', defaultParseStrategy, resultFiles);
+            // PreviewResult
+            setCellGeneralConfig(cellGeneralConfig);
+            const rules = {
+                ..._rules,
+                knowledgeId: kid,
+                fileList: resultFiles.map(file => ({
+                    id: file.id,
+                    filePath: file.file_path,
+                    fileName: file.fileName,
+                    suffix: file.suffix,
+                    fileType: file.fileType,
+                    excelRule: file.fileType === 'table' ? {
+                        ...cellGeneralConfig
+                    } : {}
+                })),
+            };
+            console.log('rules', rules);
+            
+            setRules(rules);
+            setApplyRule({
+                applyEachCell,
+                cellGeneralConfig,
+                rules
+            })
+            
+        }
+    }, [defaultParseStrategy, resultFiles])
 
     // 起始行不能大于结束行校验
     const vildateCell = () => {

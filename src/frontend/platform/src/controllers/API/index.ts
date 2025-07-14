@@ -172,11 +172,33 @@ export async function getParseStrategyList({ page, pageSize = 20, name = '' }) {
 }
 
 /**
- * 获取解析策略列表
+ * 删除某解析策略
  */
 export async function deleteParseStrategy(id: string) {
   return await axios.delete(`/api/v1/parse-strategy/${id}`);
 }
+
+/**
+ * 新建解析策略
+*/
+export async function createParseStrategy(params) {
+  return await axios.post(`/api/v1/parse-strategy/create`, params);
+}
+
+/**
+ * 修改解析策略
+*/
+export async function editParseStrategy(id, params) {
+  return await axios.put(`/api/v1/parse-strategy/${id}`, params);
+}
+
+/**
+ * 查看解析策略详情
+*/
+export async function getParseStrategy(id) {
+  return await axios.get(`/api/v1/parse-strategy/${id}`);
+}
+
 /**
  * 获取知识库下文件列表
  */
