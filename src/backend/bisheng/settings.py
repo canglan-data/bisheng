@@ -102,6 +102,14 @@ class SYSLogConf(BaseModel):
     log_format: str = Field(default='%(asctime)s %(levelname)s %(name)s: %(message)s', description="日志的格式")
     date_format: str = Field(default='%b %d %H:%M:%S', description="日期的格式")
 
+class AliyunTextModerationConf(BaseModel):
+    access_key_id: str = Field(default='', description="阿里云AccessKey ID")
+    access_key_secret: str = Field(default='', description="阿里云AccessKey Secret")
+    endpoint: str = Field(default='green-cip.cn-beijing.aliyuncs.com', description="阿里云文本审核API的Endpoint")
+    region_id: str = Field(default='cn-beijing', description="阿里云文本审核API的Region ID")
+    connect_timeout: int = Field(default=10000, description="阿里云文本审核API的连接超时时间（毫秒）")
+    read_timeout: int = Field(default=3000, description="阿里云文本审核API的读取超时时间（毫秒）")
+
 
 class DoMain(BaseModel):
     web_domain: str = Field(default='127.0.0.1', description="网站的域名")
@@ -163,6 +171,7 @@ class Settings(BaseModel):
     object_storage: ObjectStore = {}
     workflow_conf: WorkflowConf = WorkflowConf()
     syslog_conf: SYSLogConf = SYSLogConf()
+    aliyun_text_moderation_conf: AliyunTextModerationConf = AliyunTextModerationConf()
     domain: DoMain = DoMain()
     celery_task: CeleryConf = CeleryConf()
 

@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import useFlowStore from "../flowStore";
 import NodeLogo from "./NodeLogo";
 import { ResultText } from "./RunTest";
+import { checkSassUrl } from "@/components/bs-comp/FileView";
 
 const enum Status {
     normal = 'normal',
@@ -207,7 +208,7 @@ export const ResultFile = ({ title, name, fileUrl }: { title: string, name: stri
     const { flow } = useFlowStore();
 
     const handleDownload = (e) => {
-        downloadFile(fileUrl, `${flow.name}_${name}_检索结果`)
+        downloadFile(checkSassUrl(fileUrl), `${flow.name}_${name}_检索结果`)
     }
 
     return <div className="mb-2 rounded-md border bg-search-input text-sm shadow-sm">
