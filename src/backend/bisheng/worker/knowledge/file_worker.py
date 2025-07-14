@@ -10,9 +10,9 @@ from bisheng.database.models.knowledge_file import (KnowledgeFile, KnowledgeFile
 from bisheng.interface.embeddings.custom import FakeEmbedding
 from bisheng.utils import generate_uuid
 from bisheng.utils.minio_client import MinioClient
-from bisheng_langchain.vectorstores import ElasticKeywordsSearch
+from bisheng_langchain.vectorstores import ElasticKeywordsSearch, Milvus
 from loguru import logger
-from pymilvus import Collection, Milvus, MilvusException
+from pymilvus import Collection, MilvusException
 
 
 @celery_app.task(acks_late=True)
