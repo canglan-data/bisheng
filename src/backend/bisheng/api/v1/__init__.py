@@ -25,6 +25,7 @@ from bisheng.api.v1.operation import router as operation_router
 from bisheng.api.v1.scheduled_task import router as scheduled_task_router
 from bisheng.api.v1.model_fun import router as model_fun_router
 from bisheng.api.v1.pack_tool import router as pack_router
+from bisheng.api.v1.parse_strategy import router as strategy_router
 
 __all__ = [
     'chat_router',
@@ -53,5 +54,6 @@ __all__ = [
     'operation_router',
     'scheduled_task_router',
     'model_fun_router',
-    'pack_router'
+    'pack_router',
+    'strategy_router'
 ]
