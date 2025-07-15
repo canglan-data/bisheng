@@ -88,7 +88,9 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
         const _parseStrategy = parseStrategyList.find(item => !!item.is_default)
         setParseStrategy(_parseStrategy ? [{
             value: _parseStrategy.id,
-            label: <div>{_parseStrategy.name}</div>
+            label: <div>{_parseStrategy.name}
+                {!!_parseStrategy.is_default && <label className="text-xm bg-[#E0E7F7] text-primary inline-block pl-1 pr-1 ml-2">默认</label>}
+            </div>
         }] : []);
     }, [open])
     const { toast } = useToast()

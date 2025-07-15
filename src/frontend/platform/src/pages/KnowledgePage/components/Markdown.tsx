@@ -105,7 +105,6 @@ export default forwardRef(function Markdown({ edit, isUns, title, q, value, chun
     }, [value, chunkHeader])
 
     const valueVditorRef = useRef(null)
-    const capterVditorRef = useRef(null)
     
     const hasChunkHeader = typeof chunkHeader === 'string';
 
@@ -130,7 +129,6 @@ export default forwardRef(function Markdown({ edit, isUns, title, q, value, chun
     const hangleCheckChagne = (checked) => {
         if (!checked) {
             setValue(valueVditorRef.current.getResult())
-            if (hasChunkHeader) setCapter(capterVditorRef.current.getResult())
         }
         setIsAce(!checked)
     }

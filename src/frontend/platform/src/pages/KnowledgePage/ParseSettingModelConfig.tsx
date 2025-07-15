@@ -92,10 +92,9 @@ export default function ParseSettingModelConfig() {
                             <TableRow key={el.id}>
                                 <TableCell>{el.id}</TableCell>
                                 <TableCell className="font-medium">
-                                    {/* TODO: 如果是默认的需要搞一个标签 */}
                                     <div className="truncate-multiline flex items-center">
                                         {el.name}
-                                        {!!el.is_default && <label className="text-xm bg-[#E0E7F7] text-pirmary block">默认</label>}
+                                        {!!el.is_default && <label className="text-xm bg-[#E0E7F7] text-primary inline-block pl-1 pr-1 ml-2">默认</label>}
                                     </div>
                                     
                                 </TableCell>
@@ -110,7 +109,7 @@ export default function ParseSettingModelConfig() {
                                     <Button variant="link" onClick={() => {
                                         setShowDetatilModel(true);
                                         setEditId(el.id);
-                                    }} className="text-primary px-0 pl-2">{t('lib.details')}</Button>
+                                    }} className="text-primary px-0 pl-2">{t('lib.view')}</Button>
                                     <Button variant="link" onClick={() => handleDelete(el.id)} className="text-red-500 px-0 pl-2">{t('delete')}</Button>
                                 </TableCell>
                             </TableRow>

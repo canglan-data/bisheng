@@ -35,7 +35,9 @@ const useParseStrategys = () => {
         try {
             const res = await getParseStrategyList({ name, page: 1, pageSize: 50 });
             const options = res.data.map((u: any) => ({
-                label: <div>{u.name}</div>,
+                label: <div>{u.name}
+                    {!!u.is_default && <label className="text-xm bg-[#E0E7F7] text-primary inline-block pl-1 pr-1 ml-2">默认</label>}
+                </div>,
                 value: u.id,
             }));
             keyWordRef.current = name;
@@ -59,8 +61,10 @@ const useParseStrategys = () => {
         try {
             const nextPage = page + 1;
             const res = await getParseStrategyList({ name: keyWordRef.current, page: nextPage, pageSize: 50 });
-            const options = res.data.map((a: any) => ({
-                label: a.name,
+            const options = res.data.map((u: any) => ({
+                label: <div>{u.name}
+                    {!!u.is_default && <label className="text-xm bg-[#E0E7F7] text-primary inline-block pl-1 pr-1 ml-2">默认</label>}
+                </div>,
                 value: a.id,
             }));
             setparseStrategys((prevApps) => [...prevApps, ...options]);
