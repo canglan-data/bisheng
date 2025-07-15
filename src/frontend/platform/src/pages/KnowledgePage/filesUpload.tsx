@@ -2,12 +2,12 @@ import { Button } from "@/components/bs-ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/bs-ui/dialog";
 import StepProgress from "@/components/bs-ui/step";
 import { useToast } from "@/components/bs-ui/toast/use-toast";
-import { getParseStrategy, retryKnowledgeFileApi, subUploadLibFile } from "@/controllers/API";
+import { getKnowledgeDetailApi, getParseStrategy, retryKnowledgeFileApi, subUploadLibFile } from "@/controllers/API";
 import { captureAndAlertRequestErrorHoc } from "@/controllers/request";
 import { ChevronLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import FileUploadStep1 from "./components/FileUploadStep1";
 import FileUploadStep2 from "./components/FileUploadStep2";
 import FileUploadStep4 from "./components/FileUploadStep4";
@@ -22,6 +22,7 @@ const StepLabels = [
 
 export default function FilesUpload() {
     const { t } = useTranslation('knowledge')
+    const { id } = useParams(); // 获取路由参数
     const navigate = useNavigate();
     const { message } = useToast()
 
@@ -83,13 +84,12 @@ export default function FilesUpload() {
 
     useEffect(() => {
         // 获取默认切分策略详情
-        const libParseStrategyId = localStorage.getItem('libParseStrategy');
-        if (libParseStrategyId) {
-            getParseStrategy(libParseStrategyId).then((res) => {
-                console.log('res', res);
-                setDefaultParseStrategy(res.content);
-            })
-        }
+        getKnowledgeDetailApi([id]).then((res) => {
+            const content = res?.[0]?.parse_strategy_content;
+            if (content) {
+                setDefaultParseStrategy(content)
+            }
+        })
     }, [])
 
     // 默认配置保存
