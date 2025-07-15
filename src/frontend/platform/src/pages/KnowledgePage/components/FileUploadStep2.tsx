@@ -271,7 +271,26 @@ export default function FileUploadStep2({ step, resultFiles, isSubmitting, defau
 
 
 const useFileProcessingRules = (initialStrategies, resultFiles, kid) => {
-    const [rules, setRules] = useState(null);
+    const [rules, setRules] = useState({
+        separator: ['\\n\\n', '\\n'],
+        separatorRule: ['after', 'after'],
+        chunkSize: "1000",
+        chunkOverlap: "0",
+        retainImages: true,
+        enableFormula: true,
+        forceOcr: true,
+        pageHeaderFooter: true,
+        // 是否按章节切分
+        chunkByChapter: false,
+        // 切分层级
+        chunkLevel: '3',
+        // 切片追加章节标题
+        chunkAddChapter: true,
+        // 层级切分下的size
+        headerChunkSize: "1000",
+        knowledgeId: kid,
+        fileList: [],
+    });
     const [applyEachCell, setApplyEachCell] = useState(false); // 为每个表格单独设置
     const [cellGeneralConfig, setCellGeneralConfig] = useState({
         slice_length: 10,
@@ -343,6 +362,7 @@ const useFileProcessingRules = (initialStrategies, resultFiles, kid) => {
             })),
         })
     }, [cellGeneralConfig])
+
     return {
         rules,
         setRules,
