@@ -33,8 +33,6 @@ const initialStrategies = [
 
 export default function ParseStrategyDetail({editId, onBack}: {editId: string, onBack: () => void}) {
     const { t } = useTranslation()
-    const navigate = useNavigate()
-    const [showDetatilModel, setShowDetatilModel] = useState(false)
 
     const [data, setData] = useState({
         name: '',
@@ -57,12 +55,30 @@ export default function ParseStrategyDetail({editId, onBack}: {editId: string, o
     const fetchDetail = async () => {
         const res = await getParseStrategy(editId);
         const { name, is_default, content } = res;
-        const { cellGeneralConfig, ...rules} = content;
+        const { cellGeneralConfig, strategies, ...rules} = content;
         setData({
             name: name,
             is_default: !!is_default,
         })
-        setRules(rules);
+        setStrategies(strategies)
+        setRules({
+            separator: rules.separator,
+            separatorRule: rules.separator_rule,
+            chunkSize: rules.chunk_size,
+            chunkOverlap: rules.chunk_overlap,
+            retainImages: rules.retain_images,
+            enableFormula: rules.enable_formula,
+            forceOcr: rules.force_ocr,
+            pageHeaderFooter: rules.fileter_page_header_footer,
+            // 是否按章节切分
+            chunkByChapter: rules.enable_header_split,
+            // 切分层级
+            chunkLevel: rules.header_split_max_level,
+            // 切片追加章节标题
+            chunkAddChapter: rules.enable_header_split_chunk_chapter,
+            // 层级切分下的size
+            headerChunkSize: rules.header_split_chunk_size,
+        });
         setCellGeneralConfig(cellGeneralConfig);
     }
 
@@ -73,6 +89,10 @@ export default function ParseStrategyDetail({editId, onBack}: {editId: string, o
     }, [editId])
 
     const handleSubmit = () => {
+        if (!data.name) return message({
+            variant: 'error',
+            description: '请输入解析策略名称'
+        })
         const { 
             pageHeaderFooter, 
             chunkOverlap, 
@@ -104,6 +124,7 @@ export default function ParseStrategyDetail({editId, onBack}: {editId: string, o
                 enable_header_split_chunk_chapter: chunkAddChapter,
                 header_split_chunk_size: headerChunkSize,
                 cellGeneralConfig: cellGeneralConfig,
+                strategies: strategies,
             }
         };
 
