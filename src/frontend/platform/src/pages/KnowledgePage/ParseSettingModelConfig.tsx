@@ -92,10 +92,9 @@ export default function ParseSettingModelConfig() {
                             <TableRow key={el.id}>
                                 <TableCell>{el.id}</TableCell>
                                 <TableCell className="font-medium">
-                                    {/* TODO: 如果是默认的需要搞一个标签 */}
                                     <div className="truncate-multiline flex items-center">
                                         {el.name}
-                                        {!!el.is_default && <label className="text-xm bg-[#E0E7F7] text-pirmary block">默认</label>}
+                                        {!!el.is_default && <label className="text-xm bg-[#E0E7F7] text-primary inline-block pl-1 pr-1 ml-2">默认</label>}
                                     </div>
                                     
                                 </TableCell>
