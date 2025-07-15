@@ -350,7 +350,8 @@
     "copying": "复制中",
     "cancel": "取消",
     "defaultStrategy": "文档文件",
-    "customStrategy": "表格文件"
+    "customStrategy": "表格文件",
+    "view": "查看"
   },
   "evaluation": {
     "id": "任务ID",

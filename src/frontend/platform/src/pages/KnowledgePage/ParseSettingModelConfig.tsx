@@ -110,7 +110,7 @@ export default function ParseSettingModelConfig() {
                                     <Button variant="link" onClick={() => {
                                         setShowDetatilModel(true);
                                         setEditId(el.id);
-                                    }} className="text-primary px-0 pl-2">{t('lib.details')}</Button>
+                                    }} className="text-primary px-0 pl-2">{t('lib.view')}</Button>
                                     <Button variant="link" onClick={() => handleDelete(el.id)} className="text-red-500 px-0 pl-2">{t('delete')}</Button>
                                 </TableCell>
                             </TableRow>
