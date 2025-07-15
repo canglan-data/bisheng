@@ -19,7 +19,7 @@ def create_strategy(
 
 
 @router.get('')
-def get_strategy(
+def get_strategies(
     *,
     login_user: UserPayload = Depends(get_login_user),
     keyword: Optional[str] = None,

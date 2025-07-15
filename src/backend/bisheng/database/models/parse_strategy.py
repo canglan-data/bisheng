@@ -85,7 +85,10 @@ class ParseStrategyDao:
         statement = cls.generate_all_strategy_filter(statement, keyword=keyword)
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
-        statement = statement.order_by(ParseStrategy.update_time.desc())
+        statement = statement.order_by(
+            ParseStrategy.is_default.desc(),
+            ParseStrategy.create_time.desc()
+        )
         with session_getter() as session:
             return session.exec(statement).all()
 
