@@ -1,9 +1,9 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, Dict
 
 from pydantic import BaseModel, field_validator
-from sqlmodel import Column, DateTime, Field, delete, func, or_, select, text, update
+from sqlmodel import Column, DateTime, Field, delete, func, or_, select, text, update, JSON
 from sqlmodel.sql.expression import Select, SelectOfScalar
 
 from bisheng.database.base import session_getter
@@ -37,6 +37,7 @@ class KnowledgeBase(SQLModelSerializable):
     state: Optional[int] = Field(index=False, default=KnowledgeState.PUBLISHED.value,
                                  description='0 为未发布，1 为已发布, 2 为复制中')
     parse_strategy_id: Optional[int] = Field(default=0)
+    parse_strategy_content: Optional[Dict] = Field(default=None, sa_column=Column(JSON), description='解析策略内容')
     create_time: Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP')))
     update_time: Optional[datetime] = Field(default=None, sa_column=Column(

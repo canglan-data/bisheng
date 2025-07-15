@@ -56,6 +56,7 @@ from bisheng.database.models.knowledge_file import (
     KnowledgeFileStatus, ParseType,
 )
 from bisheng.database.models.llm_server import LLMDao, LLMModelType
+from bisheng.database.models.parse_strategy import ParseStrategyDao
 from bisheng.database.models.role_access import AccessType, RoleAccessDao
 from bisheng.database.models.user import UserDao
 from bisheng.database.models.user_group import UserGroupDao
@@ -168,6 +169,11 @@ class KnowledgeService(KnowledgeUtils):
             if knowledge.is_partition is not None
             else settings.get_vectors_conf().milvus.is_partition
         )
+
+        if knowledge.parse_strategy_id is not None:
+            parse_strategy = ParseStrategyDao.query_by_id(knowledge.parse_strategy_id)
+            if parse_strategy and parse_strategy.content is not None:
+                knowledge.parse_strategy_content = parse_strategy.content
 
         # 判断知识库是否重名
         repeat_knowledge = KnowledgeDao.get_knowledge_by_name(
