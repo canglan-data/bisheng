@@ -14,6 +14,7 @@ from bisheng.database.models.base import SQLModelSerializable
 from bisheng.database.models.role_access import AccessType, RoleAccess, RoleAccessDao
 from bisheng.database.models.user_role import UserRoleDao
 from bisheng.utils import generate_uuid
+from loguru import logger
 
 
 # if TYPE_CHECKING:
@@ -351,8 +352,9 @@ class FlowDao(FlowBase):
                      page: int = 0,
                      limit: int = 0,
                      user_ids:list = None,
-                     id_extra_not: list = None,) -> (List[Dict], int):
+                     id_extra_not: list = None) -> (List[Dict], int):
         """ 获取所有的应用 包含技能、助手、工作流 """
+        logger.info(f'get_all_apps name: {name}, status: {status}, id_list: {id_list}, flow_type: {flow_type},page: {page}, limit: {limit}, user_ids: {user_ids}, id_extra: {id_extra}, id_extra_not: {id_extra_not} ')
         flow_statement = select(Flow.id, Flow.name, Flow.description, Flow.flow_type, Flow.logo, Flow.user_id,
             Flow.status, Flow.create_time, Flow.update_time)
         if is_delete is not None:
