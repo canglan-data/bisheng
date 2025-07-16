@@ -175,7 +175,6 @@ export default function FilesUpload() {
         <div className="flex flex-1 overflow-hidden px-4"> {/* pb-16为底部按钮留空间 */}
             <div className="w-full overflow-y-auto">
                 <div className="h-full">
-
                     <FileUploadStep1
                         hidden={currentStep !== 1}
                         onNext={(files) => {
@@ -184,8 +183,7 @@ export default function FilesUpload() {
                         }}
                         onSave={handleSaveByDefaultConfig}
                     />
-
-                    <FileUploadStep2
+                    {[2,3].includes(currentStep) && <FileUploadStep2
                         step={(currentStep + offset)}
                         resultFiles={resultFiles}
                         isSubmitting={isSubmitting}
@@ -194,7 +192,7 @@ export default function FilesUpload() {
                         }}
                         onPrev={() => setCurrentStep(currentStep - 1)}
                         defaultParseStrategy={defaultParseStrategy}
-                    />
+                    />}
                     {currentStep === 4 && <FileUploadStep4 data={resultFiles} />}
                 </div>
             </div>

@@ -68,6 +68,10 @@ const ParagraphEdit = ({
             const { bbox, chunk_index, extra } = chunk.metadata
             const labels = bbox && JSON.parse(bbox).chunk_bboxes || []
             const chunk_chapter = (extra && JSON.parse(extra)?.chunk_chapter) || undefined;
+            const _text = chunk.text.replaceAll(
+                /(!\[[^\]]*\]\()\/bisheng(\/[^)]*\))/g,
+                `$1${__APP_ENV__.BASE_URL}/bisheng$2`
+            )
 
             const active = chunk_index === chunkId
             const resData = labels.reduce((acc, label) => {
@@ -79,7 +83,7 @@ const ParagraphEdit = ({
                         page: label.page,
                         label: label.bbox,
                         active: active,
-                        txt: chunk.text
+                        txt: _text
                     }
                 } else if (!seenIds.has(id)) {
                     seenIds.add(id);
@@ -88,7 +92,7 @@ const ParagraphEdit = ({
                         page: label.page,
                         label: label.bbox,
                         active: active,
-                        txt: chunk.text
+                        txt: _text
                     });
                 }
                 return acc;
@@ -97,8 +101,8 @@ const ParagraphEdit = ({
             labelsData = [...labelsData, ...resData]
 
             if (active) {
-                value = chunk.text
                 chunkChapter = chunk_chapter;
+                value = _text
             }
         })
         setFileName(res.data[0].metadata.source)
@@ -293,7 +297,7 @@ const ParagraphEdit = ({
                         <img
                             className="size-52 block"
                             src={__APP_ENV__.BASE_URL + "/assets/knowledge/damage.svg"} alt="" />
-                        <p>预览失败</p>
+                        <p>此文件类型不支持预览</p>
                     </div>
                 </div>
         }

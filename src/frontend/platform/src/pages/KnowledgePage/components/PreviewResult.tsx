@@ -42,7 +42,7 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
     console.log('rules', rules);
     
     const currentFile = useMemo(() => {  // 当前选择文件
-        const _currentFile = rules.fileList.find(file => file.id === selectId)
+        const _currentFile = rules?.fileList?.find(file => file.id === selectId)
         // 触发keydown事件,切换tab
         if (_currentFile) {
             const dom = document.getElementById(_currentFile.fileType === 'table' ? 'knowledge_table_tab' : 'knowledge_file_tab')
@@ -164,7 +164,7 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        {rules.fileList.map((file, index) => (
+                        {rules?.fileList?.map((file, index) => (
                             <SelectItem key={file.id} value={file.id}>
                                 <div className="flex items-center gap-2">
                                     <FileIcon type={file.suffix} className="size-4 min-w-4" />
