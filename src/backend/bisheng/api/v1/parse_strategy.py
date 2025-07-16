@@ -21,22 +21,20 @@ def create_strategy(
 @router.get('')
 def get_strategies(
     *,
-    login_user: UserPayload = Depends(get_login_user),
     keyword: Optional[str] = None,
     page_size: int = Query(10, ge=1, description="分页大小"),
     page_num: int = Query(1, ge=1, description="页码")
 ):
-    res, total = ParseStrategyService.get_strategy(login_user, keyword, page_num, page_size)
+    res, total = ParseStrategyService.get_strategy(keyword, page_num, page_size)
     return resp_200(data={'data': res, 'total': total})
 
 
 @router.get('/{parse_strategy_id}')
 def get_strategy_info(
     *,
-    login_user: UserPayload = Depends(get_login_user),
     parse_strategy_id: int
 ):
-    res = ParseStrategyService.get_strategy_info(login_user, parse_strategy_id)
+    res = ParseStrategyService.get_strategy_info(parse_strategy_id)
     return resp_200(data=res)
 
 
