@@ -37,6 +37,8 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
     // const [inputForm, setInputForm] = useState(null) // input表单
     const [formShow, setFormShow] = useState(false) // input表单显示
     const [allowUpload, setAllowUpload] = useState(true) // input允许上传文件
+    const [hiddenGuideQuestion, setHiddenGuideQuestion] = useState(false) //折叠推荐问题
+    
 
     const [showWhenLocked, setShowWhenLocked] = useState(false) // 强制开启表单按钮，不限制于input锁定
     const restartTaskRef = useRef({}) // 重启任务列表
@@ -127,6 +129,16 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
             }
         }
     }, [])
+
+    useEffect(() => {
+        const userInput = messages?.find(item => item.category === 'question');
+        console.log('userInput', userInput);
+        
+        // 如果有用户输入 则收起推荐问题
+        if (userInput) {
+            setHiddenGuideQuestion(true);
+        }
+    }, [messages])
 
     const handleSendClick = async () => {
         if (fileUploading) return
@@ -506,8 +518,13 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
             <GuideQuestions
                 ref={questionsRef}
                 locked={inputLock.locked}
-                onClick={handleClickGuideWord}
-                bottom={chatFilesRef?.current?.getHeight() || 0} //有文件 则给引导问题顶上去
+                onClick={(value) => {
+                    handleClickGuideWord(value)
+                    setHiddenGuideQuestion(true)
+                }}
+                hiddenGuideQuestion={hiddenGuideQuestion}
+                setHiddenGuideQuestion={setHiddenGuideQuestion}
+                bottom={chatFilesRef?.current?.getHeight() ? chatFilesRef?.current?.getHeight() + 28 : 0} //有文件 则给引导问题顶上去
             />
             {/* restart */}
             <div className="flex absolute left-0 top-3 z-10">

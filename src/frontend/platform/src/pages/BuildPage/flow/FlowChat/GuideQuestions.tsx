@@ -1,11 +1,15 @@
+import { ChevronDown, ChevronUp } from "lucide-react"
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 // 引导词推荐
-const GuideQuestions = forwardRef(({ locked, chatId, onClick, bottom }, ref) => {
+const GuideQuestions = forwardRef(({ locked, chatId, onClick, bottom, hiddenGuideQuestion, setHiddenGuideQuestion }, ref) => {
 
     const { t } = useTranslation()
     const [questions, setQuestions] = useState([]) // State to hold questions
+
+    console.log('hiddenGuideQuestion', hiddenGuideQuestion);
+    
 
     useImperativeHandle(ref, () => ({
         updateQuestions(newQuestions) { // Expose this method to the parent
@@ -36,19 +40,34 @@ const GuideQuestions = forwardRef(({ locked, chatId, onClick, bottom }, ref) => 
         <div className="relative">
             <div
                 className="absolute left-0"
-                style={{ bottom: `${(bottom || 0) + 28}px` }}
-            >
-                <p className="text-gray-950 text-sm mb-2 bg-[rgba(255,255,255,0.8)] rounded-md w-fit px-2 py-1">
-                    {t('chat.recommendationQuestions')}
-                </p>
+                style={{ bottom: `${(bottom || 0) + 0}px` }}
+            >   
+                <div className="flex items-center mb-2">
+                    <p className="text-gray-950 text-sm bg-[rgba(255,255,255,0.8)] rounded-md w-fit px-2 py-1">
+                        {t('chat.recommendationQuestions')}
+
+                    </p>
+                    <button 
+                        className="ml-1 p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                        onClick={() => setHiddenGuideQuestion(!hiddenGuideQuestion)}
+                        aria-label={hiddenGuideQuestion ? t('chat.expand') : t('chat.collapse')}
+                    >
+                        {hiddenGuideQuestion ? (
+                            <ChevronUp size={16} />
+                        ) : (
+                            <ChevronDown size={16} />
+                        )}
+                    </button>
+                </div>
                 {
-                    words.map((question, index) => (
+                    !hiddenGuideQuestion && words.map((question, index) => (
                         <div
                             key={index}
                             className="w-fit bg-[#d4dffa] border-2 border-gray-50 shadow-md text-gray-600 rounded-md mb-1 px-4 py-1 text-sm cursor-pointer"
                             onClick={() => {
                                 onClick(question)
-                                setQuestions([])
+                                // 历史逻辑： 选择某个问题之后就不再展示这个问题
+                                // setQuestions([])
                             }}
                         >
                             {question}
