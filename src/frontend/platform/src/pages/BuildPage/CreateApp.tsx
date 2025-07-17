@@ -20,6 +20,9 @@ import { forwardRef, useContext, useImperativeHandle, useRef, useState } from "r
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { SelectCommitment } from "../ChatAppPage/components/CommitmentDialog";
+import { Download } from "lucide-react";
+import { checkSassUrl } from "@/components/bs-comp/FileView";
+import { downloadFile } from "@/util/utils";
 
 type ModalProps = {};
 type ModalRef = {
@@ -260,9 +263,21 @@ ${t('build.exampleTwo', { ns: 'bs' })}
                         <label htmlFor="name" className="bisheng-label">
                             {appType === AppType.ASSISTANT ? t('assistantAvatar') : t('workflowAvatar')}
                         </label>
-                        <Avator value={__APP_ENV__.BASE_URL + formData.url} className="mt-3" onChange={uploadAvator}>
-                            <AssistantIcon className="bg-primary w-8 h-8 rounded-sm" />
-                        </Avator>
+                        <div className="flex gap-2">
+                            <div>
+                                <Avator value={__APP_ENV__.BASE_URL + formData.url} className="mt-3" onChange={uploadAvator}>
+                                    <AssistantIcon className="bg-primary w-8 h-8 rounded-sm" />
+                                </Avator>
+                            </div>
+                            {/* 下载按钮 */}
+                            {formData.url && <button 
+                                onClick={() => downloadFile(checkSassUrl(formData.url), formData.url?.split('/').pop())}
+                                className="p-2 mt-3 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded-full transition-colors"
+                                title="Download avatar"
+                            >
+                                <Download className="w-4 h-4" />
+                            </button>}
+                        </div>
                     </div>
                     <div className="mb-6">
                         <label htmlFor="name" className="bisheng-label">
