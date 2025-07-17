@@ -22,6 +22,7 @@ import MsgVNodeCom from "@/pages/OperationPage/useAppLog/MsgBox";
 import { SourceType } from "@/constants";
 import RichText from "@/components/bs-comp/richText";
 import { locationContext } from "@/contexts/locationContext";
+import AnswerLog from "@/components/bs-comp/chatComponent/AnswerLog";
 
 // 颜色列表
 const colorList = [
@@ -67,7 +68,7 @@ const ReasoningLog = ({ loading, msg = '', style }) => {
     </div>
 }
 
-export default function MessageBs({ debug, operation, audit, mark = false, logo, data, onUnlike = () => { }, onSource, disableBtn = false, onMarkClick, flow }: { logo: string, data: WorkflowMessage, onUnlike?: any, onSource?: any }) {
+export default function MessageBs({ debug, operation, audit, mark = false, logo, data, onUnlike = () => { }, onSource, onShowLog, disableBtn = false, onMarkClick, flow }: { logo: string, data: WorkflowMessage, onUnlike?: any, onSource?: any }) {
     const avatarColor = colorList[
         (data.sender?.split('').reduce((num, s) => num + s.charCodeAt(), 0) || 0) % colorList.length
     ]
@@ -191,18 +192,25 @@ export default function MessageBs({ debug, operation, audit, mark = false, logo,
             </>}
             {/* 附加信息 */}
             {
-                data.end && <div className="flex justify-between mt-2">
-                    <SourceEntry
-                        extra={data.extra || {}}
-                        end={data.end}
-                        source={data.source}
-                        className="pl-4"
-                        onSource={() => onSource?.({
+                data.end && <div className="flex justify-between mt-2 gap-4">
+                    <div className="flex gap-2">
+                        <SourceEntry
+                            extra={data.extra || {}}
+                            end={data.end}
+                            source={data.source}
+                            className="pl-4"
+                            onSource={() => onSource?.({
+                                chatId,
+                                messageId: data.id || data.message_id,
+                                message,
+                            })}
+                        />
+                        {/* 只有运营才展示查看日志 */}
+                        {operation && <AnswerLog onShowLog={() => onShowLog?.({
                             chatId,
                             messageId: data.id || data.message_id,
-                            message,
-                        })}
-                    />
+                        })}/>}
+                    </div>
                     {!disableBtn && !debug && <MessageButtons
                         isDisableCopy={isDisableCopy}
                         onlyRead={(audit || operation)}

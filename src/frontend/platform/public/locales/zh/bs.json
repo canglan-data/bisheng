@@ -238,7 +238,8 @@
     "searchLabels": "搜索标签",
     "confirmed": "已确认",
     "confirm": "确认",
-    "runNewWorkflow": "开启新会话"
+    "runNewWorkflow": "开启新会话",
+    "viewLog": "查看日志"
   },
   "model": {
     "modelManagement": "模型管理",
