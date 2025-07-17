@@ -497,9 +497,43 @@ export function optimizeForTTS(text) {
       .trim();
   }
   
-  export function formatTTSText(text) {
-      return optimizeForTTS(contentToPlainText(text));
-  }
+export function formatTTSText(text) {
+    return optimizeForTTS(contentToPlainText(text));
+}
+
+// 用户组转树形结构
+export function buildUserGroupTreeOptimized(
+  flatList
+) {
+  const idToNode = new Map();
+  const roots = [];
+  
+  // 第一次遍历：创建所有节点
+  flatList.forEach(item => {
+    const node = { ...item, children: [] };
+    idToNode.set(item.id, node);
+  });
+  
+  // 第二次遍历：建立父子关系
+  flatList.forEach(item => {
+    const node = idToNode.get(item.id);
+    const parentId = item.parent_id;
+    
+    if (parentId && idToNode.has(parentId)) {
+      // 如果父节点存在，建立关系
+      idToNode.get(parentId).children.push(node);
+    } else if (!parentId) {
+      // 如果parent_id为null/undefined，作为根节点
+      roots.push(node);
+    } else {
+      // 父节点不存在，也作为根节点显示
+      roots.push(node);
+    }
+  });
+  
+  return roots;
+}
+
 /**
  * 截取字符串并在末尾添加省略号（如果需要）
  * @param {string} str - 要处理的字符串

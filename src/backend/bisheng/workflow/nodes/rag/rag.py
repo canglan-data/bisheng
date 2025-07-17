@@ -47,8 +47,10 @@ class RagNode(BaseNode):
         self._qa_prompt = None
 
         self._enable_web_search = self.node_params.get('enable_web_search', False)
+        self._show_reason = self.node_params.get('show_reason', False)
 
         self._llm = LLMService.get_bisheng_llm(model_id=self.node_params['model_id'], enable_web_search=self._enable_web_search,
+                                               show_reason=self._show_reason,
                                                temperature=self.node_params.get(
                                                    'temperature', 0.3),
                                                cache=False)
@@ -106,9 +108,10 @@ class RagNode(BaseNode):
 
             result = retriever._call({'query': question}, run_manager=llm_callback)
 
+            source_documents = result.get('source_documents', [])
             if not self._show_source:
                 # 不溯源
-                result['source_documents'] = []
+                source_documents = []
 
             if self._output_user:
                 self.graph_state.save_context(content=result['result'], msg_sender='AI')
@@ -118,7 +121,7 @@ class RagNode(BaseNode):
                                       msg=result['result'],
                                       unique_id=unique_id,
                                       output_key=output_key,
-                                      source_documents=result.get('source_documents', [])))
+                                      source_documents=source_documents))
                 else:
                     # 说明有流式输出，则触发流式结束事件, 因为需要source_document所以在此执行流式结束事件
                     self.callback_manager.on_stream_over(StreamMsgOverData(
@@ -126,7 +129,7 @@ class RagNode(BaseNode):
                         msg=result['result'],
                         reasoning_content=llm_callback.reasoning_content,
                         unique_id=unique_id,
-                        source_documents=result.get('source_documents', []),
+                        source_documents=source_documents,
                         output_key=output_key,
                     ))
             ret[output_key] = result[retriever.output_key]

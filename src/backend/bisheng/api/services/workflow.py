@@ -71,6 +71,8 @@ class WorkFlowService(BaseService):
     def get_all_flows(cls, user: UserPayload, name: str, status: int, tag_id: Optional[int], flow_type: Optional[int],
                       page: int = 1,
                       page_size: int = 10) -> (list[dict], int):
+        logger.info(f"WorkFlowService get_all_flows user={user} name={name} status={status} tag_id={tag_id} "
+                    f"flow_type={flow_type} page={page} page_size={page_size}")
         """
         获取所有技能
         """
@@ -85,7 +87,7 @@ class WorkFlowService(BaseService):
 
         # 获取用户可见的技能列表
         if user.is_admin():
-            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, page, page_size)
+            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, 0, page, page_size)
         else:
 #<<<<<<< HEAD
             # user_role = UserRoleDao.get_user_roles(user.user_id)
@@ -100,8 +102,9 @@ class WorkFlowService(BaseService):
             if role_access:
                 flow_id_extra = [access.third_id for access in role_access]
             all_user_id = cls.get_company_members_by_uid(user.user_id)
-            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, page,
-                                               page_size,all_user_id,flow_id_extra)
+            logger.info(f"WorkFlowService get_all_flows user_id={user.user_id} all_user_id={all_user_id} page={page} page_size={page_size}")
+            data, total = FlowDao.get_all_apps(name=name, status=status, id_list=flow_ids, flow_type=flow_type, page=page,
+                                               limit=page_size,user_ids=all_user_id,id_extra_not=flow_id_extra)
 
         # 应用ID列表
         resource_ids = []

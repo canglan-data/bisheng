@@ -467,7 +467,6 @@ class VoiceLLMConfig(BaseModel):
     tts_model_id: Optional[int] = Field(None, description='文字转语音模型')
     stt_model_id: Optional[int] = Field(None, description='语音转文字模型')
 
-
 class AssistantLLMItem(BaseModel):
     model_id: Optional[int] = Field(None, description='模型的ID')
     agent_executor_type: Optional[str] = Field(default='ReAct',

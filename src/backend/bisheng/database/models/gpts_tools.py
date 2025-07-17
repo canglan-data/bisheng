@@ -223,7 +223,7 @@ class GptsToolsDao(GptsToolsBase):
 
     @classmethod
     def get_user_tool_type_plus(cls, user_ids: List[int], extra_tool_type_ids: List[int] = None, include_preset: bool = True,
-                           is_preset: ToolPresetType = None,extra_tool_type_ids_not: List[int] = None,) -> List[GptsToolsType]:
+                           is_preset: ToolPresetType = None,extra_tool_type_ids_not: List[int] = None) -> List[GptsToolsType]:
         """
         获取用户可见的所有工具类别
         """

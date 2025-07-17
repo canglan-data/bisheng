@@ -20,6 +20,9 @@ from bisheng.interface.embeddings.custom import FakeEmbedding
 from bisheng.utils import generate_uuid
 from bisheng.utils.minio_client import minio_client
 from bisheng.worker import bisheng_celery
+from bisheng_langchain.vectorstores import ElasticKeywordsSearch, Milvus
+from loguru import logger
+from pymilvus import Collection, MilvusException
 
 
 @bisheng_celery.task(acks_late=True)
