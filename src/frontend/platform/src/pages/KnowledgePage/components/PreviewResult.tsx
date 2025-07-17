@@ -103,8 +103,8 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
                 page: chunk.metadata.page,
                 // 替换掉markdown中图片的BASE_URL
                 text: chunk.text.replaceAll(
-                    /(!\[[^\]]*\]\()\/bisheng(\/[^)]*\))/g,
-                    `$1${__APP_ENV__.BASE_URL}/bisheng$2`
+                    /(!\[[^\]]*\]\()(?!https?:\/\/)(\/[^)]*\))/g,
+                    `$1${__APP_ENV__.BASE_URL}$2`
                 )
             })))
             setSelectIdSyncChunks(selectId)

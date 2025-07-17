@@ -64,8 +64,8 @@ const ParagraphEdit = ({
             const { bbox, chunk_index } = chunk.metadata
             const labels = bbox && JSON.parse(bbox).chunk_bboxes || []
             const _text = chunk.text.replaceAll(
-                /(!\[[^\]]*\]\()\/bisheng(\/[^)]*\))/g,
-                `$1${__APP_ENV__.BASE_URL}/bisheng$2`
+                /(!\[[^\]]*\]\()(?!https?:\/\/)(\/[^)]*\))/g,
+                `$1${__APP_ENV__.BASE_URL}$2`
             )
 
             const active = chunk_index === chunkId
