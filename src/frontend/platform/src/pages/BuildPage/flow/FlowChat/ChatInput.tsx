@@ -132,8 +132,6 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
 
     useEffect(() => {
         const userInput = messages?.find(item => item.category === 'question');
-        console.log('userInput', userInput);
-        
         // 如果有用户输入 则收起推荐问题
         if (userInput) {
             setHiddenGuideQuestion(true);

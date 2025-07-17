@@ -31,7 +31,8 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
     const [showWhenLocked, setShowWhenLocked] = useState(false) // 强制开启表单按钮，不限制于input锁定
     const [inputLock, setInputLock] = useState({ locked: false, reason: '' })
 
-    const { messages, hisMessages, chatId, createSendMsg, createWsMsg, updateCurrentMessage, destory, setShowGuideQuestion } = useMessageStore()
+    const { messages, hisMessages, chatId, createSendMsg, createWsMsg, updateCurrentMessage, destory, setShowGuideQuestion, setHiddenGuideQuestion } = useMessageStore()
+
     const currentChatIdRef = useRef(null)
     const inputRef = useRef(null)
     const continueRef = useRef(false)
@@ -60,8 +61,11 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
                 setShowWhenLocked(true)
             }
         }
-
+        const userInput = [...(messages || []), ...(hisMessages || [])]?.find(item => item.isSend);
+        // 如果历史有用户输入 则收起推荐问题
+        setHiddenGuideQuestion(!!userInput);
     }, [messages, hisMessages])
+    
     useEffect(() => {
         if (!chatId) return
         continueRef.current = false
@@ -94,7 +98,7 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
         // 解除锁定状态下 form 按钮开放的状态
         setShowWhenLocked(false)
         // 关闭引导词
-        setShowGuideQuestion(false)
+        // setShowGuideQuestion(false)
         // 收起表单
         // formShow && setFormShow(false)
         setFormShow(false)
@@ -307,7 +311,7 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
         clearFiles();
     }, [showUpload])
 
-    console.log('flow?.is_allow_upload', flow, assistant);
+    console.log('flow?.is_allow_upload', chatFilesRef?.current?.getHeight());
     
     return <div className="absolute bottom-0 w-full pt-1 bg-[#fff] dark:bg-[#1B1B1B]">
         <div className={`relative ${clear && 'pl-9'}`}>
@@ -325,7 +329,7 @@ export default function ChatInput({flow, assistant, clear, form, questions, inpu
                 chatId={chatId}
                 questions={questions}
                 onClick={handleClickGuideWord}
-                bottom={chatFilesRef?.current?.getHeight() || 0} //有文件 则给引导问题顶上去
+                bottom={chatFilesRef?.current?.getHeight() ? chatFilesRef?.current?.getHeight() + 28 : 0} //有文件 则给引导问题顶上去
             />
             {/* clear */}
             <div className="flex absolute left-0 top-4 z-10">

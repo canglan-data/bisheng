@@ -27,7 +27,7 @@ type State = {
     /**
      * 控制引导问题的折叠状态
      */
-    hiddenGuideQUestion: boolean
+    hiddenGuideQuestion: boolean
     
 }
 
@@ -44,7 +44,7 @@ type Actions = {
     insetSystemMsg: (text: string) => void;
     insetBsMsg: (text: string) => void;
     setShowGuideQuestion: (text: boolean) => void;
-    setHiddenGuideQUestion: (text: boolean) => void;
+    setHiddenGuideQuestion: (text: boolean) => void;
     clearMsgs: () => void;
 }
 
@@ -95,9 +95,9 @@ export const useMessageStore = create<State & Actions>((set, get) => ({
         set({ showGuideQuestion: bln })
     },
     // 是否折叠推荐问题（控制推荐问题是否折叠）
-    hiddenGuideQUestion: false,
+    hiddenGuideQuestion: false,
     setHiddenGuideQuestion(bln: boolean) {
-        set({ hiddenGuideQUestion: bln })
+        set({ hiddenGuideQuestion: bln })
     },
     async loadHistoryMsg(flowid, chatId, { appendHistory, lastMsg }) {
         const res = await getChatHistory(flowid, chatId, 30, 0)
