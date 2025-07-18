@@ -554,3 +554,12 @@ export function truncateString(str, maxLength) {
     // 截取字符串并添加省略号
     return str.substring(0, maxLength) + '...';
 }
+
+export const processMarkdownImages = (text) => {
+  const baseUrlForRegex = String(__APP_ENV__.BASE_URL).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
+  return text.replaceAll(
+    new RegExp(`(!\\[[^\\]]*\\]\\()(?!https?:\\/\\/)(?!${baseUrlForRegex})(\\/[^)]*\\))`, 'g'),
+    `$1${__APP_ENV__.BASE_URL}$2`
+  );
+};

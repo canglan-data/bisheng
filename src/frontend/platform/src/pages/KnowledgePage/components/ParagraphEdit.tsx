@@ -12,6 +12,7 @@ import DocxPreview from "./DocxFileViewer";
 import Guide from "./Guide";
 import Markdown from './Markdown';
 import TxtFileViewer from "./TxtFileViewer";
+import { processMarkdownImages } from "@/util/utils";
 
 // 上传预览时携带chunks
 const ParagraphEdit = ({
@@ -63,10 +64,7 @@ const ParagraphEdit = ({
         arrData.forEach(chunk => {
             const { bbox, chunk_index } = chunk.metadata
             const labels = bbox && JSON.parse(bbox).chunk_bboxes || []
-            const _text = chunk.text.replaceAll(
-                /(!\[[^\]]*\]\()(?!https?:\/\/)(\/[^)]*\))/g,
-                `$1${__APP_ENV__.BASE_URL}$2`
-            )
+            const _text = processMarkdownImages(chunk.text);
 
             const active = chunk_index === chunkId
             const resData = labels.reduce((acc, label) => {

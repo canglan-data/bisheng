@@ -8,7 +8,7 @@ import {
 } from "@/components/bs-ui/select";
 import { delChunkInPreviewApi, previewFileSplitApi, updatePreviewChunkApi } from "@/controllers/API";
 import { captureAndAlertRequestErrorHoc } from "@/controllers/request";
-import { cn } from "@/util/utils";
+import { cn, processMarkdownImages } from "@/util/utils";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import useKnowledgeStore from "../useKnowledgeStore";
@@ -102,10 +102,7 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
                 chunkIndex: chunk.metadata.chunk_index,
                 page: chunk.metadata.page,
                 // 替换掉markdown中图片的BASE_URL
-                text: chunk.text.replaceAll(
-                    /(!\[[^\]]*\]\()(?!https?:\/\/)(\/[^)]*\))/g,
-                    `$1${__APP_ENV__.BASE_URL}$2`
-                )
+                text: processMarkdownImages(chunk.text)
             })))
             setSelectIdSyncChunks(selectId)
 
