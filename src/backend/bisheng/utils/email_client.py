@@ -1,3 +1,4 @@
+import io
 import smtplib
 import traceback
 import logging
@@ -13,7 +14,7 @@ class EmailClient:
     """支持发送文本、附件和内嵌图片的邮件工具类"""
 
     def __init__(self, mail: str, password: str, msg_from: str,
-                 server_host: str = 'smtp.feishu.cn', server_port: int = 465,
+                 server_host: str = 'smtp.qq.com', server_port: int = 465,
                  use_ssl: bool = True, debug: bool = False):
         self.sender_mail = mail
         self.sender_pass = password
@@ -29,6 +30,7 @@ class EmailClient:
         self.bcc: List[str] = []
 
         self.file_list: List[str] = []
+        self.file_objs: List[tuple] = []
         self.images: List[str] = []
         self.content = ""
         self.msg_root = MIMEMultipart('related')
@@ -63,6 +65,10 @@ class EmailClient:
     def add_send_file(self, file_path: str) -> None:
         self.file_list.append(file_path)
 
+    def add_file_obj(self, file_obj: io.IOBase, filename: str) -> None:
+        """添加内存中的文件对象作为附件"""
+        self.file_objs.append((file_obj, filename))
+
     def add_image(self, image_path: str) -> None:
         self.images.append(image_path)
 
@@ -95,6 +101,17 @@ class EmailClient:
                 msg.attach(attachment)
             except Exception as e:
                 self._logger.warning(f"[附件添加失败] {file_path}: {e}")
+
+            # 添加内存文件对象附件
+            for file_obj, filename in self.file_objs:
+                try:
+                    file_obj.seek(0)
+                    file_data = file_obj.read()
+                    attachment = MIMEApplication(file_data, _subtype='octet-stream')
+                    attachment.add_header('Content-Disposition', 'attachment', filename=filename)
+                    msg.attach(attachment)
+                except Exception as e:
+                    self._logger.warning(f"[文件对象添加失败] {filename}: {e}")
 
     def _construct_message(self) -> MIMEMultipart:
         msg = MIMEMultipart('mixed')

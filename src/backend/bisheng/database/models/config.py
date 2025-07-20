@@ -20,7 +20,8 @@ class ConfigKeyEnum(Enum):
     WORKSTATION = 'workstation'  # 工作台默认模型配置
     AUDIT_LLM = 'audit_llm'  # 审计默认模型配置
     REVIEW_SESSION_CONFIG = 'session_config'  # 审计的会话分析策略配置
-    VOICE_LLM = 'voice_llm'
+    VOICE_LLM = 'voice_llm' # 语音大模型相关配置
+    VITAL_ORG_STATS = 'vital_org_stats' # 组织统计相关配置
 
 
 class ConfigBase(SQLModelSerializable):
