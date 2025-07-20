@@ -136,3 +136,11 @@ class EmailClient:
             return False
         finally:
             self.msg_root = MIMEMultipart('related')
+
+# if __name__ == '__main__':
+#     mailer = EmailClient(mail="xxx@domain.com", password="yourpass", msg_from="通知服务")
+#     mailer.set_receiver(["user@example.com"])
+#     mailer.set_title("今日数据日报")
+#     mailer.set_content("<h1>你好，数据见附件</h1>", subtype="html")
+#     mailer.add_send_file("report.xlsx")
+#     mailer.send_mail()
