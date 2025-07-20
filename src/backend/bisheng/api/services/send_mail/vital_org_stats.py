@@ -13,7 +13,7 @@ from loguru import logger
 
 
 class VitalOrgStatsService:
-    @staticmethod
+    @classmethod
     def send(cls, date=None):
         if date is None:
             date = datetime.now().date()
