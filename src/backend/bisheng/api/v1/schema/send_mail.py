@@ -6,21 +6,21 @@ from datetime import date, datetime, timedelta
 
 class VitalOrgStatsConfig(BaseModel):
     # 邮件配置
-    sender_email: EmailStr = Field(..., description="发件人邮件地址")
-    sender_password: str = Field(..., description="发件人邮箱密码")
-    recipient_emails: List[EmailStr] = Field(..., description="收件邮箱列表")
+    sender_email: EmailStr = Field(default=None, description="发件人邮件地址")
+    sender_password: str = Field(default="", description="发件人邮箱密码")
+    recipient_emails: List[EmailStr] = Field(default=[], description="收件邮箱列表")
     msg_from: str = Field(default="",description="发信人签名")
 
     # 执行时间配置
-    execution_hour: conint(ge=0, le=23) = Field(..., description="执行时间（小时，0-23）")
-    execution_minute: conint(ge=0, le=59) = Field(..., description="执行时间（分钟，0-59）")
-    execution_interval_days: conint(ge=1) = Field(..., description="执行间隔（天，最小1天）")
-    start_date: str = Field(..., description="开始执行的日期（YYYY-MM-DD）")
+    execution_hour: conint(ge=0, le=23) = Field(default=10, description="执行时间（小时，0-23）")
+    execution_minute: conint(ge=0, le=59) = Field(default=0, description="执行时间（分钟，0-59）")
+    execution_interval_days: conint(ge=1) = Field(default=1, description="执行间隔（天，最小1天）")
+    start_date: str = Field(default="2025-07-01", description="开始执行的日期（YYYY-MM-DD）")
 
     # 统计配置
-    min_qa_count: conint(ge=0) = Field(..., description="最小问答次数")
-    flow_ids: List[str] = Field(..., description="应用ID列表")
-    group_ids: List[int] = Field(..., description="组织ID列表")
+    min_qa_count: conint(ge=0) = Field(default=5, description="最小问答次数")
+    flow_ids: List[str] = Field(default=[], description="应用ID列表")
+    group_ids: List[int] = Field(default=[], description="组织ID列表")
 
     smtp_host: str = Field(default="smtp.qq.com", description="SMTP主机")
     smtp_port: int = Field(default=465, description="SMTP端口")

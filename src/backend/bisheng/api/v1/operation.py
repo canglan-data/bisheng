@@ -5,8 +5,10 @@ from fastapi import APIRouter, Query, Depends, Request, Body
 
 from bisheng.api.errcode.base import UnAuthorizedError
 from bisheng.api.services.audit_log import AuditLogService
+from bisheng.api.services.operation import OperationService
 from bisheng.api.services.user_service import UserPayload, get_login_user
 from bisheng.api.v1.schema.audit import ReviewSessionConfig
+from bisheng.api.v1.schema.send_mail import VitalOrgStatsConfig
 from bisheng.api.v1.schemas import UnifiedResponseModel, resp_200
 from bisheng.database.models.group import GroupDao
 from bisheng.database.models.session import ReviewStatus
@@ -141,3 +143,13 @@ async def export_session_chart(request: Request, login_user: UserPayload = Depen
     return resp_200(data={
         'url': url
     })
+
+@router.post("/session/vital_org_status_config")
+async def vital_org_status_config(*, request: Request, login_user: UserPayload = Depends(get_login_user),
+                          data: VitalOrgStatsConfig = Body(description='会话配置项')):
+    """ 配置用户组的状态 """
+    if not login_user.is_admin():
+        return UnAuthorizedError.return_resp()
+    OperationService.update_vital_org_stats_config(login_user,data)
+    return resp_200()
+
