@@ -24,7 +24,8 @@ def vital_org_stats_task():
     task_id = str(uuid.uuid4())
     insert_start(task_id)
     try:
-        VitalOrgStatsService.send()
+        logs = VitalOrgStatsService.send()
+        insert_progress(task_id,status="success",msg=logs)
     except Exception as e:
         logger.error(e)
         insert_progress(task_id,status="error",msg=str(e))

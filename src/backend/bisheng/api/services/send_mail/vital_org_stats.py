@@ -76,3 +76,12 @@ class VitalOrgStatsService:
         success = email_client.send_mail()
         if not success:
             logger.warning(f"活力组织统计邮件发送失败，时间：{date}")
+            raise Exception(f"活力组织统计邮件发送失败，时间：{date}")
+        logs = {
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "sender_email": config.sender_email,
+            "recipient_emails": config.recipient_emails,
+            "file_name": file_name,
+            "success": success,
+        }
+        return json.dumps(logs)
