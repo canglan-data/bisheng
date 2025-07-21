@@ -1,14 +1,15 @@
 import { useRef, useState } from "react";
 import MultiSelect from "@/components/bs-ui/select/multi";
 import { getAuditGroupsApi, getOperationGroupsApi } from "@/controllers/API/log";
+import { cname } from "@/components/bs-ui/utils";
 
-export default function FilterByApp({ value, onChange, isAudit }) {
+export default function FilterByApp({ value, onChange, isAudit, style="w-[200px] relative", selectStyle="max-w-[200px]"}) {
     const { apps, loadApps, searchApp, loadMoreApps } = useApps(isAudit);
 
     return (
-        <div className="w-[200px] relative">
+        <div className={style}>
             <MultiSelect
-                contentClassName="overflow-y-auto max-w-[200px]"
+                contentClassName={cname("overflow-y-auto", selectStyle)}
                 options={apps}
                 value={value}
                 multiple
