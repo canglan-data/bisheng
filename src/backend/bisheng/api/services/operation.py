@@ -7,10 +7,6 @@ from bisheng.api.services.user_service import UserPayload
 from bisheng.api.v1.schema.send_mail import VitalOrgStatsConfig
 from bisheng.database.models.config import ConfigDao, ConfigKeyEnum, Config
 
-
-# TODO merge_check 2整个文件都要检查，特别是session查询相关
-
-
 class OperationService:
     @classmethod
     def update_vital_org_stats_config(cls, user: UserPayload, data: VitalOrgStatsConfig):
