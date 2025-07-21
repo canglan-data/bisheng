@@ -76,14 +76,14 @@ class WorkflowClient(BaseClient):
             ChatMessageDao.update_message_model(db_message)
 
     async def _handle_message(self, message: Dict[any, any]):
-        logger.debug('----------------------------- start handle message -----------------------')
+        msg_id = message.get('msg_id')
         if message.get('action') == 'init_data':
             # 初始化workflow数据
             await self.init_workflow(message)
         elif message.get('action') == 'check_status':
             await self.check_status(message)
         elif message.get('action') == 'input':
-            await self.handle_user_input(message.get('data'))
+            await self.handle_user_input(message.get('data') , msg_id)
         elif message.get('action') == 'stop':
             await self.close(force_stop=True)
             # await self.stop_handle_message(message)
@@ -214,7 +214,7 @@ class WorkflowClient(BaseClient):
             logger.warning(f'workflow status is unknown: {status_info}')
         return False
 
-    async def handle_user_input(self, data: dict):
+    async def handle_user_input(self, data: dict, msg_id: str = None):
         logger.info(f'get user input: {data}')
         if not self.workflow:
             logger.warning('workflow is over')
@@ -228,13 +228,14 @@ class WorkflowClient(BaseClient):
             new_message = None
             # 目前只支持一个输入节点
             for node_id, node_info in data.items():
+                node_info['data']['msg_id'] = msg_id
                 user_input[node_id] = node_info['data']
                 message_id = node_info.get('message_id')
                 new_message = node_info.get('message')
                 break
-            self.workflow.set_user_input(user_input, message_id=message_id, message_content=new_message)
+            self.workflow.set_user_input(user_input, message_id=message_id, message_content=new_message, msg_id=msg_id)
             self.workflow.set_workflow_status(WorkflowStatus.INPUT_OVER.value)
             continue_workflow.delay(self.workflow.unique_id, self.workflow.workflow_id, self.workflow.chat_id,
-                                    self.workflow.user_id)
+                                    self.workflow.user_id, msg_id)
             await self.workflow_run()
         # await self.workflow_run()

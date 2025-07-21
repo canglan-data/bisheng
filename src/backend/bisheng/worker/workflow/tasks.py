@@ -75,9 +75,9 @@ def execute_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: st
         _execute_workflow(unique_id, workflow_id, chat_id, user_id)
 
 
-def _continue_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str):
+def _continue_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str, msg_id: str):
     """ 继续执行workflow """
-    redis_callback = RedisCallback(unique_id, workflow_id, chat_id, user_id)
+    redis_callback = RedisCallback(unique_id, workflow_id, chat_id, user_id, msg_id)
     try:
         workflow = _global_workflow.get(redis_callback.unique_id, None)
         if not workflow:
@@ -101,10 +101,10 @@ def _continue_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: 
 
 
 @bisheng_celery.task
-def continue_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str):
+def continue_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str, msg_id: str=None):
     """ 继续执行workflow """
     with logger.contextualize(trace_id=unique_id):
-        _continue_workflow(unique_id, workflow_id, chat_id, user_id)
+        _continue_workflow(unique_id, workflow_id, chat_id, user_id, msg_id)
 
 
 @bisheng_celery.task
