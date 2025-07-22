@@ -1,5 +1,6 @@
 import traceback
 from datetime import datetime
+from http.client import HTTPException
 from typing import Optional, List
 
 from fastapi import APIRouter, Query, Depends, Request, Body
@@ -7,6 +8,7 @@ from fastapi import APIRouter, Query, Depends, Request, Body
 from bisheng.api.errcode.base import UnAuthorizedError
 from bisheng.api.services.audit_log import AuditLogService
 from bisheng.api.services.operation import OperationService
+from bisheng.api.services.role_group_service import RoleGroupService
 from bisheng.api.services.send_mail.vital_org_stats import VitalOrgStatsService
 from bisheng.api.services.user_service import UserPayload, get_login_user
 from bisheng.api.v1.schema.audit import ReviewSessionConfig
@@ -15,6 +17,7 @@ from bisheng.api.v1.schemas import UnifiedResponseModel, resp_200
 from bisheng.database.models.group import GroupDao
 from bisheng.database.models.session import ReviewStatus
 from bisheng.database.models.user_group import UserGroupDao
+from bisheng.settings import settings
 from bisheng.utils.util import validate_date_range
 from loguru import logger
 
@@ -182,3 +185,33 @@ async def vital_org_status_config_run(*, request: Request, login_user: UserPaylo
         traceback.print_exc()
         return resp_200(data=str(e))
     return resp_200(data=log)
+@router.get('/send_mail/group/list')
+async def get_all_group(login_user: UserPayload = Depends(get_login_user),
+                        page: Optional[int] = Query(default=1, description='页码'),
+                        page_size: Optional[int] = Query(default=None, description='每页条数'),
+                        keyword: Optional[str] = Query(default=None,description='匹配关键字')):
+    """
+    获取所有分组
+    """
+    if login_user.is_admin():
+        groups = []
+    else:
+        # 查询下是否是其他用户组的管理员
+        user_groups = UserGroupDao.get_user_admin_group(login_user.user_id)
+        groups = []
+        for one in user_groups:
+            if one.is_group_admin:
+                groups.append(one.group_id)
+        # 不是任何用户组的管理员无查看权限
+        if not groups:
+            raise HTTPException(status_code=500, detail='无查看权限')
+
+    groups_res = RoleGroupService().get_group_list(groups)
+    # page = 0
+    # page_size = 0
+    groups_res = [one for one in groups_res if len(one.parent_group_path.split("|")) <= 1 or one.parent_group_path.startswith(settings.other.operation_expanded_mail_group_code)]
+    if page and page_size:
+        groups_res = groups_res[(page-1) * page_size:page * page_size]
+    if keyword:
+        groups_res = [one for one in groups_res if keyword in one.group_name]
+    return resp_200({'records': groups_res})
