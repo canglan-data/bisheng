@@ -2,14 +2,17 @@ import { LoadingIcon } from "@/components/bs-icons/loading";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/bs-ui/dialog";
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { Textarea } from "@/components/bs-ui/input";
+import { getChatLogs } from "@/controllers/API/log";
 
 export const LogContent = ({ data, setOpen,}) => {
     const [loading, setLoading] = useState(true)
+    const [logs, setLogs] = useState('');
 
     useEffect(() => {
-        //TODO： 这里请求
-        console.log('data', data);
-        setLoading(false);
+        getChatLogs(data.messageId).then(res => {
+            setLogs(JSON.stringify(res, null, 2));
+            setLoading(false);
+        })
     }, [])
 
 
@@ -21,7 +24,7 @@ export const LogContent = ({ data, setOpen,}) => {
         }
         <Textarea
             disabled
-            value={'123/\r23'}
+            value={logs || ''}
             className="min-h-80 mt-1"
         />
     </div>
