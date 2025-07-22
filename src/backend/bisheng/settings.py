@@ -113,6 +113,7 @@ class AliyunTextModerationConf(BaseModel):
 
 class DoMain(BaseModel):
     web_domain: str = Field(default='127.0.0.1', description="网站的域名")
+    web_scheme: Optional[str] = Field(default="http", description="新的协议")
 
 
 class CeleryConf(BaseModel):
