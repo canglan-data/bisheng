@@ -32,13 +32,13 @@ class VitalOrgStatsConfig(BaseModel):
         return self.execution_minute
 
     @field_validator("start_date", mode="before")
-    def validate_start_date(cls, value: str) -> date:
+    def validate_start_date(cls, value: str) -> str:
         try:
-            return datetime.strptime(value, "%Y-%m-%d").date()
+            return datetime.strptime(value, "%Y-%m-%d").date().strftime("%Y-%m-%d")
         except ValueError:
             raise ValueError("日期格式必须为YYYY-MM-DD")
 
-    def should_execute_on_date(self, target_date: Optional[datetime] = None) -> bool:
+    def should_execute_on_date(self, target_date: Optional[date] = None) -> bool:
         """
         判断指定日期与开始日期之间的间隔天数是否为配置间隔的整数倍
 
@@ -52,7 +52,7 @@ class VitalOrgStatsConfig(BaseModel):
             target_date = datetime.now()
 
         # 计算目标日期与开始日期之间的天数差
-        days_diff = (target_date.date() - datetime.strptime(self.start_date, "%Y-%m-%d").date()).days
+        days_diff = (target_date - datetime.strptime(self.start_date, "%Y-%m-%d").date()).days
 
         # 如果天数差为负数（目标日期早于开始日期），返回False
         if days_diff < 0:

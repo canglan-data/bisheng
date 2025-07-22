@@ -34,7 +34,7 @@ class OperationService:
         return data
 
     @classmethod
-    def get_vital_org_stats(cls):
+    def get_vital_org_stats_config(cls):
         """ 获取 vital_org_stats 配置 """
         ret = {}
         config = ConfigDao.get_config(ConfigKeyEnum.VITAL_ORG_STATS)

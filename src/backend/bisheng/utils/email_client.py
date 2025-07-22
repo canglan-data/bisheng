@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email.utils import formataddr
+from loguru import logger
 
 
 class EmailClient:
@@ -35,7 +36,7 @@ class EmailClient:
         self.content = ""
         self.msg_root = MIMEMultipart('related')
 
-        self._logger = logging.getLogger(__name__)
+        self._logger = logger
 
     @staticmethod
     def _normalize_recipients(recipients: Union[str, List[str]]) -> List[str]:
@@ -102,16 +103,16 @@ class EmailClient:
             except Exception as e:
                 self._logger.warning(f"[附件添加失败] {file_path}: {e}")
 
-            # 添加内存文件对象附件
-            for file_obj, filename in self.file_objs:
-                try:
-                    file_obj.seek(0)
-                    file_data = file_obj.read()
-                    attachment = MIMEApplication(file_data, _subtype='octet-stream')
-                    attachment.add_header('Content-Disposition', 'attachment', filename=filename)
-                    msg.attach(attachment)
-                except Exception as e:
-                    self._logger.warning(f"[文件对象添加失败] {filename}: {e}")
+        # 添加内存文件对象附件
+        for file_obj, filename in self.file_objs:
+            try:
+                file_obj.seek(0)
+                file_data = file_obj.read()
+                attachment = MIMEApplication(file_data, _subtype='octet-stream')
+                attachment.add_header('Content-Disposition', 'attachment', filename=filename)
+                msg.attach(attachment)
+            except Exception as e:
+                self._logger.warning(f"[文件对象添加失败] {filename}: {e}")
 
     def _construct_message(self) -> MIMEMultipart:
         msg = MIMEMultipart('mixed')

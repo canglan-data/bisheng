@@ -25,7 +25,7 @@ class VitalOrgStatsService:
         if not config.should_execute_on_date(date):
             return
 
-        start_day = date - timedelta(days=7)
+        start_day = date - timedelta(days=config.execution_interval_days)
         end_day = date - timedelta(days=1)
         group_ids = config.group_ids
         group_user = UserGroupDao.get_groups_users(group_ids=group_ids)
@@ -40,11 +40,11 @@ class VitalOrgStatsService:
         for msg in messages:
             if msg.user_id not in user_chat_num:
                 user_chat_num[msg.user_id] = 0
-            key = f'{msg.user_id}_{msg.chat_id}'
+            key = f'{msg.user_id}_{msg.flow_id}_{msg.chat_id}'
             if msg.category == "question":
                 user_chat_status[key] = 1
                 continue
-            if msg.category in ("answer", "stream_msg", "output_msg") and user_chat_status.get(key) == 1:
+            if msg.category in ("answer", "stream_msg", "output_msg") and user_chat_status.get(key, 0) == 1:
                 user_chat_num[msg.user_id] += 1
                 user_chat_status[key] = 0
         ginfo_index = {g.id: {"name": g.group_name} for g in group_infos}
@@ -54,20 +54,25 @@ class VitalOrgStatsService:
                 ginfo_index[user.group_id]["total_chat_num"] = 0
                 ginfo_index[user.group_id]["ok_user_num"] = 0
             ginfo_index[user.group_id]["total_user_num"] += 1
-            ginfo_index[user.group_id]["total_chat_num"] += user_chat_num[user.user_id]
+            ginfo_index[user.group_id]["total_chat_num"] += user_chat_num.get(user.user_id, 0)
             if user_chat_num.get(user.user_id, 0) >= config.min_qa_count:
                 ginfo_index[user.group_id]["ok_user_num"] += 1
         df = pd.DataFrame.from_dict(ginfo_index, orient="index").reset_index(drop=True)
         df["用户组织架构"] = df["name"]
         df["使用覆盖率%"] = df["ok_user_num"] / df["total_user_num"].where(df["total_user_num"] != 0, 1) * 100
         df["人均AI次数"] = df["total_chat_num"] / df["total_user_num"].where(df["total_user_num"] != 0, 1)
+        df = df[["用户组织架构", "使用覆盖率%", "人均AI次数"]]
+        df.fillna(0, inplace=True)
+        df["使用覆盖率%"] = df["使用覆盖率%"].apply(lambda x: f"{round(x, 2)}%")
+        df["人均AI次数"] = df["人均AI次数"].apply(lambda x: f"{round(x, 2)}")
+
         file_name = f"R活力组织提数报表{start_day.strftime('%Y-%m-%d')}至{end_day.strftime('%Y-%m-%d')}.xlsx"
         email_client = EmailClient(mail=str(config.sender_email), password=config.sender_password,
                                    msg_from=config.msg_from,
                                    server_host=config.smtp_host, server_port=config.smtp_port)
         email_client.set_title(f"HR活力组织提数报表{date.strftime('%Y-%m-%d')}")
         email_client.set_content(
-            f"""各位领导好：<br/>附件为{start_day.strftime('%Y-%m-%d')}至{end_day.strftime('%Y-%m-%d')}的“HR活力组织提数报表”，请注意查收。""")
+            f"""各位领导好：\n    附件为{start_day.strftime('%Y-%m-%d')}至{end_day.strftime('%Y-%m-%d')}的“HR活力组织提数报表”，请注意查收。""")
         email_client.set_receiver([str(x) for x in config.recipient_emails])
         csv_buffer = io.BytesIO()
         df.to_excel(csv_buffer, index=False)
