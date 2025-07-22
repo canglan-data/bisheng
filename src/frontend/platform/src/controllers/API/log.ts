@@ -366,3 +366,8 @@ export async function getOperationAppListApi(params: {
         params, paramsSerializer
     })
 }
+
+// 获取运营应用列表
+export async function getChatLogs(id: string) {
+    return await axios.get(`/api/v1/chat/log/${id}`);
+}
