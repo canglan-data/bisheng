@@ -87,6 +87,9 @@ class WorkflowClient(BaseClient):
         elif message.get('action') == 'stop':
             await self.close(force_stop=True)
             # await self.stop_handle_message(message)
+        elif message.get('action') == 'restart':
+            await self.close(force_stop=True)
+            await self.init_workflow(message.get('data'))
         else:
             logger.warning('not support action: %s', message.get('action'))
 

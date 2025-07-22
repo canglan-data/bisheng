@@ -189,7 +189,8 @@ class BaseNode(ABC):
         self.exec_unique_id = exec_id
         self.callback_manager.on_node_start(
             data=NodeStartData(unique_id=exec_id, node_id=self.id, name=self.name))
-
+        # TODO:: garen:chat_history
+        print(self.graph_state.get_history_memory(10))
         reason = None
         log_data = None
         try:
