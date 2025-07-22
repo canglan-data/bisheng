@@ -16,13 +16,10 @@ class ParseStrategyService(BaseService):
     @classmethod
     def get_strategy(
         cls,
-        login_user: UserPayload,
         keyword: Optional[str] = None,
         page: int = 1,
         limit: int = 10,
     ) -> Tuple[List[ParseStrategyRead], int]:
-        if not login_user.is_admin():
-            raise UnAuthorizedError.http_exception()
         res = ParseStrategyDao.get_all_strategy(keyword, page=page, limit=limit)
         total = ParseStrategyDao.count_all_strategy(keyword)
         return cls.convert_strategy_read(res), total
@@ -43,9 +40,7 @@ class ParseStrategyService(BaseService):
         ]
 
     @classmethod
-    def get_strategy_info(cls, login_user: UserPayload, parse_strategy_id: int) -> ParseStrategyView:
-        if not login_user.is_admin():
-            raise UnAuthorizedError.http_exception()
+    def get_strategy_info(cls, parse_strategy_id: int) -> ParseStrategyView:
         db_strategy = ParseStrategyDao.query_by_id(parse_strategy_id)
         if not db_strategy:
             raise NotFoundError.http_exception()

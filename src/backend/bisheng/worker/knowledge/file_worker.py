@@ -122,7 +122,7 @@ def copy_normal(
             minio_client.copy_object(source_file, f"{knowledge_new.id}")
 
         # 拷贝bbox文件
-        if minio_client.object_exists("bisheng", bbox_file):
+        if minio_client.object_exists(minio_client.bucket, bbox_file):
             target_bbox_file = KnowledgeUtils.get_knowledge_bbox_file_object_name(knowledge_new.id)
             minio_client.copy_object(bbox_file, target_bbox_file)
             knowledge_new.bbox_object_name = target_bbox_file
