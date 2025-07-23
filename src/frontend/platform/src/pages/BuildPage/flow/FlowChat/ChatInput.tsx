@@ -541,12 +541,27 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
             {!inputLock.locked && allowUpload && <ChatFiles ref={chatFilesRef} accepts={accepts} v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} preParsing={false} />}
             {/* send */}
             <div className="flex gap-2 absolute right-7 top-4 z-10">
-                <div
-                    id="bs-send-btn"
-                    className="w-6 h-6 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-950 cursor-pointer flex justify-center items-center"
-                    onClick={() => { !inputLock.locked && !fileUploading && handleSendClick() }}>
-                    <SendIcon className={`${inputLock.locked || fileUploading ? 'text-muted-foreground' : 'text-foreground'}`} />
-                </div>
+                {
+                    inputLock.locked ?
+                    <div
+                        onClick={() => {
+                            // TODO:
+                            if (stop.disable) return
+                            setStop({ show: true, disable: true });
+                            const data = onBeforSend('refresh_flow', {})
+                            sendWsMsg({ "action": "restart", data});
+                        }}
+                        className={`w-6 h-6 bg-foreground rounded-full flex justify-center items-center cursor-pointer ${stop.disable && 'bg-muted-foreground text-muted-foreground'}`}>
+                        <span className="w-2 h-2.5 border-x-2 border-border"></span>
+                    </div>
+                    :
+                    <div
+                        id="bs-send-btn"
+                        className="w-6 h-6 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-950 cursor-pointer flex justify-center items-center"
+                        onClick={() => { !inputLock.locked && !fileUploading && handleSendClick() }}>
+                        <SendIcon className={`${inputLock.locked || fileUploading ? 'text-muted-foreground' : 'text-foreground'}`} />
+                    </div>
+                }
             </div>
             {/* stop & 重置 */}
             <div className="absolute w-full flex justify-center bottom-16 hidden">
