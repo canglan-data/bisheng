@@ -61,6 +61,10 @@ class OutputNode(BaseNode):
         return self._next_node_id
 
     def _run(self, unique_id: str):
+        history_messages = self.graph_state.get_history_memory_dicts(10)
+        from bisheng.worker import RedisCallback
+        if isinstance(self.callback_manager, RedisCallback):
+            self.callback_manager.set_chat_history('running', history_messages)
         self._source_documents = []
         self.parse_output_msg()
         self.send_output_msg(unique_id)

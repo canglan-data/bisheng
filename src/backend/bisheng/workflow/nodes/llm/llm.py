@@ -53,6 +53,10 @@ class LLMNode(BaseNode):
         self._log_reasoning_content = []
 
         result = {}
+        history_messages = self.graph_state.get_history_memory_dicts(10)
+        from bisheng.worker import RedisCallback
+        if isinstance(self.callback_manager, RedisCallback):
+            self.callback_manager.set_chat_history('running', history_messages)
         if self._tab == 'single':
             result['output'], reasoning_content = self._run_once(None, unique_id, 'output')
             self._log_reasoning_content.append(reasoning_content)

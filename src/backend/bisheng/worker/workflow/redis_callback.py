@@ -48,6 +48,7 @@ class RedisCallback(BaseCallback):
         self.workflow_event_key = f'workflow:{unique_id}:event'
         self.workflow_input_key = f'workflow:{unique_id}:input'
         self.workflow_stop_key = f'workflow:{unique_id}:stop'
+        self.workflow_exec_unique_id = None
         self.workflow_expire_time = settings.get_workflow_conf().timeout * 60 + 60
 
     def set_workflow_data(self, data: dict):
@@ -127,13 +128,17 @@ class RedisCallback(BaseCallback):
             return self.build_chat_response(WorkflowEventType.Error.value, 'over',
                                             {'code': 500, 'message': status_info['reason']})
 
-    async def get_response_until_break(self) -> AsyncIterator[ChatResponse]:
+    async def get_response_until_break(self, send: bool=True) -> AsyncIterator[ChatResponse]:
         """ 不断获取workflow的response，直到遇到运行结束或者待输入 """
         while True:
             # get workflow status
             status_info = self.get_workflow_status()
             if not status_info:
-                yield self.build_chat_response(WorkflowEventType.Error.value, 'over',
+                chat_history = self.get_chat_history()
+                status = chat_history.get('status', '')
+                # 重启过程中的not workflow 错误不抛出
+                if status != 'stopped':
+                    yield self.build_chat_response(WorkflowEventType.Error.value, 'over',
                                                {'code': 500, 'message': 'workflow status not found'})
                 break
             elif status_info['status'] in [WorkflowStatus.FAILED.value, WorkflowStatus.SUCCESS.value]:
@@ -420,3 +425,78 @@ class RedisCallback(BaseCallback):
         if msg_id:
             chat_response.message_id = msg_id
         self.send_chat_response(chat_response)
+
+    def set_chat_history(self, status: str, history_messages: list = None):
+        if self.workflow_exec_unique_id is None:
+            return 'undefined'
+        raw_data = self.redis_client.get(self.workflow_exec_unique_id)
+        if raw_data:
+            try:
+                data = json.loads(raw_data)
+            except Exception:
+                data = {}
+        else:
+            data = {}
+        chat_history = data.get('chat_history')
+        if chat_history:
+            if status == 'running' and chat_history.get('status') != 'running':
+                return data.get('status')
+            if not  history_messages:
+                history_messages = chat_history.get('history_messages')
+        chat_history = {
+            "history_messages": history_messages,
+            "status": status
+        }
+        data['chat_history'] = chat_history
+        self.redis_client.set(self.workflow_exec_unique_id, json.dumps(data), 5 * 24 * 3600)
+
+        return status
+
+    def get_chat_history(self):
+        if self.workflow_exec_unique_id is None:
+            return {}
+        raw_data = self.redis_client.get(self.workflow_exec_unique_id)
+        if raw_data:
+            try:
+                data = json.loads(raw_data)
+                return data.get('chat_history', {})
+            except Exception:
+                return {}
+        return {}
+
+    def del_chat_history(self):
+        if self.workflow_exec_unique_id is not None:
+            raw_data = self.redis_client.get(self.workflow_exec_unique_id)
+            if raw_data:
+                data = json.loads(raw_data)
+                if 'chat_history' in data:
+                    del data['chat_history']
+                    self.redis_client.set(self.workflow_exec_unique_id, json.dumps(data), 2 * 24 * 3600)
+
+    def set_chat_stop_unique_id(self, unique_id: str):
+        if self.workflow_exec_unique_id is None:
+            return
+        raw_data = self.redis_client.get(self.workflow_exec_unique_id)
+        if raw_data:
+            try:
+                data = json.loads(raw_data)
+            except Exception:
+                data = {}
+        else:
+            data = {}
+        chat_history = data.get('chat_stop_unique_ids', [])
+        chat_history.append(unique_id)
+        data['chat_stop_unique_ids'] = chat_history
+        self.redis_client.set(self.workflow_exec_unique_id, json.dumps(data), 2 * 24 * 3600)
+
+    def get_chat_stop_unique_ids(self):
+        if self.workflow_exec_unique_id is None:
+            return []
+        raw_data = self.redis_client.get(self.workflow_exec_unique_id)
+        if raw_data:
+            try:
+                data = json.loads(raw_data)
+                return data.get('chat_stop_unique_ids', [])
+            except Exception:
+                return []
+        return []
