@@ -191,7 +191,7 @@ export default function l2Edit() {
                             <Label htmlFor="name">{t('skills.avatar')}</Label>
                             <div className="flex gap-2">
                                 <div>
-                                    <Avator value={__APP_ENV__.BASE_URL + logo} className="mt-2" onChange={uploadAvator}>
+                                    <Avator value={logo && __APP_ENV__.BASE_URL + logo} className="mt-2" onChange={uploadAvator}>
                                         <SkillIcon className="bg-primary w-9 h-9 rounded-sm" />
                                     </Avator>
                                 </div>
