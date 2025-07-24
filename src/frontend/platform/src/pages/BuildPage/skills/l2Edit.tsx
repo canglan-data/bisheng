@@ -157,7 +157,7 @@ export default function l2Edit() {
     const [logo, setLogo] = useState('')
     const uploadAvator = (file) => {
         uploadFileWithProgress(file, (progress) => { }, 'icon').then(res => {
-            setLogo('/bisheng/' + res.relative_path);
+            setLogo(`${__APP_ENV__.BUCKET_URL}/` + res.relative_path);
         })
     }
 
@@ -187,7 +187,7 @@ export default function l2Edit() {
                     <div className="w-full overflow-hidden transition-all px-1">
                         <div className="mt-4">
                             <Label htmlFor="name">{t('skills.avatar')}</Label>
-                            <Avator value={logo ? __APP_ENV__.BASE_URL + logo : ''} className="mt-2" onChange={uploadAvator}><SkillIcon className="bg-primary w-9 h-9 rounded-sm" /></Avator>
+                            <Avator value={logo && __APP_ENV__.BASE_URL + logo} className="mt-2" onChange={uploadAvator}><SkillIcon className="bg-primary w-9 h-9 rounded-sm" /></Avator>
                         </div>
                         <div className="mt-4">
                             <Label htmlFor="name">{t('skills.skillName')}</Label>

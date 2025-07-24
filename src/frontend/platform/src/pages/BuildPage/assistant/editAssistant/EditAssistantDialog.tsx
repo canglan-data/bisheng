@@ -94,7 +94,7 @@ export default function EditAssistantDialog({ id, logo, online, name, desc, onSa
 
     const uploadAvator = (file) => {
         uploadFileWithProgress(file, (progress) => { }, 'icon').then(res => {
-            setFormData(prev => ({ ...prev, logo: res.file_path }));
+            setFormData(prev => ({ ...prev, logo: `${__APP_ENV__.BUCKET_URL}/` + res.relative_path }));
         })
     }
 
@@ -106,7 +106,7 @@ export default function EditAssistantDialog({ id, logo, online, name, desc, onSa
             <div className="">
                 <label htmlFor="name" className="bisheng-label">{t('build.assistantAvatar')}<span className="bisheng-tip">*</span></label>
                 <Avator
-                    value={formData.logo}
+                    value={formData.logo && __APP_ENV__.BASE_URL + formData.logo}
                     className="mt-2"
                     onChange={uploadAvator}
                 ><AssistantIcon className="bg-primary w-9 h-9 rounded-sm" /></Avator>

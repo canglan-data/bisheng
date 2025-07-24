@@ -245,7 +245,7 @@ ${t('build.exampleTwo', { ns: 'bs' })}
     // 上传头像逻辑
     const uploadAvator = (file: File) => {
         uploadFileWithProgress(file, (progress) => { }, 'icon').then(res => {
-            setFormData(prev => ({ ...prev, url: '/bisheng/' + res.relative_path }));
+            setFormData(prev => ({ ...prev, url: `${__APP_ENV__.BUCKET_URL}/` + res.relative_path }));
         });
     };
 
@@ -260,7 +260,7 @@ ${t('build.exampleTwo', { ns: 'bs' })}
                         <label htmlFor="name" className="bisheng-label">
                             {appType === AppType.ASSISTANT ? t('assistantAvatar') : t('workflowAvatar')}
                         </label>
-                        <Avator value={__APP_ENV__.BASE_URL + formData.url} className="mt-3" onChange={uploadAvator}>
+                        <Avator value={formData.url && __APP_ENV__.BASE_URL + formData.url} className="mt-3" onChange={uploadAvator}>
                             <AssistantIcon className="bg-primary w-8 h-8 rounded-sm" />
                         </Avator>
                     </div>

@@ -93,7 +93,7 @@ ${t('build.exampleTwo')}
 
     const uploadAvator = (file) => {
         uploadFileWithProgress(file, (progress) => { }, 'icon').then(res => {
-            setFormData(prev => ({ ...prev, url: '/bisheng' + res.relative_path }));
+            setFormData(prev => ({ ...prev, url: `${__APP_ENV__.BUCKET_URL}/` + res.relative_path }));
         })
     }
 
@@ -104,7 +104,7 @@ ${t('build.exampleTwo')}
         <div className="flex flex-col gap-8 py-6">
             <div className="">
                 <label htmlFor="name" className="bisheng-label">{t('build.assistantAvatar')}</label>
-                <Avator value={formData.url} className="mt-2" onChange={uploadAvator}><AssistantIcon className="bg-primary w-9 h-9 rounded-sm" /></Avator>
+                <Avator value={formData.url && __APP_ENV__.BASE_URL + formData.url} className="mt-2" onChange={uploadAvator}><AssistantIcon className="bg-primary w-9 h-9 rounded-sm" /></Avator>
                 {/* {errors.name && <p className="bisheng-tip mt-1">{errors.name}</p>} */}
             </div>
             <div className="">
