@@ -97,7 +97,7 @@ export default function EditAssistantDialog({ id, logo, online, name, desc, onSa
 
     const uploadAvator = (file) => {
         uploadFileWithProgress(file, (progress) => { }, 'icon').then(res => {
-            setFormData(prev => ({ ...prev, logo: res.file_path }));
+            setFormData(prev => ({ ...prev, logo: `${__APP_ENV__.BUCKET_URL}/` + res.relative_path }));
         })
     }
 
@@ -111,14 +111,14 @@ export default function EditAssistantDialog({ id, logo, online, name, desc, onSa
                 <div className="flex gap-2">
                     <div>
                         <Avator
-                            value={__APP_ENV__.BASE_URL + formData.logo}
+                            value={formData.logo && __APP_ENV__.BASE_URL + formData.logo}
                             className="mt-2"
                             onChange={uploadAvator}
                         ><AssistantIcon className="bg-primary w-9 h-9 rounded-sm" /></Avator>
                     </div>
                      {/* 下载按钮 */}
                      {formData.logo && <button 
-                        onClick={() => downloadFile(checkSassUrl(formData.logo), formData.logo?.split('/').pop())}
+                        onClick={() => downloadFile(c__APP_ENV__.BASE_URL + logo, formData.logo?.split('/').pop())}
                         className="p-2 mt-3 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded-full transition-colors"
                         title="Download avatar"
                     >

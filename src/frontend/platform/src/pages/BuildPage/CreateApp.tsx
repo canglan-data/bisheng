@@ -248,7 +248,7 @@ ${t('build.exampleTwo', { ns: 'bs' })}
     // 上传头像逻辑
     const uploadAvator = (file: File) => {
         uploadFileWithProgress(file, (progress) => { }, 'icon').then(res => {
-            setFormData(prev => ({ ...prev, url: '/bisheng/' + res.relative_path }));
+            setFormData(prev => ({ ...prev, url: `${__APP_ENV__.BUCKET_URL}/` + res.relative_path }));
         });
     };
 
@@ -265,13 +265,13 @@ ${t('build.exampleTwo', { ns: 'bs' })}
                         </label>
                         <div className="flex gap-2">
                             <div>
-                                <Avator value={__APP_ENV__.BASE_URL + formData.url} className="mt-3" onChange={uploadAvator}>
+                                <Avator value={formData.url && __APP_ENV__.BASE_URL + formData.url} className="mt-3" onChange={uploadAvator}>
                                     <AssistantIcon className="bg-primary w-8 h-8 rounded-sm" />
                                 </Avator>
                             </div>
                             {/* 下载按钮 */}
                             {formData.url && <button 
-                                onClick={() => downloadFile(checkSassUrl(formData.url), formData.url?.split('/').pop())}
+                                onClick={() => downloadFile(__APP_ENV__.BASE_URL + logo, formData.url?.split('/').pop())}
                                 className="p-2 mt-3 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded-full transition-colors"
                                 title="Download avatar"
                             >
