@@ -271,7 +271,7 @@ ${t('build.exampleTwo', { ns: 'bs' })}
                             </div>
                             {/* 下载按钮 */}
                             {formData.url && <button 
-                                onClick={() => downloadFile(__APP_ENV__.BASE_URL + logo, formData.url?.split('/').pop())}
+                                onClick={() => downloadFile(__APP_ENV__.BASE_URL + formData.url, formData.url?.split('/').pop())}
                                 className="p-2 mt-3 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded-full transition-colors"
                                 title="Download avatar"
                             >

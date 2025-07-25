@@ -118,7 +118,7 @@ export default function EditAssistantDialog({ id, logo, online, name, desc, onSa
                     </div>
                      {/* 下载按钮 */}
                      {formData.logo && <button 
-                        onClick={() => downloadFile(c__APP_ENV__.BASE_URL + logo, formData.logo?.split('/').pop())}
+                        onClick={() => downloadFile(__APP_ENV__.BASE_URL + formData.logo, formData.logo?.split('/').pop())}
                         className="p-2 mt-3 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded-full transition-colors"
                         title="Download avatar"
                     >
