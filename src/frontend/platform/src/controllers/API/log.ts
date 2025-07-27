@@ -366,3 +366,48 @@ export async function getOperationAppListApi(params: {
         params, paramsSerializer
     })
 }
+
+// 获取邮件配置信息
+export async function getConfigVitalOrgStatusApi(): Promise<any> {
+    return await axios.get('/api/v1/operation/session/vital_org_status_config').then(res => {
+        const formData = {
+            appName: res.flow_ids?.map(id => ({ value: id, label: id })),
+            selectedDepartments: res.group_ids ? res.group_ids.map(id => ({ value: id.toString(), label: id.toString() })) : [],
+            selectPeriod: res.execution_interval_days?.toString() || '7',
+            selectDay: res.start_date ? new Date(res.start_date) : '',
+            answerTime: res.min_qa_count || 5,
+            email: res.sender_email || '',
+            emailCode: res.sender_password || '',
+            receivedEmails: res.recipient_emails || ['']
+        };
+        
+        return formData;
+    })
+}
+
+// 更新邮件任务
+export async function configVitalOrgStatusApi(params: {
+        sender_email: string,
+        sender_password: string,
+        recipient_emails: string[]
+        execution_interval_days: number,
+        start_date: string,
+        min_qa_count: number,
+        flow_ids: string[],
+        group_ids: number[],
+    }) {
+    const backendData = {
+        ...params,
+        execution_hour: 10,
+        execution_minute: 0,
+         // msg_from?: string,
+        smtp_host: "smtp.qq.com",
+        smtp_port: 465
+    };
+    return await axios.post('/api/v1/operation/session/vital_org_status_config', backendData)
+}
+
+// 获取用户组织架构相关应用
+export async function getSendEmailGroupsApi(params: { keyword, page, page_size }) {
+    return await axios.get('/api/v1/operation/send_mail/group/list', { params })
+}

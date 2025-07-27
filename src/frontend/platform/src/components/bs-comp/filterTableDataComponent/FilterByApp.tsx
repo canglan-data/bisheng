@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MultiSelect from "@/components/bs-ui/select/multi";
 import { getAuditGroupsApi, getOperationGroupsApi } from "@/controllers/API/log";
 import { cname } from "@/components/bs-ui/utils";
@@ -12,6 +12,7 @@ export default function FilterByApp({ value, onChange, isAudit, style="w-[200px]
                 contentClassName={cname("overflow-y-auto", selectStyle)}
                 options={apps}
                 value={value}
+
                 multiple
                 placeholder="应用名称"
                 onLoad={loadApps}

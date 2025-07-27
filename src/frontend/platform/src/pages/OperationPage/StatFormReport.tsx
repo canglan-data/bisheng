@@ -1,25 +1,19 @@
-import { LoadingIcon } from "@/components/bs-icons/loading";
 import { Button } from "@/components/bs-ui/button";
 import ShadTooltip from "@/components/ShadTooltipComponent";
-import { getOperationChatStatisticsApi } from "@/controllers/API/log";
-import { useTable } from "@/util/hook";
+import { configVitalOrgStatusApi, getConfigVitalOrgStatusApi, getOperationGroupsApi, getSendEmailGroupsApi } from "@/controllers/API/log";
 import { formatDate } from "@/util/utils";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/bs-ui/card";
 import { Input } from "@/components/bs-ui/input";
 import { QuestionTooltip } from "@/components/bs-ui/tooltip";
-import MultiSelect from "@/components/bs-ui/select/multi";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/bs-ui/select";
 import { DatePicker } from "@/components/bs-ui/calendar/datePicker";
 import FilterByApp from "@/components/bs-comp/filterTableDataComponent/FilterByApp";
-import { message } from "@/components/bs-ui/toast/use-toast";
-
-export const getStrTime = (date) => {
-    const start_date = date[0] && (formatDate(date[0], 'yyyy-MM-dd') + ' 00:00:00')
-    const end_date = date[1] && (formatDate(date[1], 'yyyy-MM-dd') + ' 23:59:59')
-    return [start_date, end_date]
-}
+import { message, toast } from "@/components/bs-ui/toast/use-toast";
+import { captureAndAlertRequestErrorHoc } from "@/controllers/request";
+import { uniq } from "lodash-es";
+import FilterByMultiUsergroup from "./components/FilterByMultiUserGroup";
 
 export default function StatFormReport({ onBack, onJump }) {
     const [form, setForm] = useState({
@@ -33,36 +27,148 @@ export default function StatFormReport({ onBack, onJump }) {
         receivedEmails: ['']
     });
 
-
-    useEffect(() => {
-            // // On initial load, fetch the latest configuration and set it to formData
-            // getChatAnalysisConfigApi().then(config => {
-            //     setFormData(config);
-            // });
-        }, []);
-
-    const handleFilterChange = (filterType, value) => {
-        // const updatedFilters = { ...filters, [filterType]: value };
-        // setFilters(updatedFilters);
+    const loadApps = async (name: string = "") => {
+        try {
+            const res = await getOperationGroupsApi({ keyword: name, page: 1, page_size: 5000 });
+            const options = res.data.map((a: any) => ({
+                label: a.name,
+                value: a.id,
+            }));
+            return options;
+        } catch (error) {
+            console.error("Error loading apps:", error);
+            return [];
+        }
     };
 
+    const loadGroups = async (name: string = "") => {
+        try {
+            const res = await getSendEmailGroupsApi({ keyword: name, page: 1, page_size: 5000 });
+            const groups = res.records.map((a: any) => ({
+                label: a.group_name,
+                value: a.id,
+            }));
+            return groups;
+        } catch (error) {
+            console.error("Error loading groups:", error);
+            return [];
+        }
+    };
+    
+
+
+    useEffect(() => {
+        // On initial load, fetch the latest configuration and set it to formData
+        const fetchData = async () => {
+            try {
+                const appOptions = await loadApps("");
+                const groupOptions = await loadGroups("")
+                const config = await getConfigVitalOrgStatusApi();
+                
+                if (config.appName && Array.isArray(config.appName) && appOptions.length > 0) {
+                    config.appName = config.appName.map(item => {
+                        const appInfo = appOptions.find(app => app.value === item.value);
+                        return appInfo ? appInfo : item;
+                    });
+                }
+                if (config.selectedDepartments && Array.isArray(config.selectedDepartments) && groupOptions.length > 0) {
+                    config.selectedDepartments = config.selectedDepartments.map(item => {
+                        const appInfo = groupOptions.find(app => app.value === Number(item.value));
+                        return appInfo ? appInfo : item;
+                    });
+                }
+                
+                // set form
+                setForm(config);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        };
+        
+        fetchData();
+    }, []);
+
     const handleSave = () => {
-        if (!form.appName) {
+        if (!form.appName || form.appName.length === 0) {
             return message({
                 variant: 'warning',
-                description: '不可为空',
+                description: '应用名称不可为空',
             });
         }
-        console.log(form, 'kkkk')
+        
+        if (!form.selectedDepartments || form.selectedDepartments.length === 0) {
+            return message({
+                variant: 'warning',
+                description: '用户组织架构不可为空',
+            });
+        }
+        
+        if (!form.selectPeriod) {
+            return message({
+                variant: 'warning',
+                description: '统计周期不可为空',
+            });
+        }
+        
+        if (!form.selectDay) {
+            return message({
+                variant: 'warning',
+                description: '开始日期不可为空',
+            });
+        }
+        
+        if (!form.answerTime) {
+            return message({
+                variant: 'warning',
+                description: '问答次数不可为空',
+            });
+        }
+        
+        if (!form.email) {
+            return message({
+                variant: 'warning',
+                description: '发送邮箱不可为空',
+            });
+        }
+        
+        if (!form.emailCode) {
+            return message({
+                variant: 'warning',
+                description: '邮箱授权码不可为空',
+            });
+        }
+        
+        if (!form.receivedEmails || form.receivedEmails.length === 0 || !form.receivedEmails[0]) {
+            return message({
+                variant: 'warning',
+                description: '收件邮箱不可为空',
+            });
+        }
 
-        // Simulate saving the configuration (API call)
-        // captureAndAlertRequestErrorHoc(updateChatAnalysisConfigApi(formData).then(() => {
-        //     toast({
-        //         variant: 'success',
-        //         description: '配置已生效',
-        //     });
-        //     onBack();  // Close the page after successful save
-        // }))
+        if (form.emailCode.length !== 16) {
+            return message({
+                variant: 'warning',
+                description: '邮箱授权码必须为16位',
+            });
+        }
+
+        //Simulate saving the configuration (API call)
+        captureAndAlertRequestErrorHoc(configVitalOrgStatusApi({
+            sender_email: form.email,
+            sender_password: form.emailCode,
+            recipient_emails:uniq(form.receivedEmails),
+            execution_interval_days: Number(form.selectPeriod),
+            start_date: formatDate(new Date(form.selectDay), 'yyyy-MM-dd'),
+            min_qa_count: form.answerTime,
+            flow_ids: form.appName?.map(el => el.value) || undefined,
+            group_ids: form.selectedDepartments?.map(el => Number(el.value)) || undefined,
+        }).then(() => {
+            toast({
+                variant: 'success',
+                description: '配置已生效',
+            });
+            onBack();  // Close the page after successful save
+        }))
     };
 
     const handleCancel = () => {
@@ -71,9 +177,6 @@ export default function StatFormReport({ onBack, onJump }) {
 
     return (
         <div className="relative size-full py-4">
-            {/* {loading && <div className="absolute w-full h-full top-0 left-0 flex justify-center items-center z-10 bg-[rgba(255,255,255,0.6)] dark:bg-blur-shared">
-                <LoadingIcon />
-            </div>} */}
             <div className="flex ml-6 items-center gap-x-3">
                 <ShadTooltip content="返回" side="right">
                     <button className="extra-side-bar-buttons w-[36px]" onClick={onBack}>
@@ -94,14 +197,15 @@ export default function StatFormReport({ onBack, onJump }) {
                     </CardHeader>
                     <CardContent className="h-fit">
                         <div className="grid grid-cols-[max-content_1fr] gap-4 items-center max-w-[640px]">
-                            {/* Application Name */}
                             <label className="text-right font-medium"><span className="text-red-500">*</span>应用名称</label>
                             <FilterByApp isAudit={false} value={form.appName} onChange={(value) => setForm({...form, appName: value})} style="w-auto" selectStyle="max-w-auto"/>
 
                             <label className="text-right font-medium"><span className="text-red-500">*</span>用户组织架构</label>
-                            <div className="flex items-center space-x-2">
-                                <MultiSelect options={[]} ></MultiSelect>
-                            </div>
+
+                            <FilterByMultiUsergroup
+                                value={form.selectedDepartments}
+                                onChange={(value) => setForm({...form, selectedDepartments: value})} 
+                            />
 
                             <label className="text-right font-medium"><span className="text-red-500">*</span>统计周期</label>
                             <div className="flex items-center space-x-2">
@@ -130,7 +234,7 @@ export default function StatFormReport({ onBack, onJump }) {
 
                             <label className="text-right font-medium"><span className="text-red-500">*</span>问答次数</label>
                             <div className="relative">
-                                <Input type="number" value={form.answerTime} onChange={(e) => setForm({...form, answerTime: Number(e.target.value)})}></Input>
+                                <Input type="number" min={1} max={100} value={form.answerTime} onChange={(e) => setForm({...form, answerTime: Number(e.target.value)})}></Input>
                             </div>
                             
                         </div>
@@ -150,22 +254,22 @@ export default function StatFormReport({ onBack, onJump }) {
                             {/* Sender Email */}
                             <label className="text-right font-medium"><span className="text-red-500">*</span>发送邮箱</label>
                             <div className="relative">
-                                <Input type="text" className="pr-40" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value})} />
+                                <Input type="text" className="pr-40" maxLength={256} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value})} />
                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">@aviva-cofco.com.cn</span>
                             </div>
 
                             {/* Authorization Code */}
                             <label className="text-right font-medium"><span className="text-red-600">*</span>邮箱授权码</label>
                             <div className="flex items-center gap-2 relative">
-                                <Input type="text" placeholder="请输入16位授权码" className="flex-grow" value={form.emailCode} onChange={(e) => setForm({ ...form, emailCode: e.target.value})}/>
+                                <Input type="text" placeholder="请输入16位授权码" maxLength={16} className="flex-grow" value={form.emailCode} onChange={(e) => setForm({ ...form, emailCode: e.target.value})}/>
                                 <div className="absolute left-full ml-2">
                                     <QuestionTooltip
                                     content={
                                         <div>
                                         <p className="font-medium mb-2">如何申请/获取企业微信邮箱授权码？</p>
-                                        <p>登录首页(QQ邮箱) → 加密（私密）→ （账号）</p>
-                                        <p>找到（POSTA认证密码）→ 点击【开启】删除（请验证密码）</p>
-                                        <p>选择【生成授权码】→ 获取完成此页面 → 获得你的授权码（如abc072244@jb679）</p>
+                                        <p>1. 登录网页版QQ邮箱 → 顶部【设置】→ 【账号】</p>
+                                        <p>2. 找到【POP3/IMAP服务】→ 点击【开启】服务（需验证密保）</p>
+                                        <p>3. 点击【生成授权码】→ 按提示发送短信 → 获得<b>16位授权码</b>（如 `abcd1234efgh5678`）</p>
                                         </div>
                                     }
                                     />
@@ -182,6 +286,7 @@ export default function StatFormReport({ onBack, onJump }) {
                                             type="text"
                                             className="pr-40"
                                             value={email}
+                                            maxLength={256}
                                             onChange={(e) => {
                                             const newEmails = [...form.receivedEmails];
                                             newEmails[index] = e.target.value;
@@ -203,11 +308,12 @@ export default function StatFormReport({ onBack, onJump }) {
                                 </>
                                 ))}
                                  
+                            {(form.receivedEmails.length < 10) &&<>
                             <label className="text-right font-medium"></label>
                             <div className="text-[#1890ff] hover:text-[#40a9ff] transition-colors text-sm right-3 text-right" onClick={() => {
                                 setForm({ ...form, receivedEmails: [...form.receivedEmails, ''] });
                                 }}
-                            > + 添加邮箱</div>
+                            > + 添加邮箱</div></>}
                            
                         </div>
                     </CardContent>
