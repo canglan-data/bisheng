@@ -147,7 +147,7 @@ class RagNode(BaseNode):
         tmp_retrieved_result = json.dumps(source_documents, indent=2, ensure_ascii=False)
         if len(tmp_retrieved_result.encode('utf-8')) >= 50 * 1024:  # 大于50kb的日志数据存文件
             tmp_retrieved_type = 'file'
-            tmp_object_name = f'/workflow/source_document/{time.time()}.txt'
+            tmp_object_name = f'{time.time()}.txt'
             self._minio_client.upload_tmp(tmp_object_name, tmp_retrieved_result.encode('utf-8'))
             share_url = self._minio_client.get_share_link(tmp_object_name, self._minio_client.tmp_bucket)
             tmp_retrieved_result = self._minio_client.clear_minio_share_host(share_url)
