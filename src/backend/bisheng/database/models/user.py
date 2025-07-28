@@ -105,7 +105,8 @@ class UserDao(UserBase):
                      user_ids: List[int],
                      keyword: str = None,
                      page: int = 0,
-                     limit: int = 0) -> (List[User], int):
+                     limit: int = 0,
+                     positions: list[str] = None) -> (List[User], int):
         statement = select(User)
         count_statement = select(func.count(User.user_id))
         if user_ids:
@@ -114,6 +115,9 @@ class UserDao(UserBase):
         if keyword:
             statement = statement.where(User.user_name.like(f'%{keyword}%'))
             count_statement = count_statement.where(User.user_name.like(f'%{keyword}%'))
+        if positions:
+            statement = statement.where(User.position.in_(positions))
+            count_statement = count_statement.where(User.position.in_(positions))
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
         if keyword:

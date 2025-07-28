@@ -64,7 +64,7 @@ class AuditLogService:
 
     @classmethod
     def get_audit_log(cls, login_user: UserPayload, group_ids, operator_ids, start_time, end_time,
-                      system_id, event_type, page, limit) -> Any:
+                      system_id, event_type, page, limit, monitor_result: list[str] = None, export: int = 0) -> Any:
         groups = group_ids
         if not login_user.is_admin():
             groups = [str(one.group_id) for one in UserGroupDao.get_user_power_group(login_user.user_id)]
@@ -77,8 +77,187 @@ class AuditLogService:
                 if not groups:
                     return UnAuthorizedError.return_resp()
         data, total = AuditLogDao.get_audit_logs(groups, operator_ids, start_time, end_time, system_id, event_type,
-                                                 page, limit)
-        return resp_200(data={'data': data, 'total': total})
+                                                 page, limit, monitor_result=monitor_result)
+
+        new_result = []
+        for d in data:
+            new_result.append(d.model_dump())
+        data = new_result
+        AuditLogService.expand_user_info(data)
+
+        if export:
+            url = AuditLogService.export_audit(data)
+            return resp_200(data={'file': url, 'total': len(data)})
+        else:
+            return resp_200(data={'data': data, 'total': total})
+
+    @staticmethod
+    def expand_user_info(data: list[dict]):
+        from bisheng.api.services.permission_service import PermissionService
+        if not data:
+            return
+
+        user_ids = [int(u['operator_id']) for u in data]
+        if not user_ids:
+            return
+
+        group_dict = {}
+        user_dict = {}
+        for g in GroupDao.get_all_group():
+            group_dict[g.id] = g
+
+        for u in UserDao.get_all_users():
+            user_dict[u.user_id] = u
+
+        user_role_dict = PermissionService.get_user_role_dict(user_ids=user_ids)
+        for d in data:
+            operator_info = {}
+            user = user_dict.get(d['operator_id'], None)
+            operator_info['position'] = user.position if user else ''
+
+            groups = set()
+            if d['group_ids']:
+                for gid in d['group_ids']:
+                    group = group_dict.get(int(gid), None)
+                    if group:
+                        groups.add(group.group_name)
+                operator_info['groups'] = list(set(groups))
+            else:
+                operator_info['groups'] = []
+
+            user_roles = user_role_dict.get(d['operator_id'], [])
+            role_names = []
+            for ur in user_roles:
+                role_names.append(ur['name'])
+
+            operator_info['roles'] = role_names
+            d['operator_info'] = operator_info
+
+
+    @staticmethod
+    def export_audit(data: list[dict]):
+        excel_data = [
+            [
+                "审计ID",
+                "用户名",
+                "用户角色",
+                "用户组织架构",
+                "用户职位",
+                "操作时间",
+                "系统模块",
+                "操作行为",
+                "操作对象类型",
+                "操作对象",
+                "IP地址",
+                "备注",
+                "操作监测",
+            ]
+        ]
+
+        monitor_result_dict = {
+            "set_group_admin": "添加非组织架构管理员",
+            "not_work_time": "非工作时间",
+            "pass": "通过"
+        }
+
+        system_dict = {
+            "chat": "会话",
+            "build": "构建",
+            "knowledge": "知识库",
+            "system": "系统"
+        }
+
+        event_type_dict = {
+            "create_chat": "新建会话",
+            "delete_chat": "删除会话",
+            "create_build": "新建应用",
+            "update_build": "编辑应用",
+            "delete_build": "删除应用",
+            "create_knowledge": "新建知识库",
+            "delete_knowledge": "删除知识库",
+            "upload_file": "知识库上传文件",
+            "delete_file": "知识库删除文件",
+            "update_user": "用户编辑",
+            "forbid_user": "停用用户",
+            "recover_user": "启用用户",
+            "create_user_group": "新建用户组织架构",
+            "delete_user_group": "删除用户组织架构",
+            "update_user_group": "编辑用户组织架构",
+            "create_role": "新建角色",
+            "delete_role": "删除角色",
+            "update_role": "编辑角色",
+            "user_login": "用户登录"
+        }
+
+        object_type_dict = {
+            "none": "无",
+            "flow": "技能",
+            "work_flow": "工作流",
+            "assistant": "助手",
+            "knowledge": "知识库",
+            "file": "文件",
+            "user_conf": "用户配置",
+            "user_group_conf": "用户组配置",
+            "role_conf": "角色配置"
+        }
+
+        for one in data:
+
+            monitor_result = one.get('monitor_result', [])
+            monitor_text = [monitor_result_dict.get(m, '') for m in monitor_result]
+            monitor_text = "、".join(monitor_text)
+
+            system_text = system_dict.get(
+                one.get('system_id', ''), ''
+            )
+
+            event_type_text = event_type_dict.get(
+                one.get('event_type', ''), one.get('event_type', '')
+            )
+
+            object_type_text = object_type_dict.get(
+                one.get('object_type', ''), one.get('object_type', '')
+            )
+
+            info = one.get('operator_info', {})
+
+            line = {
+                "id": one.get('id'),
+                "operator_name": one.get('operator_name', ''),
+                "operator_roles": "、".join(info.get('roles', [])),
+                "operator_groups": "、".join(info.get('groups', [])),
+                "operator_position": info.get('position', ''),
+                "create_time": one.get('create_time', '').replace("T", " "),
+                "system_id": system_text,
+                "event_type": event_type_text,
+                "object_type": object_type_text,
+                "object_name": one.get('object_name', ''),
+                "ip_address": one.get('ip_address', ''),
+                "note": one.get('note', ''),
+                "monitor_result": monitor_text,
+            }
+
+            excel_data.append(list(line.values()))
+
+        wb = Workbook()
+        ws = wb.active
+        # print(excel_data)
+        for i in range(len(excel_data)):
+            # print(excel_data[i])
+            for j in range(len(excel_data[i])):
+                ws.cell(i + 1, j + 1, excel_data[i][j])
+
+        minio_client = MinioClient()
+        tmp_object_name = f'tmp/audit/export_{generate_uuid()}.xlsx'
+        with NamedTemporaryFile() as tmp_file:
+            wb.save(tmp_file.name)
+            tmp_file.seek(0)
+            minio_client.upload_minio(tmp_object_name, tmp_file.name,
+                                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                      minio_client.tmp_bucket)
+
+        share_url = minio_client.get_share_link(tmp_object_name, minio_client.tmp_bucket)
+        return minio_client.clear_minio_share_host(share_url)
 
     @classmethod
     def get_all_operators(cls, login_user: UserPayload) -> Any:
@@ -340,6 +519,20 @@ class AuditLogService:
         cls._knowledge_log(user, ip_address, EventType.DELETE_FILE, ObjectType.FILE,
                            str(knowledge_id), file_name, ResourceTypeEnum.KNOWLEDGE, str(knowledge_id))
 
+    @staticmethod
+    def is_not_work_time():
+        import datetime
+        now = datetime.datetime.now()
+
+        # 检查是否为周末 (周一=0, ..., 周日=6)
+        is_weekend = now.weekday() >= 5
+
+        # 检查是否在工作时间之外
+        is_off_hours = now.hour < 8 or now.hour >= 18
+
+        # 只要是周末 或者 是在工作时间之外，就返回 True
+        return is_weekend or is_off_hours
+
     @classmethod
     def _system_log(cls, user: UserPayload, ip_address: str, group_ids: List[int], event_type: EventType,
                     object_type: ObjectType, object_id: str, object_name: str, note: str = ''):
@@ -356,6 +549,36 @@ class AuditLogService:
             ip_address=ip_address,
             note=note,
         )
+
+        monitor_result = []
+
+        is_not_work_time = AuditLogService.is_not_work_time()
+        if is_not_work_time:
+            # 用户编辑、停用用户、启用用户、编辑用户组织架构、新建角色、编辑角色、删除角色和用户登录
+            type_list = [
+                EventType.UPDATE_USER.value,
+                EventType.FORBID_USER.value,
+                EventType.RECOVER_USER.value,
+                EventType.UPDATE_USER_GROUP.value,
+
+                EventType.USER_LOGIN.value,
+
+                EventType.CREATE_ROLE.value,
+                EventType.UPDATE_ROLE.value,
+                EventType.DELETE_ROLE.value,
+            ]
+
+            if event_type.value in type_list:
+                monitor_result.append('not_work_time')
+
+        if '新增管理员' in note:
+            monitor_result.append('set_group_admin')
+
+        if not monitor_result:
+            monitor_result.append('pass')
+
+        audit_log.monitor_result = monitor_result
+
         AuditLogDao.insert_audit_logs([audit_log])
 
     @classmethod
@@ -397,11 +620,11 @@ class AuditLogService:
                         ObjectType.USER_GROUP_CONF, str(group_info.id), group_info.group_name)
 
     @classmethod
-    def update_user_group(cls, user: UserPayload, ip_address: str, group_info: Group):
+    def update_user_group(cls, user: UserPayload, ip_address: str, group_info: Group, note: str = ''):
         logger.info(f"act=update_user_group user={user.user_name} ip={ip_address} group_id={group_info.id}")
         # 获取用户组信息
         cls._system_log(user, ip_address, [group_info.id], EventType.UPDATE_USER_GROUP,
-                        ObjectType.USER_GROUP_CONF, str(group_info.id), group_info.group_name)
+                        ObjectType.USER_GROUP_CONF, str(group_info.id), group_info.group_name, note=note)
 
     @classmethod
     def delete_user_group(cls, user: UserPayload, ip_address: str, group_info: Group):

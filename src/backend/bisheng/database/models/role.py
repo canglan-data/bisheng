@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Any, Dict
 
+import loguru
 from sqlmodel import Field, select, Column, DateTime, text, func, delete, and_, UniqueConstraint, or_, Text
 
 from sqlalchemy import Column, DateTime, text, func, delete, and_, UniqueConstraint
@@ -11,6 +12,7 @@ from bisheng.database.base import session_getter
 from bisheng.database.constants import AdminRole
 from bisheng.database.models.base import SQLModelSerializable
 from bisheng.database.models.role_access import RoleAccess
+from bisheng.database.models.role_position import RolePosition
 from bisheng.database.models.user_role import UserRole
 
 # 默认普通用户角色的ID
@@ -19,7 +21,7 @@ DefaultRole = 2
 
 class RoleBase(SQLModelSerializable):
     role_name: str = Field(index=False, description='前端展示名称')
-    group_id: Optional[int] = Field(default=None, index=True)
+    group_id: Optional[int] = Field(default=0, index=True)
     remark: Optional[str] = Field(default=None, index=False)
     is_bind_all: bool = Field(default=False, description='此角色是否绑定所有的子用户组')
     extra: Optional[str] = Field(default='', sa_column=Column(Text), description='额外信息')
@@ -37,25 +39,28 @@ class Role(RoleBase, table=True):
 class RoleRead(RoleBase):
     id: Optional[int] = None
     user_ids: Optional[List[Dict]] = []  # 已绑定的用户列表
+    group_positions: Optional[dict] = {}
 
 
 class RoleUpdate(RoleBase):
     role_name: Optional[str] = None
     remark: Optional[str] = None
     user_ids: Optional[List[int]] = []  # 已绑定的用户列表
+    group_positions: Optional[dict] = {}
 
 
 class RoleCreate(RoleBase):
     user_ids: Optional[List[int]] = []  # 绑定的用户ID列表
+    group_positions: Optional[dict] = {}
 
 
 class RoleDao(RoleBase):
 
     @classmethod
-    def generate_role_group_statement(cls, statement, group: List[int], keyword: str = None,
-                                      include_parent: bool = False, only_bind: bool = False):
+    def generate_role_group_statement(cls, statement, group: List[int] = None, keyword: str = None,
+                                      include_parent: bool = False, only_bind: bool = False, role_ids: List[int] = None):
         statement = statement.where(Role.id > AdminRole)
-        if group:
+        if group is not None:
             parent_group_ids = []
             if include_parent:
                 parent_groups = GroupDao.get_parent_groups_by_ids(group)
@@ -71,11 +76,13 @@ class RoleDao(RoleBase):
             statement = statement.filter(Role.role_name.like(f'%{keyword}%'))
         if only_bind:
             statement = statement.where(Role.is_bind_all == True)
+        if role_ids is not None:
+            statement = statement.where(Role.id.in_(role_ids))
         return statement
 
     @classmethod
-    def get_role_by_groups(cls, group: List[int], keyword: str = None, page: int = 0, limit: int = 0,
-                           include_parent: bool = False, only_bind: bool = False) -> List[Role]:
+    def get_role_by_groups(cls, group: List[int] = None, keyword: str = None, page: int = 0, limit: int = 0,
+                           include_parent: bool = False, only_bind: bool = False, role_ids: List[int] = None) -> List[Role]:
         """
         获取用户组内的角色列表, 不包含系统管理员角色
         params:
@@ -87,7 +94,7 @@ class RoleDao(RoleBase):
         return: 角色列表
         """
         statement = select(Role)
-        statement = cls.generate_role_group_statement(statement, group, keyword, include_parent, only_bind)
+        statement = cls.generate_role_group_statement(statement, group, keyword, include_parent, only_bind, role_ids=role_ids)
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
         statement = statement.order_by(Role.create_time.desc())
@@ -95,13 +102,13 @@ class RoleDao(RoleBase):
             return session.exec(statement).all()
 
     @classmethod
-    def count_role_by_groups(cls, group: List[int], keyword: str = None, include_parent: bool = False,
-                             only_bind: bool = False) -> int:
+    def count_role_by_groups(cls, group: List[int] = None, keyword: str = None, include_parent: bool = False,
+                             only_bind: bool = False, role_ids: List[int] = None) -> int:
         """
         统计用户组内的角色数量，参数如上
         """
         statement = select(func.count(Role.id))
-        statement = cls.generate_role_group_statement(statement, group, keyword, include_parent, only_bind)
+        statement = cls.generate_role_group_statement(statement, group, keyword, include_parent, only_bind, role_ids=role_ids)
         with session_getter() as session:
             return session.scalar(statement)
 

@@ -33,9 +33,9 @@ class UserPayload:
         self.user_id = kwargs.get('user_id')
         self.user_role = kwargs.get('role')
         self.group_cache = {}
-        if self.user_role != 'admin':  # 非管理员用户，需要获取他的角色列表
-            roles = UserRoleDao.get_user_roles(self.user_id)
-            self.user_role = [one.role_id for one in roles]
+        # if self.user_role != 'admin':  # 非管理员用户，需要获取他的角色列表
+        #     roles = UserRoleDao.get_user_roles(self.user_id)
+        #     self.user_role = [one.role_id for one in roles]
         self.role_cache = {}
         self.bind_role_cache = {}
         self.user_name = kwargs.get('user_name')
@@ -239,6 +239,10 @@ def gen_user_role(db_user: User):
             gr.append('group_operation')
         if len(db_user_admin_groups) > 0:
             gr.append('group_admin')
+            gr.append('group_operation')
+            gr.append('group_audit')
+
+        gr = list(set(gr))
         if len(gr) > 0:
             role = "|".join(gr)
         else:
