@@ -1,3 +1,11 @@
+/*
+ * @Author: FlowerHeap flowerheap@qq.com
+ * @Date: 2025-07-28 09:41:25
+ * @LastEditors: FlowerHeap flowerheap@qq.com
+ * @LastEditTime: 2025-07-29 22:34:27
+ * @FilePath: \bisheng\src\frontend\platform\src\pages\BuildPage\flow\FlowChat\GuideQuestions.tsx
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -66,7 +74,7 @@ const GuideQuestions = forwardRef(({ locked, chatId, onClick, bottom, hiddenGuid
                     !hiddenGuideQuestion && words.map((question, index) => (
                         <div
                             key={index}
-                            className="w-fit max-w-[700px] break-words bg-[#d4dffa] border-2 border-gray-50 shadow-md text-gray-600 rounded-md mb-1 px-4 py-1 text-sm cursor-pointer"
+                            className="w-fit  max-w-[300px] md:max-w-[700px] break-words bg-[#d4dffa] border-2 border-gray-50 shadow-md text-gray-600 rounded-md mb-1 px-4 py-1 text-sm cursor-pointer"
                             onClick={() => {
                                 onClick(question)
                                 // 历史逻辑： 选择某个问题之后就不再展示这个问题
