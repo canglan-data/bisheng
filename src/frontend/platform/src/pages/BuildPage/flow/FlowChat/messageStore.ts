@@ -49,6 +49,7 @@ type Actions = {
     setShowGuideQuestion: (text: boolean) => void;
     clearMsgs: () => void;
     setInputForm: (inputForm: any) => void;
+    endAllUnfinishedMessages: () => void;
 }
 
 
@@ -288,6 +289,17 @@ export const useMessageStore = create<State & Actions>((set, get) => ({
         set({ inputForm: form })
     },
 
+    endAllUnfinishedMessages() {
+        console.log('state.messages :>> ', get().messages);
+        
+        set((state) => ({
+            messages: state.messages
+                .filter(msg => msg.category !== 'node_run') // 移除category类型为node_run的message
+                .map(msg => 
+                    !msg.end ? { ...msg, end: true, type: 'end' } : msg
+                )
+        }));
+    },
     // // stream end
     // updateCurrentMessage(wsdata, cover = false) {
     //     // console.log( wsdata.chat_id, get().chatId);

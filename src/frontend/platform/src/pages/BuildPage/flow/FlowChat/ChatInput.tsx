@@ -56,7 +56,8 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
         insetSeparator,
         destory,
         insetNodeRun,
-        setShowGuideQuestion
+        setShowGuideQuestion,
+        endAllUnfinishedMessages
     } = useMessageStore()
     console.log('ui messages :>> ', messages);
 
@@ -550,6 +551,10 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
                             setStop({ show: true, disable: true });
                             const data = onBeforSend('refresh_flow', {})
                             sendWsMsg({ "action": "restart", data});
+                            //hack 后端不能第一时间结束 这里需要延迟结束
+                            setTimeout(() => {
+                                endAllUnfinishedMessages();
+                            }, 1000)
                         }}
                         className={`w-6 h-6 bg-foreground rounded-full flex justify-center items-center cursor-pointer ${stop.disable && 'bg-muted-foreground text-muted-foreground'}`}>
                         <span className="w-2 h-2.5 border-x-2 border-border"></span>
