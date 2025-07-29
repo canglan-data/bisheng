@@ -145,12 +145,12 @@ export default function StatFormReport({ onBack, onJump }) {
             });
         }
 
-        if (form.emailCode.length !== 16) {
-            return message({
-                variant: 'warning',
-                description: '邮箱授权码必须为16位',
-            });
-        }
+        // if (form.emailCode.length !== 16) {
+        //     return message({
+        //         variant: 'warning',
+        //         description: '邮箱授权码必须为16位',
+        //     });
+        // }
 
         //Simulate saving the configuration (API call)
         captureAndAlertRequestErrorHoc(configVitalOrgStatusApi({
@@ -261,7 +261,7 @@ export default function StatFormReport({ onBack, onJump }) {
                             {/* Authorization Code */}
                             <label className="text-right font-medium"><span className="text-red-600">*</span>邮箱授权码</label>
                             <div className="flex items-center gap-2 relative">
-                                <Input type="text" placeholder="请输入16位授权码" maxLength={16} className="flex-grow" value={form.emailCode} onChange={(e) => setForm({ ...form, emailCode: e.target.value})}/>
+                                <Input type="text" placeholder="请输入16位授权码" maxLength={50} className="flex-grow" value={form.emailCode} onChange={(e) => setForm({ ...form, emailCode: e.target.value})}/>
                                 <div className="absolute left-full ml-2">
                                     <QuestionTooltip
                                     content={
