@@ -54,7 +54,7 @@ export const IconUploadSection = ({
             {/* <Switch checked={enabled} onCheckedChange={onToggle} /> */}
         </div>
         <Avator
-            value={__APP_ENV__.BASE_URL + image}
+            value={image && __APP_ENV__.BASE_URL + image}
             size={MaxFileSize}
             close
             className="mt-3"

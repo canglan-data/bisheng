@@ -198,6 +198,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
     }
 
     const wsRef = useRef(null)
+    const reRunStateRef = useRef(false)
     const createWebSocket = () => {
         // 单例
         if (wsRef.current) return Promise.resolve('ok');
@@ -223,15 +224,12 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
 
                     if (data.type === 'begin') {
                         setStop({ show: true, disable: false })
-                    } else if (data.type === 'close') {
-                        setStop({ show: false, disable: false })
-                        // 停止会话后,有重启标识会话自动开启会话
-                        if (restartTaskRef.current[data.chat_id]) {
-                            createWebSocket().then(() => {
-                                sendWsMsg(onBeforSend('init_data', {}))
-                            })
-                            restartTaskRef.current[data.chat_id] = false
+                    } else if (data.type === 'close' && data.category === 'processing') {
+                        if (!reRunStateRef.current) {
+                            // 重试时阻止关闭stop
+                            setStop({ show: false, disable: false })
                         }
+                        reRunStateRef.current = false
                     }
 
                     // const errorMsg = data.category === 'error' ? data.intermediate_steps : ''
@@ -509,7 +507,6 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
 
     // 文件上传状态
     const { fileUploading, getFileIds, loadingChange } = useFileLoading(inputLock.locked)
-
     return <div className="absolute bottom-0 w-full pt-1 bg-[#fff] dark:bg-[#1B1B1B]">
         <div className={`relative pr-4 ${clear && 'pl-9'}`}>
             {/* 引导问题 */}

@@ -159,7 +159,7 @@ export default function l2Edit() {
     const [logo, setLogo] = useState('')
     const uploadAvator = (file) => {
         uploadFileWithProgress(file, (progress) => { }, 'icon').then(res => {
-            setLogo('/bisheng/' + res.relative_path);
+            setLogo(`${__APP_ENV__.BUCKET_URL}/` + res.relative_path);
         })
     }
 
@@ -191,13 +191,13 @@ export default function l2Edit() {
                             <Label htmlFor="name">{t('skills.avatar')}</Label>
                             <div className="flex gap-2">
                                 <div>
-                                    <Avator value={__APP_ENV__.BASE_URL + logo} className="mt-2" onChange={uploadAvator}>
+                                    <Avator value={logo && __APP_ENV__.BASE_URL + logo} className="mt-2" onChange={uploadAvator}>
                                         <SkillIcon className="bg-primary w-9 h-9 rounded-sm" />
                                     </Avator>
                                 </div>
                                 {/* 下载按钮 */}
                                 {logo && <button
-                                    onClick={() => downloadFile(checkSassUrl(logo), logo?.split('/').pop())}
+                                    onClick={() => downloadFile(__APP_ENV__.BASE_URL + logo, logo?.split('/').pop())}
                                     className="p-2 mt-3 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded-full transition-colors"
                                     title="Download avatar"
                                 >

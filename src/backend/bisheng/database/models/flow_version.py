@@ -134,7 +134,7 @@ class FlowVersionDao(FlowVersionBase):
         """
         with session_getter() as session:
             statement = select(FlowVersion.id, FlowVersion.flow_id, FlowVersion.name, FlowVersion.description,
-                               FlowVersion.is_current, FlowVersion.create_time, FlowVersion.update_time).where(
+                               FlowVersion.is_current, FlowVersion.create_time, FlowVersion.update_time, FlowVersion.flow_type).where(
                 FlowVersion.flow_id == flow_id, FlowVersion.is_delete == 0).order_by(FlowVersion.id.desc())
             ret = session.exec(statement).mappings().all()
             return [FlowVersionRead.model_validate(f) for f in ret]
