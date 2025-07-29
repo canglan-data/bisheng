@@ -43,7 +43,10 @@ const GuideQuestions = forwardRef(({ locked, chatId, onClick, bottom, hiddenGuid
                 style={{ bottom: `${(bottom || 0) + 0}px` }}
             >   
                 <div className="flex items-center mb-2">
-                    <p className="text-gray-950 text-sm bg-[rgba(255,255,255,0.8)] rounded-md w-fit px-2 py-1">
+                    <p
+                        className="text-gray-950 text-sm bg-[rgba(255,255,255,0.8)] rounded-md w-fit px-2 py-1 cursor-pointer"
+                        onClick={() => setHiddenGuideQuestion(!hiddenGuideQuestion)}
+                    >
                         {t('chat.recommendationQuestions')}
 
                     </p>

@@ -35,7 +35,10 @@ export default function GuideQuestions({ locked, chatId, questions, onClick, bot
             style={{ bottom: `${(bottom || 0)}px` }}
         >
             <div className="flex items-center mb-2">
-                <p className="text-gray-950 text-sm bg-[rgba(255,255,255,0.8)] rounded-md w-fit px-2 py-1">{t('chat.recommendationQuestions')}</p>
+                <p
+                    className="text-gray-950 text-sm bg-[rgba(255,255,255,0.8)] rounded-md w-fit px-2 py-1 cursor-pointer"
+                    onClick={() => setHiddenGuideQuestion(!hiddenGuideQuestion)}
+                >{t('chat.recommendationQuestions')}</p>
                 <button 
                     className="ml-1 p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
                     onClick={() => setHiddenGuideQuestion(!hiddenGuideQuestion)}
