@@ -49,6 +49,7 @@ type Actions = {
     setShowGuideQuestion: (text: boolean) => void;
     clearMsgs: () => void;
     setInputForm: (inputForm: any) => void;
+    endAllUnfinishedMessages: () => void;
 }
 
 
@@ -141,7 +142,7 @@ export const useMessageStore = create<State & Actions>((set, get) => ({
             ...currentMsg,
             message_id: data.type === 'end' ? data.message_id : currentMsg.message_id,
             message: data.type === 'end' ? data.message.msg : currentMsg.message + data.message.msg,
-            reasoning_log: reasoning_content ? currentMsg.reasoning_log + reasoning_content : currentMsg.reasoning_log,
+            reasoning_log: data.type === 'end' ? currentMsg.reasoning_log : (reasoning_content ? currentMsg.reasoning_log + reasoning_content : currentMsg.reasoning_log),
             create_time: formatDate(new Date(), 'yyyy-MM-ddTHH:mm:ss'),
             source: data.source,
             end: data.type === 'end'
@@ -288,6 +289,17 @@ export const useMessageStore = create<State & Actions>((set, get) => ({
         set({ inputForm: form })
     },
 
+    endAllUnfinishedMessages() {
+        console.log('state.messages :>> ', get().messages);
+        
+        set((state) => ({
+            messages: state.messages
+                .filter(msg => msg.category !== 'node_run') // 移除category类型为node_run的message
+                .map(msg => 
+                    !msg.end ? { ...msg, end: true, type: 'end' } : msg
+                )
+        }));
+    },
     // // stream end
     // updateCurrentMessage(wsdata, cover = false) {
     //     // console.log( wsdata.chat_id, get().chatId);

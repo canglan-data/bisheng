@@ -15,6 +15,7 @@ import MessageBsChoose from "./MessageBsChoose";
 import MessageNodeRun from "./MessageNodeRun";
 import { useMessageStore } from "./messageStore";
 import MessageUser from "./MessageUser";
+import LogModal from "@/pages/ChatAppPage/components/LogModal";
 
 export default function ChatMessages({
     debug,
@@ -45,6 +46,8 @@ export default function ChatMessages({
     const thumbRef = useRef(null)
     // 溯源
     const sourceRef = useRef(null)
+    // 日志
+    const logRef = useRef(null)
 
     // 自动滚动
     const messagesRef = useRef(null)
@@ -262,6 +265,7 @@ export default function ChatMessages({
                                 msgVNode={msgVNode}
                                 onUnlike={(chatId) => { thumbRef.current?.openModal(chatId) }}
                                 onSource={(data) => { sourceRef.current?.openModal(data) }}
+                                onShowLog={(data) => { logRef.current?.openModal(data) }}
                                 onMarkClick={() => onMarkClick?.('answer', msg.message_id, findQa(messagesList, index))}
                             />
                         </div>;
@@ -319,5 +323,6 @@ export default function ChatMessages({
         {inputForm && <InputForm data={inputForm} />}
         <ThumbsMessage ref={thumbRef}></ThumbsMessage>
         <ResouceModal ref={sourceRef}></ResouceModal>
+        <LogModal ref={logRef}></LogModal>
     </div>
 };

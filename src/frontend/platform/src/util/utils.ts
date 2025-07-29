@@ -562,3 +562,12 @@ export function removeLineBreaks(str) {
   // 使用正则表达式替换所有换行符
   return str.replace(/[\r\n]+/g, '');
 }
+
+export const processMarkdownImages = (text) => {
+  const baseUrlForRegex = String(__APP_ENV__.BASE_URL).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
+  return text.replaceAll(
+    new RegExp(`(!\\[[^\\]]*\\]\\()(?!https?:\\/\\/)(?!${baseUrlForRegex})(\\/[^)]*\\))`, 'g'),
+    `$1${__APP_ENV__.BASE_URL}$2`
+  );
+};

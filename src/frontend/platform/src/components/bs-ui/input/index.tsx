@@ -243,6 +243,7 @@ const InputList = React.forwardRef<HTMLDivElement, InputProps & {
                             className={cname('pr-8', inputClassName)}
                             placeholder={props.placeholder || ''}
                             onChange={(e) => handleChange(e.target.value, item.key, index)}
+                            maxLength={80}
                             // onInput={(e) => {
                             //     rules.some(rule => {
                             //         if (rule.maxLength && e.target.value.length > rule.maxLength) {

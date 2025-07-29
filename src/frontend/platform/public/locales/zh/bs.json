@@ -21,6 +21,7 @@
     "registrationSuccess": "注册成功,请输入密码进行登录",
     "pleaseEnterCaptcha": "请输入验证码",
     "passwordExpired": "您的密码已过期，请及时修改",
+    "enterpriseWechatLogin": "企业微信登录",
     "otherMethods": "其他登录方式"
   },
   "menu": {
@@ -238,7 +239,8 @@
     "searchLabels": "搜索标签",
     "confirmed": "已确认",
     "confirm": "确认",
-    "runNewWorkflow": "开启新会话"
+    "runNewWorkflow": "开启新会话",
+    "viewLog": "查看日志"
   },
   "model": {
     "modelManagement": "模型管理",

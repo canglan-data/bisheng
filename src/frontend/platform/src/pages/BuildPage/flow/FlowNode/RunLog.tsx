@@ -208,7 +208,7 @@ export const ResultFile = ({ title, name, fileUrl }: { title: string, name: stri
     const { flow } = useFlowStore();
 
     const handleDownload = (e) => {
-        downloadFile(checkSassUrl(fileUrl), `${flow.name}_${name}_检索结果`)
+        downloadFile(__APP_ENV__.BASE_URL + fileUrl, `${flow.name}_${name}_检索结果`);
     }
 
     return <div className="mb-2 rounded-md border bg-search-input text-sm shadow-sm">

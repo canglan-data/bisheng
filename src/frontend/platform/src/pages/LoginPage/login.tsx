@@ -140,73 +140,77 @@ export const LoginPage = () => {
                         <span className='block w-fit m-auto font-normal text-[14px] text-tx-color mt-[24px]'>{t('login.slogen')}</span>
                     </div>
                     <div className="grid gap-[12px] mt-[68px]">
-                        <div className="grid">
-                            <Input
-                                id="email"
-                                className='h-[48px] dark:bg-login-input'
-                                ref={mailRef}
-                                placeholder={t('login.account')}
-                                type="email"
-                                autoCapitalize="none"
-                                autoComplete="email"
-                                autoCorrect="off"
-                            />
-                        </div>
-                        <div className="grid">
-                            <Input
-                                id="pwd"
-                                className='h-[48px] dark:bg-login-input'
-                                ref={pwdRef}
-                                placeholder={t('login.password')}
-                                type="password"
-                                onKeyDown={e => e.key === 'Enter' && showLogin && handleLogin()} />
-                        </div>
-                        {
-                            !showLogin && <div className="grid">
-                                <Input id="pwd"
-                                    className='h-[48px] dark:bg-login-input'
-                                    ref={agenPwdRef}
-                                    placeholder={t('login.confirmPassword')}
-                                    type="password" />
-                            </div>
-                        }
-                        {
-                            captchaData.user_capthca && (<div className="flex items-center gap-4">
-                                <Input
-                                    type="text"
-                                    ref={captchaRef}
-                                    placeholder={t('login.pleaseEnterCaptcha')}
-                                    className="form-input px-4 py-2 border border-gray-300 focus:outline-none"
-                                />
-                                <img
-                                    src={'data:image/jpg;base64,' + captchaData.captcha} // 这里应该是你的验证码图片的URL
-                                    alt="captcha"
-                                    onClick={fetchCaptchaData} // 这里应该是你的刷新验证码函数
-                                    className="cursor-pointer h-10 bg-gray-100 border border-gray-300"
-                                    style={{ width: '120px' }} // 根据需要调整宽度
-                                />
-                            </div>
-                            )
-                        }
-                        {
-                            showLogin ? <>
-                                <div className="text-center">
-                                    {!isLDAP && appConfig.register && <a href="javascript:;" className=" text-blue-500 text-sm hover:underline" onClick={() => setShowLogin(false)}>{t('login.noAccountRegister')}</a>}
+                        {!appConfig.onlyWx && (
+                            <>
+                                <div className="grid">
+                                    <Input
+                                        id="email"
+                                        className='h-[48px] dark:bg-login-input'
+                                        ref={mailRef}
+                                        placeholder={t('login.account')}
+                                        type="email"
+                                        autoCapitalize="none"
+                                        autoComplete="email"
+                                        autoCorrect="off"
+                                    />
                                 </div>
-                                <Button
-                                    className='h-[48px] mt-[32px] dark:bg-button'
-                                    disabled={isLoading} onClick={handleLogin} >{t('login.loginButton')}</Button>
-                            </> :
-                                <>
-                                    <div className="text-center">
-                                        <a href="javascript:;" className=" text-blue-500 text-sm hover:underline" onClick={() => setShowLogin(true)}>{t('login.haveAccountLogin')}</a>
+                                <div className="grid">
+                                    <Input
+                                        id="pwd"
+                                        className='h-[48px] dark:bg-login-input'
+                                        ref={pwdRef}
+                                        placeholder={t('login.password')}
+                                        type="password"
+                                        onKeyDown={e => e.key === 'Enter' && showLogin && handleLogin()} />
+                                </div>
+                                {
+                                    !showLogin && <div className="grid">
+                                        <Input id="pwd"
+                                            className='h-[48px] dark:bg-login-input'
+                                            ref={agenPwdRef}
+                                            placeholder={t('login.confirmPassword')}
+                                            type="password" />
                                     </div>
-                                    <Button
-                                        className='h-[48px] mt-[32px] dark:bg-button'
-                                        disabled={isLoading} onClick={handleRegister} >{t('login.registerButton')}</Button>
-                                </>
-                        }
-                        {appConfig.isPro && <LoginBridge onHasLdap={setIsLDAP} />}
+                                }
+                                {
+                                    captchaData.user_capthca && (<div className="flex items-center gap-4">
+                                        <Input
+                                            type="text"
+                                            ref={captchaRef}
+                                            placeholder={t('login.pleaseEnterCaptcha')}
+                                            className="form-input px-4 py-2 border border-gray-300 focus:outline-none"
+                                        />
+                                        <img
+                                            src={'data:image/jpg;base64,' + captchaData.captcha} // 这里应该是你的验证码图片的URL
+                                            alt="captcha"
+                                            onClick={fetchCaptchaData} // 这里应该是你的刷新验证码函数
+                                            className="cursor-pointer h-10 bg-gray-100 border border-gray-300"
+                                            style={{ width: '120px' }} // 根据需要调整宽度
+                                        />
+                                    </div>
+                                    )
+                                }
+                                {
+                                    showLogin ? <> 
+                                        <div className="text-center">
+                                            {!isLDAP && appConfig.register && <a href="javascript:;" className=" text-blue-500 text-sm hover:underline" onClick={() => setShowLogin(false)}>{t('login.noAccountRegister')}</a>}
+                                        </div>
+                                        <Button
+                                            className='h-[48px] mt-[32px] dark:bg-button'
+                                            disabled={isLoading} onClick={handleLogin} >{t('login.loginButton')}</Button>
+                                    </> :
+                                        <> 
+                                            <div className="text-center">
+                                                <a href="javascript:;" className=" text-blue-500 text-sm hover:underline" onClick={() => setShowLogin(true)}>{t('login.haveAccountLogin')}</a>
+                                            </div>
+                                            <Button
+                                                className='h-[48px] mt-[32px] dark:bg-button'
+                                                disabled={isLoading} onClick={handleRegister} >{t('login.registerButton')}</Button>
+                                        </>
+                                }
+                            </>
+                        )}
+                        {appConfig.isPro && <LoginBridge onHasLdap={setIsLDAP} onlyWx={appConfig.onlyWx} />}
                     </div>
                     <div className=" absolute right-[16px] bottom-[16px] flex">
                         <span className="mr-4 text-sm text-gray-400 relative top-2">v{json.version}</span>

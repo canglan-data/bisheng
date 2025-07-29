@@ -66,6 +66,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const [appConfig, setAppConfig] = useState<any>({
     libAccepts: [],
     noFace: true,
+    onlyWx: false,
     disableCopyFlowIds: [],
   })
 
@@ -84,6 +85,8 @@ export function LocationProvider({ children }: { children: ReactNode }) {
           chatPrompt: !!res.application_usage_tips,
           securityCommitment: !!res.enable_security_commitment,
           noFace: !res.show_github_and_help,
+          // onlyWx: false,
+          onlyWx: !!res.only_show_weixin_login,
           register: !!res.enable_registration,
           disableCopyFlowIds: res.disable_copy_flow_ids || [],
           uploadFileMaxSize: res.uploaded_files_maximum_size || 50,

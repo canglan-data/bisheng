@@ -1,5 +1,6 @@
 import asyncio
 import json
+from time import sleep
 from typing import Dict, Optional
 
 from fastapi import Request, WebSocket, status
@@ -49,6 +50,17 @@ class WorkflowClient(BaseClient):
         else:
             await self.send_response('processing', 'close', '')
 
+    async def restart(self, message: dict):
+        self.workflow.set_chat_history(status='stopped')
+        action = message.get('action')
+        exec_unique_id = message.get('exec_unique_id')
+        message = message.get('data')
+        message['action'] = action
+        message['exec_unique_id'] = exec_unique_id
+        await self.close(force_stop=True)
+        sleep(1)
+        await self.init_workflow(message)
+
     async def save_chat_message(self, chat_response: ChatResponse) -> int | None:
         if not self.chat_id:
             return
@@ -76,17 +88,19 @@ class WorkflowClient(BaseClient):
             ChatMessageDao.update_message_model(db_message)
 
     async def _handle_message(self, message: Dict[any, any]):
-        logger.debug('----------------------------- start handle message -----------------------')
+        msg_id = message.get('msg_id')
         if message.get('action') == 'init_data':
             # 初始化workflow数据
             await self.init_workflow(message)
         elif message.get('action') == 'check_status':
             await self.check_status(message)
         elif message.get('action') == 'input':
-            await self.handle_user_input(message.get('data'))
+            await self.handle_user_input(message.get('data') , msg_id)
         elif message.get('action') == 'stop':
             await self.close(force_stop=True)
             # await self.stop_handle_message(message)
+        elif message.get('action') == 'restart':
+            await self.restart(message)
         else:
             logger.warning('not support action: %s', message.get('action'))
 
@@ -108,7 +122,7 @@ class WorkflowClient(BaseClient):
         unique_id = generate_uuid()
         if self.chat_id:
             await self.init_history()
-            unique_id = f'{self.chat_id}_async_task_id'
+            unique_id = f'{self.chat_id}_async_task_id' + unique_id # 修改于2025.7.25,修改原因:在restart工作流时,由于close和init_workflow对应的新旧workflow的unique_id是同一个,可能导致其他线程或进程删除workflow的数据.
         logger.debug(f'init workflow with unique_id: {unique_id}, workflow_id: {workflow_id}, chat_id: {self.chat_id}')
         self.workflow = RedisCallback(unique_id, workflow_id, self.chat_id, str(self.user_id))
         # 判断workflow是否已上线，未上线的话关闭当前websocket链接
@@ -172,8 +186,10 @@ class WorkflowClient(BaseClient):
             self.workflow = RedisCallback(unique_id, workflow_id, self.chat_id, str(self.user_id))
             self.workflow.set_workflow_data(workflow_data)
             self.workflow.set_workflow_status(WorkflowStatus.WAITING.value)
+            self.workflow.workflow_exec_unique_id = message.get('exec_unique_id')
+
             # 发起异步任务
-            execute_workflow.delay(unique_id, workflow_id, self.chat_id, str(self.user_id))
+            execute_workflow.delay(unique_id, workflow_id, self.chat_id, str(self.user_id), message.get('exec_unique_id'))
             await self.send_response('processing', 'begin', '')
             await self.workflow_run()
         except Exception as e:
@@ -192,29 +208,33 @@ class WorkflowClient(BaseClient):
         #     await asyncio.sleep(0.5)
 
     async def _workflow_run(self):
-        # 需要不断从redis中获取workflow返回的消息
-        async for event in self.workflow.get_response_until_break():
-            await self.send_json(event)
+        try:
+            if not self.workflow:
+                logger.warning('workflow is over by other task')
+                return True
 
-        if not self.workflow:
-            logger.warning('workflow is over by other task')
+            # 需要不断从redis中获取workflow返回的消息
+            async for event in self.workflow.get_response_until_break():
+                await self.send_json(event)
+
+            status_info = self.workflow.get_workflow_status()
+            if not status_info or status_info['status'] in [WorkflowStatus.FAILED.value, WorkflowStatus.SUCCESS.value]:
+            # DONE merge_check
+            # if status_info['status'] in [WorkflowStatus.FAILED.value, WorkflowStatus.SUCCESS.value]:
+                await self.send_response('processing', 'close', '')
+                self.workflow.clear_workflow_status()
+                self.workflow = None
+                return True
+
+            # 说明运行到了待输入状态
+            elif status_info['status'] != WorkflowStatus.INPUT.value:
+                logger.warning(f'workflow status is unknown: {status_info}')
+            return False
+        except AttributeError:
+            print('workflow is None')
             return True
 
-        status_info = self.workflow.get_workflow_status()
-        if not status_info or status_info['status'] in [WorkflowStatus.FAILED.value, WorkflowStatus.SUCCESS.value]:
-        # DONE merge_check
-        # if status_info['status'] in [WorkflowStatus.FAILED.value, WorkflowStatus.SUCCESS.value]:
-            await self.send_response('processing', 'close', '')
-            self.workflow.clear_workflow_status()
-            self.workflow = None
-            return True
-
-        # 说明运行到了待输入状态
-        elif status_info['status'] != WorkflowStatus.INPUT.value:
-            logger.warning(f'workflow status is unknown: {status_info}')
-        return False
-
-    async def handle_user_input(self, data: dict):
+    async def handle_user_input(self, data: dict, msg_id: str = None):
         logger.info(f'get user input: {data}')
         if not self.workflow:
             logger.warning('workflow is over')
@@ -228,13 +248,14 @@ class WorkflowClient(BaseClient):
             new_message = None
             # 目前只支持一个输入节点
             for node_id, node_info in data.items():
+                node_info['data']['msg_id'] = msg_id
                 user_input[node_id] = node_info['data']
                 message_id = node_info.get('message_id')
                 new_message = node_info.get('message')
                 break
-            self.workflow.set_user_input(user_input, message_id=message_id, message_content=new_message)
+            self.workflow.set_user_input(user_input, message_id=message_id, message_content=new_message, msg_id=msg_id)
             self.workflow.set_workflow_status(WorkflowStatus.INPUT_OVER.value)
             continue_workflow.delay(self.workflow.unique_id, self.workflow.workflow_id, self.workflow.chat_id,
-                                    self.workflow.user_id)
+                                    self.workflow.user_id, msg_id, self.workflow.workflow_exec_unique_id)
             await self.workflow_run()
         # await self.workflow_run()

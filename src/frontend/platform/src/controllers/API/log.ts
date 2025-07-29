@@ -411,3 +411,8 @@ export async function configVitalOrgStatusApi(params: {
 export async function getSendEmailGroupsApi(params: { keyword, page, page_size }) {
     return await axios.get('/api/v1/operation/send_mail/group/list', { params })
 }
+
+// 获取运营应用列表
+export async function getChatLogs(id: string) {
+    return await axios.get(`/api/v1/chat/log/${id}`);
+}

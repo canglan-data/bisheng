@@ -269,7 +269,7 @@ sftp-config.json
 /DEV.md
 /bisheng.tar.gz
 /bisheng
-
+/bisheng-gateway
 
 # Docker local files
 docker/data/*

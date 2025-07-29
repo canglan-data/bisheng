@@ -1,7 +1,7 @@
 import FlowSetting from "@/components/Pro/security/FlowSetting";
 import { useToast } from "@/components/bs-ui/toast/use-toast";
 import { locationContext } from "@/contexts/locationContext";
-import { ArrowLeft, ChevronUp } from "lucide-react";
+import { ArrowLeft, ChevronUp, Download } from "lucide-react";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -21,6 +21,8 @@ import { SkillIcon } from "@/components/bs-icons";
 import { uploadFileWithProgress } from "@/modals/UploadModal/upload";
 import { SelectCommitment } from "@/pages/ChatAppPage/components/CommitmentDialog";
 import { getCommitmentApi, setCommitmentApi } from "@/controllers/API";
+import { checkSassUrl } from "@/components/bs-comp/FileView";
+import { downloadFile } from "@/util/utils";
 
 export default function l2Edit() {
     const { t } = useTranslation()
@@ -157,7 +159,7 @@ export default function l2Edit() {
     const [logo, setLogo] = useState('')
     const uploadAvator = (file) => {
         uploadFileWithProgress(file, (progress) => { }, 'icon').then(res => {
-            setLogo('/bisheng/' + res.relative_path);
+            setLogo(`${__APP_ENV__.BUCKET_URL}/` + res.relative_path);
         })
     }
 
@@ -187,7 +189,21 @@ export default function l2Edit() {
                     <div className="w-full overflow-hidden transition-all px-1">
                         <div className="mt-4">
                             <Label htmlFor="name">{t('skills.avatar')}</Label>
-                            <Avator value={logo} className="mt-2" onChange={uploadAvator}><SkillIcon className="bg-primary w-9 h-9 rounded-sm" /></Avator>
+                            <div className="flex gap-2">
+                                <div>
+                                    <Avator value={logo && __APP_ENV__.BASE_URL + logo} className="mt-2" onChange={uploadAvator}>
+                                        <SkillIcon className="bg-primary w-9 h-9 rounded-sm" />
+                                    </Avator>
+                                </div>
+                                {/* 下载按钮 */}
+                                {logo && <button
+                                    onClick={() => downloadFile(__APP_ENV__.BASE_URL + logo, logo?.split('/').pop())}
+                                    className="p-2 mt-3 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded-full transition-colors"
+                                    title="Download avatar"
+                                >
+                                    <Download className="w-4 h-4" />
+                                </button>}
+                            </div>
                         </div>
                         <div className="mt-4">
                             <Label htmlFor="name">{t('skills.skillName')}</Label>

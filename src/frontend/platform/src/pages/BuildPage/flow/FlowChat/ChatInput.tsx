@@ -37,6 +37,8 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
     // const [inputForm, setInputForm] = useState(null) // input表单
     const [formShow, setFormShow] = useState(false) // input表单显示
     const [allowUpload, setAllowUpload] = useState(true) // input允许上传文件
+    const [hiddenGuideQuestion, setHiddenGuideQuestion] = useState(false) //折叠推荐问题
+    
 
     const [showWhenLocked, setShowWhenLocked] = useState(false) // 强制开启表单按钮，不限制于input锁定
     const restartTaskRef = useRef({}) // 重启任务列表
@@ -54,7 +56,8 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
         insetSeparator,
         destory,
         insetNodeRun,
-        setShowGuideQuestion
+        setShowGuideQuestion,
+        endAllUnfinishedMessages
     } = useMessageStore()
     console.log('ui messages :>> ', messages);
 
@@ -128,6 +131,14 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
         }
     }, [])
 
+    useEffect(() => {
+        const userInput = messages?.find(item => item.category === 'question');
+        // 如果有用户输入 则收起推荐问题
+        if (userInput) {
+            setHiddenGuideQuestion(true);
+        }
+    }, [messages])
+
     const handleSendClick = async () => {
         if (fileUploading) return
         // 解除锁定状态下 form 按钮开放的状态
@@ -188,6 +199,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
     }
 
     const wsRef = useRef(null)
+    const reRunStateRef = useRef(false)
     const createWebSocket = () => {
         // 单例
         if (wsRef.current) return Promise.resolve('ok');
@@ -213,15 +225,12 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
 
                     if (data.type === 'begin') {
                         setStop({ show: true, disable: false })
-                    } else if (data.type === 'close') {
-                        setStop({ show: false, disable: false })
-                        // 停止会话后,有重启标识会话自动开启会话
-                        if (restartTaskRef.current[data.chat_id]) {
-                            createWebSocket().then(() => {
-                                sendWsMsg(onBeforSend('init_data', {}))
-                            })
-                            restartTaskRef.current[data.chat_id] = false
+                    } else if (data.type === 'close' && data.category === 'processing') {
+                        if (!reRunStateRef.current) {
+                            // 重试时阻止关闭stop
+                            setStop({ show: false, disable: false })
                         }
+                        reRunStateRef.current = false
                     }
 
                     // const errorMsg = data.category === 'error' ? data.intermediate_steps : ''
@@ -499,15 +508,19 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
 
     // 文件上传状态
     const { fileUploading, getFileIds, loadingChange } = useFileLoading(inputLock.locked)
-
     return <div className="absolute bottom-0 w-full pt-1 bg-[#fff] dark:bg-[#1B1B1B]">
         <div className={`relative pr-4 ${clear && 'pl-9'}`}>
             {/* 引导问题 */}
             <GuideQuestions
                 ref={questionsRef}
                 locked={inputLock.locked}
-                onClick={handleClickGuideWord}
-                bottom={chatFilesRef?.current?.getHeight() || 0} //有文件 则给引导问题顶上去
+                onClick={(value) => {
+                    handleClickGuideWord(value)
+                    setHiddenGuideQuestion(true)
+                }}
+                hiddenGuideQuestion={hiddenGuideQuestion}
+                setHiddenGuideQuestion={setHiddenGuideQuestion}
+                bottom={chatFilesRef?.current?.getHeight() ? chatFilesRef?.current?.getHeight() + 28 : 0} //有文件 则给引导问题顶上去
             />
             {/* restart */}
             <div className="flex absolute left-0 top-3 z-10">
@@ -529,12 +542,31 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
             {!inputLock.locked && allowUpload && <ChatFiles ref={chatFilesRef} accepts={accepts} v={location.href.indexOf('/chat/flow/') === -1 ? 'v1' : 'v2'} onChange={loadingChange} preParsing={false} />}
             {/* send */}
             <div className="flex gap-2 absolute right-7 top-4 z-10">
-                <div
-                    id="bs-send-btn"
-                    className="w-6 h-6 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-950 cursor-pointer flex justify-center items-center"
-                    onClick={() => { !inputLock.locked && !fileUploading && handleSendClick() }}>
-                    <SendIcon className={`${inputLock.locked || fileUploading ? 'text-muted-foreground' : 'text-foreground'}`} />
-                </div>
+                {
+                    inputLock.locked ?
+                    <div
+                        onClick={() => {
+                            // TODO:
+                            if (stop.disable) return
+                            setStop({ show: true, disable: true });
+                            const data = onBeforSend('refresh_flow', {})
+                            sendWsMsg({ "action": "restart", data});
+                            //hack 后端不能第一时间结束 这里需要延迟结束
+                            setTimeout(() => {
+                                endAllUnfinishedMessages();
+                            }, 1000)
+                        }}
+                        className={`w-6 h-6 bg-foreground rounded-full flex justify-center items-center cursor-pointer ${stop.disable && 'bg-muted-foreground text-muted-foreground'}`}>
+                        <span className="w-2 h-2.5 border-x-2 border-border"></span>
+                    </div>
+                    :
+                    <div
+                        id="bs-send-btn"
+                        className="w-6 h-6 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-950 cursor-pointer flex justify-center items-center"
+                        onClick={() => { !inputLock.locked && !fileUploading && handleSendClick() }}>
+                        <SendIcon className={`${inputLock.locked || fileUploading ? 'text-muted-foreground' : 'text-foreground'}`} />
+                    </div>
+                }
             </div>
             {/* stop & 重置 */}
             <div className="absolute w-full flex justify-center bottom-16 hidden">
