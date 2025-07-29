@@ -289,7 +289,7 @@ class GraphEngine:
                 pass
             self.judge_status()
         except IgnoreException as e:
-            logger.warning(f'graph ignore error: {e}')
+            logger.warning(f'graph ignore error1: {e}')
             self.status = WorkflowStatus.FAILED.value
             self.reason = str(e)
         except Exception as e:

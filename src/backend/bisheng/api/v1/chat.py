@@ -38,6 +38,7 @@ from bisheng.database.models.message import ChatMessage, ChatMessageDao, ChatMes
 from bisheng.database.models.session import MessageSessionDao, MessageSession
 from bisheng.database.models.user import UserDao
 from bisheng.database.models.user_group import UserGroupDao
+from bisheng.database.models.workflow_node_logs import WorkflowNodeLogDao
 from bisheng.graph.graph.base import Graph
 from bisheng.utils import generate_uuid
 from bisheng.utils.logger import logger
@@ -728,3 +729,14 @@ async def stream_build(flow_id: str,
     except Exception as exc:
         logger.error(exc)
         raise HTTPException(status_code=500, detail=str(exc))
+
+@router.get('/chat/log/{chat_message_id}')
+async def stream_build(chat_message_id: int,
+                       login_user: UserPayload = Depends(get_login_user)):
+    message = ChatMessageDao.get_message_by_id(chat_message_id)
+    result = []
+    if not message:
+        raise NotFoundError.http_exception()
+    if  message.msg_id:
+        result = WorkflowNodeLogDao.get_by_msg_id(message.msg_id)
+    return resp_200(data=result)
