@@ -10,6 +10,7 @@ from bisheng.database.models.user import UserDao
 from bisheng.database.models.group import GroupDao
 from bisheng.database.models.user_group import UserGroupDao
 from loguru import logger
+from langchain_core.messages import messages_from_dict
 
 
 class StartNode(BaseNode):
@@ -45,6 +46,15 @@ class StartNode(BaseNode):
         new_preset_question = {}
         for one in self.node_params['preset_question']:
             new_preset_question[one['key']] = one['value']
+
+        from bisheng.worker import RedisCallback
+        if isinstance(self.callback_manager, RedisCallback):
+            chat_history = self.callback_manager.get_chat_history()
+            self.callback_manager.del_chat_history()
+            if chat_history.get('status') == 'stopped':
+                history_messages = chat_history.get('history_messages')
+                if history_messages:
+                    self.graph_state.batch_save(messages_from_dict(history_messages))
 
         return {
             'current_time': self.node_params['current_time'],

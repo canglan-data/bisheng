@@ -22,6 +22,7 @@ class LogType(IntEnum):
 class WorkflowNodeLogBase(SQLModelSerializable):
     flow_id: str = Field(index=True, description='工作流ID')
     chat_id: str = Field(index=True, description='会话ID')
+    msg_id: Optional[str] = Field(default=None, description='问答ID')
     log_type: int = Field(default=0, description='日志类型')
     logs: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON), description='JSON格式的日志内容')
     node_id: Optional[str] = Field(default=None, index=True, description='节点ID')
@@ -79,6 +80,13 @@ class WorkflowNodeLogDao:
         """通过node_id获取记录列表"""
         with session_getter() as session:
             statement = select(WorkflowNodeLog).where(WorkflowNodeLog.node_id == node_id)
+            return session.exec(statement).all()
+
+    @classmethod
+    def get_by_msg_id(cls, msg_id: str) -> List[WorkflowNodeLog]:
+        """通过msg_id获取记录列表"""
+        with session_getter() as session:
+            statement = select(WorkflowNodeLog).where(WorkflowNodeLog.msg_id == msg_id)
             return session.exec(statement).all()
 
     @classmethod

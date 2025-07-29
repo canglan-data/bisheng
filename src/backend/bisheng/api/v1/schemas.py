@@ -181,6 +181,7 @@ class ChatResponse(ChatMessage):
     intermediate_steps: str = ''
     is_bot: bool | int = True
     category: str = 'processing'
+    msg_id: Optional[str] = None
 
     @field_validator('type')
     @classmethod

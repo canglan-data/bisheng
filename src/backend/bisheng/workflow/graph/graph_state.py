@@ -28,6 +28,27 @@ class GraphState(BaseModel):
             ai_prefix=self.history_memory.ai_prefix,
         )
 
+    def get_history_memory_dicts(self, count: int) -> list:
+        """ 获取聊天历史记录"""
+        if not count:
+            count = self.history_memory.k
+        if count == 0:
+            return []
+        messages = self.history_memory.chat_memory.messages[-count:]
+        messages_dicts = []
+        for message in messages:
+
+            messages_dict = {}
+            if isinstance(message, HumanMessage):
+                messages_dict['type'] = 'human'
+            if isinstance(message, AIMessage):
+                messages_dict['type'] = 'ai'
+
+            messages_dict['data'] = {"content": message.content}
+            messages_dicts.append(messages_dict)
+        return messages_dicts
+
+
     def get_history_list(self, count: int) -> List[BaseMessage]:
         return self.history_memory.buffer_as_messages[-count:]
 
@@ -39,6 +60,10 @@ class GraphState(BaseModel):
             self.history_memory.chat_memory.add_messages([HumanMessage(content=content)])
         elif msg_sender == 'AI':
             self.history_memory.chat_memory.add_messages([AIMessage(content=content)])
+
+    def batch_save(self, messages: List[BaseMessage]) -> None:
+        # 批量保存聊天记录
+        self.history_memory.chat_memory.add_messages(messages)
 
     def set_variable(self, node_id: str, key: str, value: Any):
         """ 将节点产生的数据放到全局变量里 """

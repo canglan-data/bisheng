@@ -3,6 +3,7 @@ import copy
 import uuid
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
+from loguru import logger
 
 from langchain_core.messages import HumanMessage
 
@@ -188,7 +189,8 @@ class BaseNode(ABC):
         self.exec_unique_id = exec_id
         self.callback_manager.on_node_start(
             data=NodeStartData(unique_id=exec_id, node_id=self.id, name=self.name))
-
+        # TODO:: garen:chat_history
+        print(self.graph_state.get_history_memory(10))
         reason = None
         log_data = None
         try:
@@ -234,8 +236,11 @@ class BaseNode(ABC):
         if not logs:
             return
         chat_id = ""
+        msg_id = ''
         if self.callback_manager and hasattr(self.callback_manager, 'chat_id'):
             chat_id = self.callback_manager.chat_id
+        if self.callback_manager and hasattr(self.callback_manager, 'msg_id'):
+            msg_id = self.callback_manager.msg_id
         log_data = WorkflowNodeLog(
             flow_id=self.workflow_id,
             node_id=self.id,
@@ -244,5 +249,6 @@ class BaseNode(ABC):
             logs=logs,
             user_id=self.user_id,
             chat_id=chat_id,
+            msg_id=msg_id,
         )
         WorkflowNodeLogDao.insert_one(log_data)
