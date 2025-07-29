@@ -192,16 +192,19 @@ export function formatMilliseconds(ms: number, format: string): string {
 
 // Date转换为目标格式
 export function formatDate(date: Date, format: string): string {
-    const addZero = (num) => num < 10 ? `0${num}` : `${num}`
+  const addZero = (num) => num < 10 ? `0${num}` : `${num}`
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  const weekday = weekdays[date.getDay()];
     const replacements = {
         'yyyy': date.getFullYear(),
         'MM': addZero(date.getMonth() + 1),
         'dd': addZero(date.getDate()),
         'HH': addZero(date.getHours()),
         'mm': addZero(date.getMinutes()),
-        'ss': addZero(date.getSeconds())
+        'ss': addZero(date.getSeconds()),
+        'E': `周${weekday}`,
     }
-    return format.replace(/yyyy|MM|dd|HH|mm|ss/g, (match) => replacements[match])
+    return format.replace(/yyyy|MM|dd|HH|mm|ss|E/g, (match) => replacements[match])
 }
 
 // param time: yyyy-mm-ddTxxxx
