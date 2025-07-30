@@ -147,7 +147,7 @@ export default function StatFormReport({ onBack, onJump }) {
             });
         }
         
-        if (!form.receivedEmails || form.receivedEmails.length === 0 || !form.receivedEmails[0]) {
+        if (!form.receivedEmails || form.receivedEmails.length === 0 || !form.receivedEmails[0] || form.receivedEmails.some(item => !Boolean(item))) {
             return message({
                 variant: 'warning',
                 description: '收件邮箱不可为空',
