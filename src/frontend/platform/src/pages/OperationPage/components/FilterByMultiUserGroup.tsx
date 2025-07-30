@@ -88,7 +88,7 @@ const MultiLevelSelect = ({
     // 递归渲染树形结构
     const renderTree = (nodes, level = 0) => {
         // 只渲染到二级
-        if (level > 2) return null;
+        // if (level > 2) return null;
         
         return nodes.map((node) => {
             const isExpanded = expandedNodes.has(node.id);
@@ -120,8 +120,9 @@ const MultiLevelSelect = ({
                         <span onClick={() => handleSelect(node)}>{node.group_name}</span>
                     </div>
                     
-                    {/* 递归渲染子节点，但限制最多二级 */}
-                    {isExpanded && hasChildren && level < 2 && (
+                    {/* 递归渲染子节点 */}
+                    {/* level < 2 */}
+                    {isExpanded && hasChildren && (
                         <div className="pl-4">{renderTree(node.children, level + 1)}</div>
                     )}
                 </div>
