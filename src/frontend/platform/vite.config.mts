@@ -53,7 +53,8 @@ proxyTargets['/custom_base/api'] = {
 // const app_env = { BASE_URL: '/custom_base' }
 const app_env = { 
   BASE_URL: '/platform',
-  BUCKET_URL: '/bisheng'
+  BUCKET_URL: '/bisheng',
+  // ONLY_WX_LOGIN: false
   //BUCKET_URL: '/aigc-bucket'
 }
 // const app_env = {

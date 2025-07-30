@@ -86,7 +86,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
           securityCommitment: !!res.enable_security_commitment,
           noFace: !res.show_github_and_help,
           // onlyWx: false,
-          onlyWx: !!res.only_show_weixin_login,
+          onlyWx: __APP_ENV__.ONLY_WX_LOGIN === false ? false : !!res.only_show_weixin_login,
           register: !!res.enable_registration,
           disableCopyFlowIds: res.disable_copy_flow_ids || [],
           uploadFileMaxSize: res.uploaded_files_maximum_size || 50,
