@@ -79,6 +79,15 @@ export default function StatFormReport({ onBack, onJump }) {
                 }
                 
                 // set form
+                // 进入页面时移除所有邮箱后缀
+                if (config.email) {
+                    config.email = config.email.replace(/@aviva-cofco\.com\.cn$/, '');
+                }
+                if (config.receivedEmails && Array.isArray(config.receivedEmails)) {
+                    config.receivedEmails = config.receivedEmails.map(email => 
+                        email.replace(/@aviva-cofco\.com\.cn$/, '')
+                    );
+                }
                 setForm(config);
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -154,9 +163,11 @@ export default function StatFormReport({ onBack, onJump }) {
 
         //Simulate saving the configuration (API call)
         captureAndAlertRequestErrorHoc(configVitalOrgStatusApi({
-            sender_email: form.email,
+            sender_email: form.email.trim() ? `${form.email.trim()}@aviva-cofco.com.cn` : '',
             sender_password: form.emailCode,
-            recipient_emails:uniq(form.receivedEmails),
+            recipient_emails: uniq(form.receivedEmails.map(email => 
+              email.trim() ? `${email.trim()}@aviva-cofco.com.cn` : ''
+            ).filter(Boolean)),
             execution_interval_days: Number(form.selectPeriod),
             start_date: formatDate(new Date(form.selectDay), 'yyyy-MM-dd'),
             min_qa_count: form.answerTime,
