@@ -97,6 +97,13 @@ export default function StatFormReport({ onBack, onJump }) {
         fetchData();
     }, []);
 
+    // 邮箱格式验证函数
+    const isValidEmail = (email: string) => {
+      // 验证邮箱前缀格式（不包含域名部分）
+      const emailRegex = /^[a-zA-Z0-9._%+-]+$/;
+      return emailRegex.test(email.trim());
+    };
+
     const handleSave = () => {
         if (!form.appName || form.appName.length === 0) {
             return message({
@@ -139,6 +146,14 @@ export default function StatFormReport({ onBack, onJump }) {
                 description: '发送邮箱不可为空',
             });
         }
+
+        // 验证发送邮箱格式
+        if (!isValidEmail(form.email)) {
+            return message({
+                variant: 'warning',
+                description: '发送邮箱格式不正确，请输入有效的邮箱前缀',
+            });
+        }
         
         if (!form.emailCode) {
             return message({
@@ -152,6 +167,16 @@ export default function StatFormReport({ onBack, onJump }) {
                 variant: 'warning',
                 description: '收件邮箱不可为空',
             });
+        }
+
+        // 验证所有收件邮箱格式
+        for (const email of form.receivedEmails) {
+            if (email && !isValidEmail(email)) {
+                return message({
+                    variant: 'warning',
+                    description: `收件邮箱格式不正确: ${email}，请输入有效的邮箱前缀`,
+                });
+            }
         }
 
         // if (form.emailCode.length !== 16) {
