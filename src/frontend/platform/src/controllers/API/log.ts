@@ -397,10 +397,10 @@ export async function configVitalOrgStatusApi(params: {
         group_ids: number[],
     }) {
     const backendData = {
+        msg_from:  "智慧中英",
         ...params,
         execution_hour: 10,
         execution_minute: 0,
-         // msg_from?: string,
         smtp_host: "smtp.qq.com",
         smtp_port: 465
     };
