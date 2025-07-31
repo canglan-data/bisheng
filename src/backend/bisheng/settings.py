@@ -115,6 +115,9 @@ class DoMain(BaseModel):
     web_domain: str = Field(default='127.0.0.1', description="网站的域名")
     web_scheme: Optional[str] = Field(default="http", description="新的协议")
 
+class Other(BaseModel):
+    operation_expanded_mail_group_code: Optional[str] = Field(default='', description='操作扩展邮件组编码')
+
 
 class CeleryConf(BaseModel):
     task_routers: Optional[dict] = Field(default_factory=dict, description='任务路由配置')
@@ -174,6 +177,7 @@ class Settings(BaseModel):
     syslog_conf: SYSLogConf = SYSLogConf()
     aliyun_text_moderation_conf: AliyunTextModerationConf = AliyunTextModerationConf()
     domain: DoMain = DoMain()
+    other: Other = Other()
     celery_task: CeleryConf = CeleryConf()
 
     @field_validator('database_url')
