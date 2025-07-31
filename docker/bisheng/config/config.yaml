@@ -103,3 +103,6 @@ aliyun_text_moderation_conf:
 domain:
   web_domain: "123.57.174.112:3001"
   web_scheme: "http"
+
+other:
+  operation_expanded_mail_group_code: "001|007"

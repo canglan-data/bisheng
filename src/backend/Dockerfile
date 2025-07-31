@@ -12,6 +12,7 @@ RUN pip install 'volcengine-python-sdk[ark]'==3.0.11 -i https://mirrors.huaweicl
 RUN pip install ibm_db==3.2.6 -i https://mirrors.huaweicloud.com/repository/pypi/simple
 RUN pip install ibm_db_sa==0.4.2 -i https://mirrors.huaweicloud.com/repository/pypi/simple
 RUN pip install alibabacloud_green20220302==2.20.3  -i https://mirrors.huaweicloud.com/repository/pypi/simple
+RUN pip install pydantic[email] -i https://mirrors.huaweicloud.com/repository/pypi/simple
 # RUN pip install --user volcengine==1.0.188
 # RUN poetry update --without dev
 
