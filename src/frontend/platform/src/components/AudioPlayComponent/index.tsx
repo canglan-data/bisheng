@@ -65,7 +65,7 @@ export const AudioPlayComponent = ({ messageId, msg }: AudioPlayButtonProps) => 
         },
       });
     } catch (err) {
-      setError('Failed to play audio');
+      setError('转换中请稍后点击...');
       console.error(err);
     }
   };
