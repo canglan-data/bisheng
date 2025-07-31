@@ -149,30 +149,31 @@ export default function Users(params) {
 
     // 系统管理员(超管、组超管)
     const isAdmin = useMemo(() => {
-        return user.role?.includes('admin')
+        return user.role?.split('|').includes('admin');
     }, [user])
     
     // 拥有权限管理权限
     const hasGroupAdminRole = useMemo(() => {
-        return user.role?.includes('group_admin')
+        return user.role?.split('|').includes('group_admin')
     }, [user])
 
     const operations = (el) => {
         const isSuperAdmin = el.roles.some(role => role.id === 1)
         // 禁止编辑admin用户
+        {/* 0806 隐藏重置密码 + 编辑 */}
         if (isSuperAdmin) return <div>
-            <Button variant="link" disabled className="px-0">{t('edit')}</Button>
+            {/* <Button variant="link" disabled className="px-0">{t('edit')}</Button> */}
             {/* <Button variant="link" disabled className="px-0 pl-4">{t('system.resetPwd')}</Button> */}
-            <Button variant="link" className="px-0 pl-4" onClick={() => userPwdModalRef.current.open(el.user_id)}>{t('system.resetPwd')}</Button>
+            {/* <Button variant="link" className="px-0 pl-4" onClick={() => userPwdModalRef.current.open(el.user_id)}>{t('system.resetPwd')}</Button> */}
             <Button variant="link" disabled className="text-red-500 px-0 pl-4">{t('disable')}</Button>
         </div>
 
         return <div>
             {/* 编辑 */}
-            <Button variant="link" disabled={user.user_id === el.user_id} onClick={() => setCurrentUser(el)} className="px-0">{t('edit')}</Button>
+            {/* <Button variant="link" disabled={user.user_id === el.user_id} onClick={() => setCurrentUser(el)} className="px-0">{t('edit')}</Button> */}
             {/* 重置密码 */}
-            {(isAdmin || hasGroupAdminRole) &&
-                <Button variant="link" className="px-0 pl-4" onClick={() => userPwdModalRef.current.open(el.user_id)}>{t('system.resetPwd')}</Button>}
+            {/* {(isAdmin || hasGroupAdminRole) &&
+                <Button variant="link" className="px-0 pl-4" onClick={() => userPwdModalRef.current.open(el.user_id)}>{t('system.resetPwd')}</Button>} */}
             {/* 禁用 */}
             {
                 el.delete === 1 ? <Button variant="link" onClick={() => handleEnableUser(el)} className="text-green-500 px-0 pl-4">{t('enable')}</Button> :
@@ -197,6 +198,7 @@ export default function Users(params) {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[200px]">{t('system.username')}</TableHead>
+                        <TableHead className="w-[200px]">{t('system.userPosition')}</TableHead>
                         <TableHead>
                             <div className="flex items-center">
                                 {t('system.userGroup')}
@@ -229,6 +231,7 @@ export default function Users(params) {
                     {users.map((el: any) => (
                         <TableRow key={el.id}>
                             <TableCell className="font-medium max-w-md truncate">{el.user_name}</TableCell>
+                            <TableCell>{el.position}</TableCell>
                             {/* <TableCell>{el.role}</TableCell> */}
                             <TableCell className="break-all">{(el.groups || []).map(el => el.name).join(',')}</TableCell>
                             <TableCell className="break-all">{(el.roles || []).map(el => el.name).join(',')}</TableCell>

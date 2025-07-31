@@ -235,6 +235,13 @@ export function getUserGroupsApi(config) {
   });
 }
 
+// 职位列表
+export function getUserPositionApi(config) {
+  return axios.get(`/api/v1/group/list`, {
+    signal: config?.signal, // 绑定 AbortSignal
+  });
+}
+
 // 用户组列表 用于列表页
 export function getUserGroupsProApiV2({ name = '', page, pageSize, groupId, roleId }: {
   name: string,
