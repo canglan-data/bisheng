@@ -63,10 +63,10 @@ class VitalOrgStatsService:
         df["人均AI次数"] = df["total_chat_num"] / df["total_user_num"].where(df["total_user_num"] != 0, 1)
         df = df[["用户组织架构", "使用覆盖率%", "人均AI次数"]]
         df.fillna(0, inplace=True)
-        df["使用覆盖率%"] = df["使用覆盖率%"].apply(lambda x: f"{round(x, 2)}%")
-        df["人均AI次数"] = df["人均AI次数"].apply(lambda x: f"{round(x, 2)}")
+        df["使用覆盖率%"] = df["使用覆盖率%"].apply(lambda x: f"{round(x, 2):.2f}%")
+        df["人均AI次数"] = df["人均AI次数"].apply(lambda x: f"{round(x, 2):.2f}")
 
-        file_name = f"R活力组织提数报表{start_day.strftime('%Y-%m-%d')}至{end_day.strftime('%Y-%m-%d')}.xlsx"
+        file_name = f"HR活力组织提数报表{start_day.strftime('%Y-%m-%d')}至{end_day.strftime('%Y-%m-%d')}.xlsx"
         email_client = EmailClient(mail=str(config.sender_email), password=config.sender_password,
                                    msg_from=config.msg_from,
                                    server_host=config.smtp_host, server_port=config.smtp_port)
