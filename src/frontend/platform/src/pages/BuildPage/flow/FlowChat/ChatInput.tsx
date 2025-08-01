@@ -589,7 +589,7 @@ export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBef
                 disabled={inputLock.locked}
                 onInput={handleTextAreaHeight}
                 placeholder={placholder}
-                className={"resize-none py-4 pr-20 text-md min-h-6 max-h-[200px] scrollbar-hide dark:bg-[#2A2B2E] text-gray-800" + (form && ' pl-10')}
+                className={"resize-none py-4 pr-[100px] text-md min-h-6 max-h-[200px] scrollbar-hide dark:bg-[#2A2B2E] text-gray-800" + (form && ' pl-10')}
                 onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();
