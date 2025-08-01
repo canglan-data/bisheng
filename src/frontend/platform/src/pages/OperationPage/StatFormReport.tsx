@@ -64,6 +64,11 @@ export default function StatFormReport({ onBack, onJump }) {
                 const appOptions = await loadApps("");
                 const groupOptions = await loadGroups("")
                 const config = await getConfigVitalOrgStatusApi();
+
+                // 确保收件邮箱有默认值
+                if (!config.receivedEmails || !Array.isArray(config.receivedEmails) || config.receivedEmails.length === 0) {
+                    config.receivedEmails = [''];
+                }
                 
                 if (config.appName && Array.isArray(config.appName) && appOptions.length > 0) {
                     config.appName = config.appName.map(item => {

@@ -14,7 +14,7 @@ class VitalOrgStatsConfig(BaseModel):
     # 执行时间配置
     execution_hour: conint(ge=0, le=23) = Field(default=10, description="执行时间（小时，0-23）")
     execution_minute: conint(ge=0, le=59) = Field(default=0, description="执行时间（分钟，0-59）")
-    execution_interval_days: conint(ge=1) = Field(default=1, description="执行间隔（天，最小1天）")
+    execution_interval_days: conint(ge=1) = Field(default=7, description="执行间隔（天，最小1天）")
     start_date: str = Field(default="2025-07-01", description="开始执行的日期（YYYY-MM-DD）")
 
     # 统计配置
