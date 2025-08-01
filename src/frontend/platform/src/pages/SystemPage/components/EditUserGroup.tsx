@@ -185,12 +185,6 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
     
     // 用户权限管理员
     const [adminsSelected, setAdminsSelected] = useState([])
-
-    // 审计员
-    const [auditorsSelected, setAuditorsSelected] = useState([])
-    
-    // 运营员
-    const [operatorsSelected, setOperatorsSelected] = useState([])
     
     const [lockOptions, setLockOptions] = useState([])
 
@@ -215,11 +209,9 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
         // 过滤系统管理员
         const users = selected.filter(item => !lockOptions.some(id => id === item.value))
         const admins = adminsSelected.filter(item => !lockOptions.some(id => id === item.value))
-        const auditors = auditorsSelected.filter(item => !lockOptions.some(id => id === item.value))
-        const operators = operatorsSelected.filter(item => !lockOptions.some(id => id === item.value))
 
-        const res: any = await (data.id ? updateUserGroup(data.id, form, admins, auditors, operators) : // 修改
-            saveUserGroup(form, admins, auditors, operators)) // 保存
+        const res: any = await (data.id ? updateUserGroup(data.id, form, admins) : // 修改
+            saveUserGroup(form, admins)) // 保存
 
         if (appConfig.isPro) {
             await captureAndAlertRequestErrorHoc(saveGroupApi({
@@ -248,15 +240,15 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
             const users = data.group_admins?.map(d => ({ label: d.user_name, value: d.user_id })) || []
 
             const admins = data.group_admins?.map(d => ({ label: d.user_name, value: d.user_id })) || []
-            const auditors = data.group_audits?.map(d => ({ label: d.user_name, value: d.user_id })) || [];
-            const operators = data.group_operations?.map(d => ({ label: d.user_name, value: d.user_id })) || [];
+            // const auditors = data.group_audits?.map(d => ({ label: d.user_name, value: d.user_id })) || [];
+            // const operators = data.group_operations?.map(d => ({ label: d.user_name, value: d.user_id })) || [];
             
             const defaultUsers = res.map(d => ({ label: d.user_name, value: d.user_id }))
             setLockOptions(defaultUsers.map(el => el.value))
 
             setAdminsSelected([...defaultUsers, ...admins]);
-            setAuditorsSelected([...defaultUsers, ...auditors]);
-            setOperatorsSelected([...defaultUsers, ...operators]);
+            // setAuditorsSelected([...defaultUsers, ...auditors]);
+            // setOperatorsSelected([...defaultUsers, ...operators]);
 
             setSelected([...defaultUsers, ...users])
         }
@@ -295,7 +287,7 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
                 />
             </div>
         </div>
-        <div className="font-bold mt-12">
+        {/* <div className="font-bold mt-12">
             <p className="text-xl mb-4">{t('system.auditor')}</p>
             <div className="">
                 <UsersSelect
@@ -316,7 +308,7 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
                     onChange={setOperatorsSelected}
                 />
             </div>
-        </div>
+        </div> */}
         {appConfig.isPro && <>
             <div className="font-bold mt-12">
                 <p className="text-xl mb-4">{t('system.flowControl')}</p>

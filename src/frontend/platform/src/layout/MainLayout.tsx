@@ -63,23 +63,12 @@ export default function MainLayout() {
 
     // 系统管理员(超管、组超管)
     const isAdmin = useMemo(() => {
-        return user.role?.includes('admin')
+        return user.role === 'admin';
     }, [user])
 
     // 拥有权限管理权限
     const hasGroupAdminRole = useMemo(() => {
-        return user.role?.includes('group_admin')
-    }, [user])
-    
-    // 拥有审批权限
-    const hasAuditRole = useMemo(() => {
-        return user.role?.includes('group_audit')
-    }, [user])
-
-    
-    // 拥有运营权限
-    const hasOperationRole = useMemo(() => {
-        return user.role?.includes('group_operation')
+        return user.role === 'group_admin';
     }, [user])
 
     const isMenu = (menu) => {
@@ -191,7 +180,7 @@ export default function MainLayout() {
                         }
                         {
                             //管理员和审核员和用户组权限管理员 可以看到
-                            (isAdmin || hasGroupAdminRole || hasAuditRole) && <>
+                            (isAdmin || hasGroupAdminRole) && <>
                                 <NavLink to='/log' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
                                     <LogIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.log')}</span>
                                 </NavLink>
@@ -199,7 +188,7 @@ export default function MainLayout() {
                         }
                         {
                             //管理员和运营员和用户组权限管理员 可以看到
-                            (isAdmin || hasGroupAdminRole || hasOperationRole) && <NavLink to='/operation' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                            (isAdmin || hasGroupAdminRole) && <NavLink to='/operation' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
                                 <ApplicationIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">运&nbsp;&nbsp;&nbsp;&nbsp;营</span>
                             </NavLink>
                         }

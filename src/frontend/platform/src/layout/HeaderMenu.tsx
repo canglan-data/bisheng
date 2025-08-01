@@ -13,7 +13,7 @@ export default function HeaderMenu({ }) {
 
     // 系统管理员(超管、组超管)
     const isAdmin = useMemo(() => {
-        return user.role?.includes('admin')
+        return user.role === 'admin';
     }, [user])
 
     if (['/build/apps', '/build/tools', '/build/client'].includes(location.pathname)) {

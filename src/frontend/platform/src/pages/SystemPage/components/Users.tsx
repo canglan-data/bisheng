@@ -149,12 +149,12 @@ export default function Users(params) {
 
     // 系统管理员(超管、组超管)
     const isAdmin = useMemo(() => {
-        return user.role?.split('|').includes('admin');
+        return user.role === 'admin';
     }, [user])
     
     // 拥有权限管理权限
     const hasGroupAdminRole = useMemo(() => {
-        return user.role?.split('|').includes('group_admin')
+        return user.role === 'group_admin';
     }, [user])
 
     const operations = (el) => {

@@ -49,13 +49,13 @@ export default function UserGroups() {
     useEffect(() => {
         const groups = groupsData.map((g: any)=> {
             const group_admins = [...defaultAdminsRef.current, ...g.group_admins];
-            const group_audits = [...defaultAdminsRef.current, ...g.group_audits];
-            const group_operations = [...defaultAdminsRef.current, ...g.group_operations];
+            // const group_audits = [...defaultAdminsRef.current, ...g.group_audits];
+            // const group_operations = [...defaultAdminsRef.current, ...g.group_operations];
             return {
                 ...g,
                 group_admins,
-                group_audits,
-                group_operations
+                // group_audits,
+                // group_operations
             }
         });
         setUserGroups(groups);
@@ -105,8 +105,8 @@ export default function UserGroups() {
                     <TableRow>
                         <TableHead className="w-[200px]">{t('system.groupName')}</TableHead>
                         <TableHead>{t('system.permissionsAdmins')}</TableHead>
-                        <TableHead>{t('system.auditor')}</TableHead>
-                        <TableHead>{t('system.operator')}</TableHead>
+                        {/* <TableHead>{t('system.auditor')}</TableHead>
+                        <TableHead>{t('system.operator')}</TableHead> */}
                         {appConfig.isPro && <TableHead className="w-[150px]">{t('system.flowControl')}</TableHead>}
                         <TableHead className="w-[160px]">上级用户组</TableHead>
                         <TableHead className="w-[160px]">{t('system.changeTime')}</TableHead>
@@ -119,8 +119,8 @@ export default function UserGroups() {
                             <TableCell className="font-medium">{ug.group_name}</TableCell>
                             {/* TODO: admin_user是啥？ zzy */}
                             <TableCell className="break-all">{(ug.admin_user || ug.group_admins).map(el => el.user_name).join(',')}</TableCell>
-                            <TableCell className="break-all">{(ug.admin_user || ug.group_audits).map(el => el.user_name).join(',')}</TableCell>
-                            <TableCell className="break-all">{(ug.admin_user || ug.group_operations).map(el => el.user_name).join(',')}</TableCell>
+                            {/* <TableCell className="break-all">{(ug.admin_user || ug.group_audits).map(el => el.user_name).join(',')}</TableCell>
+                            <TableCell className="break-all">{(ug.admin_user || ug.group_operations).map(el => el.user_name).join(',')}</TableCell> */}
                             {appConfig.isPro && <TableCell>{ug.group_limit ? t('system.limit') : t('system.unlimited')}</TableCell>}
                             <TableCell>{ug.parent_group_path || '无'}</TableCell>
                             <TableCell>{ug.update_time.replace('T', ' ')}</TableCell>
@@ -128,8 +128,8 @@ export default function UserGroups() {
                                 <Button variant="link" onClick={() => setUserGroup({
                                     ...ug,
                                     group_admins: ug.group_admins.slice(defaultAdminsRef.current.length),
-                                    group_audits: ug.group_audits.slice(defaultAdminsRef.current.length),
-                                    group_operations: ug.group_operations.slice(defaultAdminsRef.current.length),
+                                    // group_audits: ug.group_audits.slice(defaultAdminsRef.current.length),
+                                    // group_operations: ug.group_operations.slice(defaultAdminsRef.current.length),
                                 })}
                                     className="px-0 pl-6">{t('edit')}
                                 </Button>

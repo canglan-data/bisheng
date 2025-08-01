@@ -270,20 +270,18 @@ export function delUserGroupApi(group_id) {
 }
 
 // 保存用户组
-export function saveUserGroup(form, admins, audits, operations) {
+export function saveUserGroup(form, admins) {
   console.log('form :>> ', form);
   const { groupName: group_name } = form
   return axios.post(`/api/v1/group/create`, {
     group_name,
     group_admins: admins.map(item => item.value),
-    group_audits: audits.map(item => item.value),
-    group_operations: operations.map(item => item.value),
     parent_id: form.department.id
   });
 }
 
 // 修改用户组
-export function updateUserGroup(id, form, admins, audits, operations) {
+export function updateUserGroup(id, form, admins) {
   const { groupName: group_name } = form
   const a = axios.put(`/api/v1/group/create`, {
     id,
@@ -293,15 +291,7 @@ export function updateUserGroup(id, form, admins, audits, operations) {
     group_id: id,
     user_ids: admins.map(item => item.value)
   })
-  const c = axios.post(`/api/v1/group/set_group_audit`, {
-    group_id: id,
-    user_ids: audits.map(item => item.value)
-  })
-  const d = axios.post(`/api/v1/group/set_group_operation`, {
-    group_id: id,
-    user_ids: operations.map(item => item.value)
-  })
-  return Promise.all([a, b, c, d])
+  return Promise.all([a, b])
 }
 
 
