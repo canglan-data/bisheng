@@ -116,7 +116,7 @@ class DoMain(BaseModel):
     web_scheme: Optional[str] = Field(default="http", description="新的协议")
 
 class Other(BaseModel):
-    operation_expanded_mail_group_code: Optional[str] = Field(default='', description='操作扩展邮件组编码')
+    operation_expanded_mail_group_code: Optional[list[str]] = Field(default='', description='操作扩展邮件组编码')
 
 
 class CeleryConf(BaseModel):

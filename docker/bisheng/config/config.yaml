@@ -105,4 +105,4 @@ domain:
   web_scheme: "http"
 
 other:
-  operation_expanded_mail_group_code: "001|007"
+  operation_expanded_mail_group_code: ["001|007", "001|008"]
