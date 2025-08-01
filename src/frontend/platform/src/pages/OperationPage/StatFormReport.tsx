@@ -138,10 +138,10 @@ export default function StatFormReport({ onBack, onJump }) {
             });
         }
         
-        if (!form.answerTime) {
+        if (!form.answerTime || isNaN(form.answerTime) || !Number.isInteger(form.answerTime) || form.answerTime < 1 || form.answerTime > 100) {
             return message({
                 variant: 'warning',
-                description: '问答次数不可为空',
+                description: '问答次数必须为1-100之间的整数',
             });
         }
         
