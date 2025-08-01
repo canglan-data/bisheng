@@ -234,7 +234,7 @@ const MultiLevelSelect = ({
                             ))}
                         </div>
                     ) : (
-                        <div className="text-gray-600">{placeholder}</div>
+                        <div className="text-gray-500">{placeholder}</div>
                     )}
                     
                     {value.length > 0 && (

@@ -232,7 +232,7 @@ export default function StatFormReport({ onBack, onJump }) {
                     <CardHeader>
                         <CardTitle>
                         <div className="flex gap-2 items-center">
-                            <span className="text-lg"> 统计规则</span>
+                            <span className="text-lg">统计规则</span>
                         </div>
                         </CardTitle>
                     </CardHeader>
@@ -295,7 +295,7 @@ export default function StatFormReport({ onBack, onJump }) {
                             {/* Sender Email */}
                             <label className="text-right font-medium"><span className="text-red-500">*</span>发送邮箱</label>
                             <div className="relative">
-                                <Input type="text" className="pr-40" maxLength={256} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value})} />
+                                <Input type="text" placeholder="请输入发件邮箱地址" className="pr-40" maxLength={64} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value})} />
                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">@aviva-cofco.com.cn</span>
                             </div>
 
@@ -325,9 +325,10 @@ export default function StatFormReport({ onBack, onJump }) {
                                         <div key={index} className="relative">
                                         <Input
                                             type="text"
+                                            placeholder="请输入收件邮箱地址"
                                             className="pr-40"
                                             value={email}
-                                            maxLength={256}
+                                            maxLength={64}
                                             onChange={(e) => {
                                             const newEmails = [...form.receivedEmails];
                                             newEmails[index] = e.target.value;
