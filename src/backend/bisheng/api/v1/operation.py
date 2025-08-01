@@ -209,7 +209,7 @@ async def get_all_group(login_user: UserPayload = Depends(get_login_user),
     groups_res = RoleGroupService().get_group_list(groups)
     # page = 0
     # page_size = 0
-    groups_res = [one for one in groups_res if len(one.parent_group_path.split("|")) <= 1 or one.parent_group_path.startswith(settings.other.operation_expanded_mail_group_code)]
+    groups_res = [one for one in groups_res if len(one.code.split("|")) <= 1 or one.code.startswith(settings.other.operation_expanded_mail_group_code)]
     if page and page_size:
         groups_res = groups_res[(page-1) * page_size:page * page_size]
     if keyword:
