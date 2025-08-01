@@ -4,6 +4,7 @@ from http.client import HTTPException
 from typing import Optional, List
 
 from fastapi import APIRouter, Query, Depends, Request, Body
+from langchain_community.chains.graph_qa.kuzu import remove_prefix
 
 from bisheng.api.errcode.base import UnAuthorizedError
 from bisheng.api.services.audit_log import AuditLogService
@@ -209,7 +210,12 @@ async def get_all_group(login_user: UserPayload = Depends(get_login_user),
     groups_res = RoleGroupService().get_group_list(groups)
     # page = 0
     # page_size = 0
-    groups_res = [one for one in groups_res if len(one.code.split("|")) <= 1 or one.code.startswith(settings.other.operation_expanded_mail_group_code)]
+    def my_remove_prefix(group_code: str, prefixes: list[str]) -> str:
+        for prefix in prefixes:
+            if group_code.startswith(prefix):
+                return group_code.removeprefix(prefix)
+        return group_code
+    groups_res = [one for one in groups_res if len(my_remove_prefix(one.code, settings.other.operation_expanded_mail_group_code).split("|")) <= 1]
     if page and page_size:
         groups_res = groups_res[(page-1) * page_size:page * page_size]
     if keyword:
