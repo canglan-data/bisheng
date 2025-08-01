@@ -24,8 +24,6 @@ class StartNode(BaseNode):
         self.graph_state.history_memory = ConversationBufferWindowMemory(
             k=self.node_params.get('chat_history', 10))
 
-        logger.debug(
-            f"jjxx StartNode init node_data.v:{self.node_data.v} type_v:{type(self.node_data.v)} node_data:{self.node_data}")
 
     def _run(self, unique_id: str) -> Dict[str, Any]:
         if self.node_params['guide_word']:
@@ -35,8 +33,6 @@ class StartNode(BaseNode):
             self.callback_manager.on_guide_question(
                 data=GuideQuestionData(node_id=self.id, unique_id=unique_id,
                                        guide_question=self.node_params['guide_question']))
-
-        logger.debug(f"jjxx StartNode _run node_data.v:{self.node_data.v} type_v:{type(self.node_data.v)} node_data:{self.node_data}")
 
         if not self.node_data.v:
             raise IgnoreException(f'{self.name} -- workflow node is update')

@@ -161,13 +161,13 @@ class RoleGroupService():
 
         if 'position_count' in expand:
             position_count_dict = PermissionService.get_group_position_count_dict(group_ids=group_ids)
-            logger.info(f'jjxx555 group_ids:{group_ids} position_count_dict:{position_count_dict}')
+            # logger.info(f'jjxx555 group_ids:{group_ids} position_count_dict:{position_count_dict}')
             for group in res:
                 self.fill_position_count(group, position_count_dict)
 
         if 'role_count' in expand:
             role_count_dict = PermissionService.get_group_role_count_dict(group_ids=group_ids)
-            logger.info(f'jjxx555 group_ids:{group_ids} role_count_dict:{role_count_dict}')
+            # logger.info(f'jjxx555 group_ids:{group_ids} role_count_dict:{role_count_dict}')
             for group in res:
                 self.fill_role_count(group, role_count_dict)
 
@@ -454,7 +454,6 @@ class RoleGroupService():
                 # 职位已经赋予了
                 logger.debug(f"jjxx set_group_admin user_id:{user_id} user_name:{group_admin_from_position[user_id]['user_name']} position_skipped")
             else:
-                # TODO jjxx 手动增加的，需要记录异常
                 new_user_ids.append(user_id)
 
         user_ids = new_user_ids

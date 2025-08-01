@@ -81,8 +81,6 @@ class RagNode(BaseNode):
         self.init_milvus()
         self.init_es()
 
-        loguru.logger.debug(f'jjxx flag1')
-
         retriever = BishengRetrievalQA.from_llm(
             llm=self._llm,
             vector_store=self._milvus,

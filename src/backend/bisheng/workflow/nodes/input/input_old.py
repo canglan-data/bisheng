@@ -28,8 +28,6 @@ class InputNodeOld(BaseNode):
         # 对话框里输入文件的最大长度，超过这个长度会被截断
         self._dialog_files_length = int(self.node_params.get('dialog_files_content_size', 15000))
 
-        logger.debug(f"jjxx InputNodeOld args:{args} kwargs:{kwargs} node_data:{self.node_data}")
-
         if self.is_dialog_input():
             new_node_params['user_input'] = self.node_params['user_input']
             new_node_params['dialog_files_content'] = self.node_params.get('dialog_files_content', [])

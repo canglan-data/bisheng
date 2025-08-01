@@ -28,8 +28,6 @@ class InputNode(BaseNode):
         if self.node_data.v != 2:
             self.old_input = InputNodeOld(*args, **kwargs)
 
-        logger.debug(f"jjxx InputNode node_data.v:{self.node_data.v} type_v:{type(self.node_data.v)} args:{args} kwargs:{kwargs} node_data:{self.node_data}")
-
         # 记录这个变量是什么类型的
         self._node_params_map = {}
         new_node_params = {}

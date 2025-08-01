@@ -252,10 +252,10 @@ class PermissionService:
                     if code in root_codes:  # 同一根目录
                         new_group_ids.append(g.id)
 
-                logger.debug(f'jjxx get_group_resource_group_ids user:{user.user_name} group_ids:{group_ids} root_codes:{root_codes} new_group_ids:{new_group_ids}')
+                # logger.debug(f'jjxx get_group_resource_group_ids user:{user.user_name} group_ids:{group_ids} root_codes:{root_codes} new_group_ids:{new_group_ids}')
                 group_ids = new_group_ids
 
-        logger.debug(f'jjxx get_group_resource_group_ids user:{user.user_name} group_ids:{group_ids}')
+        # logger.debug(f'jjxx get_group_resource_group_ids user:{user.user_name} group_ids:{group_ids}')
 
         return group_ids
 
