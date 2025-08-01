@@ -215,7 +215,7 @@ async def get_all_group(login_user: UserPayload = Depends(get_login_user),
             if group_code.startswith(prefix):
                 return group_code.removeprefix(prefix)
         return group_code
-    groups_res = [one for one in groups_res if len(my_remove_prefix(one.code, settings.other.operation_expanded_mail_group_code).split("|")) <= 1]
+    groups_res = [one for one in groups_res if my_remove_prefix(one.code, settings.other.operation_expanded_mail_group_code).count('|') <= 1]
     if page and page_size:
         groups_res = groups_res[(page-1) * page_size:page * page_size]
     if keyword:
