@@ -1,5 +1,5 @@
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from http.client import HTTPException
 from typing import Optional, List
 
@@ -181,7 +181,7 @@ async def vital_org_status_config_run(*, request: Request, login_user: UserPaylo
     if not login_user.is_admin():
         return UnAuthorizedError.return_resp()
     try:
-        log = VitalOrgStatsService.send()
+        log = VitalOrgStatsService.send(datetime.today() + timedelta(days=1))
     except Exception as e:
         traceback.print_exc()
         return resp_200(data=str(e))
