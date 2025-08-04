@@ -39,17 +39,36 @@ export async function registerApi(name, pwd, captcha_key?, captcha?) {
 }
 
 // 管理员视角 获取用户列表
-export async function getUsersApi({ name = '', page, pageSize, groupId, roleId }: {
+export async function getUsersApi({ name = '', page, pageSize, groupId, roleId, positions }: {
   name: string,
   page: number,
   pageSize: number,
   groupId?: number[],
   roleId?: number[],
+  positions?: string[]
 }): Promise<{ data: User[]; total: number }> {
   const groupStr = groupId?.reduce((res, id) => `${res}&group_id=${id}`, '') || ''
   const roleStr = roleId?.reduce((res, id) => `${res}&role_id=${id}`, '') || ''
+  const positionStr = positions?.reduce((res, id) => `${res}&position=${id}`, '') || ''
   return await axios.get(
-    `/api/v1/user/list?page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}`
+    `/api/v1/user/list?page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}${positionStr}`
+  );
+}
+
+// 管理员视角 获取用户列表
+export async function getUsersApi_V2({ name = '', page, pageSize, groupId, roleId, positions }: {
+  name: string,
+  page: number,
+  pageSize: number,
+  groupId?: number[],
+  roleId?: number[],
+  positions?: string[]
+}): Promise<{ data: User[]; total: number }> {
+  const groupStr = groupId?.reduce((res, id) => `${res}&group_id=${id}`, '') || ''
+  const roleStr = roleId?.reduce((res, id) => `${res}&role_id=${id}`, '') || ''
+  const positionStr = positions?.reduce((res, id) => `${res}&position=${id}`, '') || ''
+  return await axios.get(
+    `/api/v1/user/list_v2?page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}${positionStr}`
   );
 }
 
@@ -94,6 +113,11 @@ export async function getRolesApi(params: {
 }): Promise<{ data: ROLE[] }> {
   return await axios.get(`/api/v1/group/roles?role_name`, { params, paramsSerializer })
     .then(res => res.data);
+}
+
+// 角色列表
+export async function getRolesCountApi(){
+  return await axios.get(`/api/v1/permission/role_user_count`);
 }
 
 // 角色详情
@@ -234,6 +258,17 @@ export function getUserGroupsApi(config) {
     signal: config?.signal, // 绑定 AbortSignal
   });
 }
+
+// 用户组带数字列表
+export function getUserGroupsCountApi() {
+  return axios.get(`/api/v1/group/tree?expand=role_count`);
+}
+
+// 职位列表筛选项 /api/v1/permission/position_user_count
+export function getUserPositionCountApi() {
+  return axios.get(`/api/v1/permission/position_user_count`);
+}
+
 
 // 获取职位列表
 export function getUserPositionApi() {

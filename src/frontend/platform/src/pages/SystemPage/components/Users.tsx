@@ -3,7 +3,8 @@ import { bsConfirm } from "@/components/bs-ui/alertDialog/useConfirm";
 import { Button } from "@/components/bs-ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/bs-ui/popover";
 import FilterUserGroup from "@/components/bs-ui/select/filter";
-import { getRolesApi, getUserGroupsApi } from "@/controllers/API/user";
+import FilterTreeUserGroup from "@/components/bs-ui/select/treeFilter";
+import { getRolesApi, getRolesCountApi, getUserGroupsApi, getUserGroupsCountApi, getUserPositionCountApi } from "@/controllers/API/user";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SearchInput } from "../../../components/bs-ui/input";
@@ -26,7 +27,7 @@ import UserPwdModal from "@/pages/LoginPage/UserPwdModal";
 import { PlusIcon } from "@/components/bs-icons";
 import CreateUser from "./CreateUser";
 
-function UsersFilter({ options, onChecked, nameKey, placeholder, onFilter }) {
+function UsersFilter({ options, onChecked, nameKey, placeholder, onFilter, byTree = false }) {
     const [open, setOpen] = useState(false)
     const [_value, setValue] = useState([])
     const [searchKey, setSearchKey] = useState('')
@@ -64,19 +65,29 @@ function UsersFilter({ options, onChecked, nameKey, placeholder, onFilter }) {
             <FilterIcon onClick={() => setOpen(!open)} className={_value.length ? 'text-primary ml-3' : 'text-gray-400 ml-3'} />
         </PopoverTrigger>
         <PopoverContent>
-            <FilterUserGroup
-                value={_value}
-                options={_options}
-                nameKey={nameKey}
-                placeholder={placeholder}
-                onChecked={handlerChecked}
-                search={(e) => setSearchKey(e.target.value)}
-                onClearChecked={reset}
-                onOk={filterData}
-            />
+            {byTree ? 
+                <FilterTreeUserGroup
+                    value={_value}
+                    options={_options}
+                    nameKey={nameKey}
+                    placeholder={placeholder}
+                    onChecked={handlerChecked}
+                    search={(e) => setSearchKey(e.target.value)}
+                    onClearChecked={reset}
+                    onOk={filterData}
+                />
+                : <FilterUserGroup
+                    value={_value}
+                    options={_options}
+                    nameKey={nameKey}
+                    placeholder={placeholder}
+                    onChecked={handlerChecked}
+                    search={(e) => setSearchKey(e.target.value)}
+                    onClearChecked={reset}
+                    onOk={filterData}
+            />}
         </PopoverContent>
     </Popover>
-
 }
 
 
@@ -122,14 +133,29 @@ export default function Users(params) {
     // 获取用户组类型数据
     const [userGroups, setUserGroups] = useState([])
     const getUserGoups = async () => {
-        const res: any = await getUserGroupsApi()
+        const res: any = await getUserGroupsCountApi()
+        console.log('res', res);
         setUserGroups(res.records)
     }
     // 获取角色类型数据
     const [roles, setRoles] = useState([])
     const getRoles = async () => {
-        const res: any = await getRolesApi()
-        setRoles(res)
+        const res: any = await getRolesCountApi()
+        const roles = res.map(item => ({
+            ...item,
+            id: item.role_id,
+            role_name: `${item.role_name}(${item.user_count})`,
+        }))
+        setRoles(roles)
+    }
+    const [positions, setPositions] = useState([])
+    const getPositions = async () => {
+        const res: any = await getUserPositionCountApi()
+        const positions = Object.keys(res).map(key => ({
+            position_name: `${key}(${res[key]})`,
+            id: key
+        }))
+        setPositions(positions)
     }
     // 已选项上浮
     const handleGroupChecked = (values) => {
@@ -138,13 +164,17 @@ export default function Users(params) {
     const handleRoleChecked = (values) => {
         setRoles(values)
     }
+    const handlePositionChecked = (values) => {
+        setPositions(values)
+    }
 
     const [openCreate, setOpenCreate] = useState(false)
 
     useEffect(() => {
         getUserGoups()
         getRoles()
-        return () => { setUserGroups([]); setRoles([]) }
+        getPositions()
+        return () => { setUserGroups([]); setRoles([]); setPositions([]) }
     }, [])
 
     // 系统管理员(超管、组超管)
@@ -198,7 +228,18 @@ export default function Users(params) {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[200px]">{t('system.username')}</TableHead>
-                        <TableHead className="w-[200px]">{t('system.userPosition')}</TableHead>
+                        <TableHead className="w-[200px]">
+                            <div className="flex items-center">
+                                {t('system.userPosition')}
+                                <UsersFilter
+                                    options={positions}
+                                    nameKey='position_name'
+                                    onChecked={handlePositionChecked}
+                                    placeholder={t('system.searchUserPositions')}
+                                    onFilter={(ids) => filterData({ positions: ids })}
+                                ></UsersFilter>
+                            </div>
+                        </TableHead>
                         <TableHead>
                             <div className="flex items-center">
                                 {t('system.userGroup')}
@@ -208,6 +249,7 @@ export default function Users(params) {
                                     onChecked={handleGroupChecked}
                                     placeholder={t('system.searchUserGroups')}
                                     onFilter={(ids) => filterData({ groupId: ids })}
+                                    byTree
                                 ></UsersFilter>
                             </div>
                         </TableHead>
