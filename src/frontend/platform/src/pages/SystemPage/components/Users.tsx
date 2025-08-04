@@ -188,10 +188,10 @@ export default function Users(params) {
                 <div className="w-[180px] relative">
                     <SearchInput placeholder={t('system.username')} onChange={(e) => search(e.target.value)}></SearchInput>
                 </div>
-                {user.role === 'admin' && <Button className="flex justify-around" onClick={() => setOpenCreate(true)}>
+                {/* {user.role === 'admin' && <Button className="flex justify-around" onClick={() => setOpenCreate(true)}>
                     <PlusIcon className="text-primary" />
                     <span className="text-[#fff] mx-4">{t('create')}</span>
-                </Button>}
+                </Button>} */}
             </div>
             <Table className="mb-[50px]">
                 {/* <TableCaption>用户列表.</TableCaption> */}

@@ -235,11 +235,14 @@ export function getUserGroupsApi(config) {
   });
 }
 
-// 职位列表
-export function getUserPositionApi(config) {
-  return axios.get(`/api/v1/group/list`, {
-    signal: config?.signal, // 绑定 AbortSignal
-  });
+// 获取职位列表
+export function getUserPositionApi() {
+  return axios.get(`/api/v1/permission/get_group_admin_position`);
+}
+
+// 保存职位列表
+export function saveUserPositionApi(positionObj) {
+  return axios.post(`/api/v1/permission/set_group_admin_position`, positionObj);
 }
 
 // 用户组列表 用于列表页
