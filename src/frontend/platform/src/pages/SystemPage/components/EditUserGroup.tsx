@@ -219,7 +219,7 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
                 id: data.id || res.id, // 修改id:data.id， 创建id：res.id
                 adminUser: users.map(item => item.label).join(','),
                 adminUserId: users.map(item => item.value).join(','),
-                parent_id: form.department.id
+                parent_id: form.department?.id
             }))
         }
 
@@ -242,9 +242,16 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
             const admins = data.group_admins?.map(d => ({ label: d.user_name, value: d.user_id })) || []
             // const auditors = data.group_audits?.map(d => ({ label: d.user_name, value: d.user_id })) || [];
             // const operators = data.group_operations?.map(d => ({ label: d.user_name, value: d.user_id })) || [];
-            
+
             const defaultUsers = res.map(d => ({ label: d.user_name, value: d.user_id }))
-            setLockOptions(defaultUsers.map(el => el.value))
+            const groupAdmins = data.group_admins.reduce((pre, cur) => {
+                if (cur.is_from_position) {
+                    return [...pre, cur.user_id];
+                }
+                return pre;
+            }, [])
+
+            setLockOptions([...defaultUsers.map(el => el.value), ...groupAdmins])
 
             setAdminsSelected([...defaultUsers, ...admins]);
             // setAuditorsSelected([...defaultUsers, ...auditors]);
@@ -261,21 +268,22 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
         queryFn: () => getUserGroupTreeApi()
     });
 
-
     return <div className="max-w-[630px] mx-auto pt-4 h-[calc(100vh-128px)] overflow-y-auto pb-10 scrollbar-hide">
         <div className="font-bold mt-4">
             <p className="text-xl mb-4">{t('system.groupName')}</p>
             <Input placeholder={t('system.userGroupName')} required value={form.groupName} onChange={(e) => setForm({ ...form, groupName: e.target.value })}></Input>
         </div>
-        <div className="font-bold mt-4">
+        {/* 有group_name表示是修改页面 同时有上级用户组 才展示上级用户组 */}
+        {(data.group_name && form.department) && <div className="font-bold mt-4">
             <p className="text-xl mb-4">上级用户组</p>
             <SelectGroup
+                showFullPath
                 disabled={data.group_name}
                 value={form.department}
                 onChange={(department) => setForm({ ...form, department })}
                 options={options}
             />
-        </div>
+        </div>}
         <div className="font-bold mt-12">
             <p className="text-xl mb-4">{t('system.permissionsAdmins')}</p>
             <div className="">

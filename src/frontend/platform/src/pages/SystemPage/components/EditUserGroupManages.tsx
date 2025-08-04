@@ -6,7 +6,7 @@ import AutoPagination from "@/components/bs-ui/pagination/autoPagination";
 import { RadioGroup, RadioGroupItem } from "@/components/bs-ui/radio";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/bs-ui/table";
 import { useToast } from "@/components/bs-ui/toast/use-toast";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/bs-ui/tooltip";
+import { QuestionTooltip, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/bs-ui/tooltip";
 import { locationContext } from "@/contexts/locationContext";
 import { getGroupFlowsApi, saveGroupApi } from "@/controllers/API/pro";
 import { getAdminsApi, getUserGroupTreeApi, getUserPositionApi, saveUserGroup, saveUserPositionApi, updateUserGroup } from "@/controllers/API/user";
@@ -74,7 +74,11 @@ export default function EditUserGroupManages({ onChange }) {
  
     return <div className="max-w-[630px] mx-auto pt-4 h-[calc(100vh-128px)] overflow-y-auto pb-10 scrollbar-hide">
         <div className="font-bold mt-4">
-            <p className="text-xl mb-4">组织架构默认管理员</p>
+            <p className="text-xl mb-4">组织架构默认管理员
+                <QuestionTooltip
+                    content={'选择对应“用户职位”成为组织架构默认管理员，则该用户职位自动管理本部门及其子部门的成员和数据。'}
+                />
+            </p>
             <PositionSelect
                 multiple
                 value={form.positions}

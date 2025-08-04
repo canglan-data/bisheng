@@ -370,7 +370,7 @@ export async function loggedChangePasswordApi(password, new_password): Promise<a
 }
 
 // 用户组树数据
-export async function getUserGroupTreeApi(groupId: string): Promise<any> {
+export async function getUserGroupTreeApi(groupId?: string): Promise<any> {
   return axios.get(`/api/v1/group/tree`, { params: { group_id: groupId } });
 }
 
