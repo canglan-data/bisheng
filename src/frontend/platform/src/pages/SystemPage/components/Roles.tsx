@@ -65,6 +65,8 @@ export default function Roles() {
     const { t } = useTranslation();
     const [state, dispatch] = useReducer(reducer, initialState);
     const allRolesRef = useRef<ROLE[]>([]);
+    const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([])
+    const [selectedPositionIds, setSelectedPositionIds] = useState<string[]>([])
 
     const loadData = useCallback(async () => {
         const inputDom = document.getElementById('role-input') as HTMLInputElement;
@@ -72,13 +74,16 @@ export default function Roles() {
             inputDom.value = '';
         }
         try {
-            const data:any = await getRolesByGroupApi('', [state.group]);
+            // 使用通过onFilter回调获取的筛选条件
+            console.log('selectedOrgIds', selectedOrgIds);
+            
+            const data:any = await getRolesByGroupApi('', selectedOrgIds, false, selectedPositionIds);
             dispatch({ type: 'SET_ROLES', payload: data });
             allRolesRef.current = data;
         } catch (error) {
             console.error(error);
         }
-    }, [state.group]);
+    }, [state.group, selectedPositionIds, selectedOrgIds]);
 
     useEffect(() => {
         getUserGroupsApi().then((res:any) => {
@@ -114,9 +119,10 @@ export default function Roles() {
         dispatch({ type: 'SET_SEARCH_WORD', payload: word });
         dispatch({ type: 'SET_ROLES', payload: allRolesRef.current.filter(item => item.role_name.toUpperCase().includes(word.toUpperCase())) });
     };
+    // 当筛选条件变化时重新加载数据
     useEffect(() => {
         loadData()
-    }, [state.group])
+    }, [state.group, selectedPositionIds, selectedOrgIds])
 
     const [keyWord, setKeyWord] = useState('')
     const options = useMemo(() => {
@@ -130,10 +136,6 @@ export default function Roles() {
         const res: any = await getUserGroupsCountApi()
         setUserGroups(res)
     }
-    // 已选项上浮
-    const handleGroupChecked = (values) => {
-        setUserGroups(values)
-    }
     
     const [positions, setPositions] = useState([])
     const getPositions = async () => {
@@ -144,9 +146,6 @@ export default function Roles() {
             id: key
         }))
         setPositions(positions)
-    }
-    const handlePositionChecked = (values) => {
-        setPositions(values)
     }
 
     useEffect(() => {
@@ -171,8 +170,8 @@ export default function Roles() {
     return (
         <div className="relative">
             <div className="h-[calc(100vh-128px)] overflow-y-auto pt-2 pb-10">
-                <div className="flex justify-between">
-                    <div className="flex items-center">
+                <div className="flex justify-end">
+                    {/* <div className="flex items-center">
                         <Label>{t('system.currentGroup')}</Label>
                         <SelectSearch value={state.group} options={options} selectPlaceholder={t('system.defaultGroup')} 
                         inputPlaceholder={t('log.selectUserGroup')}
@@ -185,7 +184,7 @@ export default function Roles() {
                         }}
                         onChange={e => setKeyWord(e.target.value)}
                         />
-                    </div>
+                    </div> */}
                     <div className="flex gap-6 items-center justify-between">
                         <div className="w-[180px] relative">
                             <SearchInput id="role-input" placeholder={t('system.roleName')} onChange={handleSearch} />
@@ -203,25 +202,30 @@ export default function Roles() {
                             <div className="flex items-center">
                                 {t('system.userPosition')}
                                 <UsersFilter
-                                    options={positions}
-                                    nameKey='position_name'
-                                    onChecked={handlePositionChecked}
-                                    placeholder={t('system.searchUserPositions')}
-                                    onFilter={(ids) => {}}
-                                ></UsersFilter>
+                                        options={positions}
+                                        nameKey='position_name'
+                                        placeholder={t('system.searchUserPositions')}
+                                        onChecked={(values) => setPositions(values)}
+                                        onFilter={(ids) => {
+                                                setSelectedPositionIds(ids);
+                                            }}
+                                    ></UsersFilter>
                                 </div>
                             </TableHead>
                             <TableHead>
                                 <div className="flex items-center">
                                     {t('system.userGroup')}
                                     <UsersFilter
-                                        options={userGroups}
-                                        nameKey='group_name'
-                                        onChecked={handleGroupChecked}
-                                        placeholder={t('system.searchUserGroups')}
-                                        onFilter={(ids) => {}}
-                                        byTree
-                                    ></UsersFilter>
+                                            options={userGroups}
+                                            nameKey='group_name'
+                                            placeholder={t('system.searchUserGroups')}
+                                            onChecked={(values) => setUserGroups(values)}
+                                            onFilter={(ids) => {
+                                                console.log('ids', ids);
+                                                setSelectedOrgIds(ids);
+                                            }}
+                                            byTree
+                                        ></UsersFilter>
                                 </div>
                             </TableHead>
                             <TableHead>{t('createTime')}</TableHead>

@@ -51,24 +51,8 @@ export async function getUsersApi({ name = '', page, pageSize, groupId, roleId, 
   const roleStr = roleId?.reduce((res, id) => `${res}&role_id=${id}`, '') || ''
   const positionStr = positions?.reduce((res, id) => `${res}&position=${id}`, '') || ''
   return await axios.get(
-    `/api/v1/user/list?page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}${positionStr}`
-  );
-}
-
-// 管理员视角 获取用户列表
-export async function getUsersApi_V2({ name = '', page, pageSize, groupId, roleId, positions }: {
-  name: string,
-  page: number,
-  pageSize: number,
-  groupId?: number[],
-  roleId?: number[],
-  positions?: string[]
-}): Promise<{ data: User[]; total: number }> {
-  const groupStr = groupId?.reduce((res, id) => `${res}&group_id=${id}`, '') || ''
-  const roleStr = roleId?.reduce((res, id) => `${res}&role_id=${id}`, '') || ''
-  const positionStr = positions?.reduce((res, id) => `${res}&position=${id}`, '') || ''
-  return await axios.get(
-    `/api/v1/user/list_v2?page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}${positionStr}`
+    `/api/v1/user/list_v2?expand=roles&expand=groups&page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}${positionStr}`
+    // `/api/v1/user/list?page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}${positionStr}`
   );
 }
 
@@ -85,7 +69,7 @@ export async function getUsersApiForUser({ name = '', page, pageSize, groupId, r
   const roleStr = roleId?.reduce((res, id) => `${res}&role_id=${id}`, '') || ''
   const role = isAudit ? 'audit' : 'operation';
   return await axios.get(
-    `/api/v1/user/list?group_role_type=${role}&page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}`
+    `/api/v1/user/list_v2?expand=roles&expand=groups&group_role_type=${role}&page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}`
   );
 }
 
@@ -104,18 +88,6 @@ export async function disableUserApi(userid, status) {
   });
 }
 // 角色列表
-export async function getRolesApi(params: {
-  group_id: string[],
-  keyword: string,
-  include_parent: boolean,
-  page: number,
-  limit: number
-}): Promise<{ data: ROLE[] }> {
-  return await axios.get(`/api/v1/group/roles?role_name`, { params, paramsSerializer })
-    .then(res => res.data);
-}
-
-// 角色列表
 export async function getRolesCountApi(){
   return await axios.get(`/api/v1/permission/role_user_count`);
 }
@@ -125,9 +97,16 @@ export async function getRoleDetailApi(roleId: number) {
   return await axios.get(`/api/v1/role/${roleId}`)
 }
 // 用户组下角色列表
-export async function getRolesByGroupApi(searchkey = "", groupIds: any[], include_parent: boolean = false): Promise<{ data: ROLE[] }> {
-  const groupStr = groupIds?.reduce((pre, id) => `${pre}&group_id=${id}`, '') || ''
-  return await axios.get(`/api/v1/group/roles?keyword=${searchkey}${groupStr}&include_parent=${include_parent}`)
+export async function getRolesByGroupApi(
+  searchkey = "", 
+  groupIds: any[], 
+  include_parent: boolean = false,
+  positionIds: string[] = []
+): Promise<{ data: ROLE[] }> {
+  const groupStr = groupIds?.reduce((pre, id) => `${pre}&group_id=${id}`, '') || '';
+  const positionStr = positionIds?.reduce((pre, id) => `${pre}&position_id=${id}`, '') || '';
+  
+  return await axios.get(`/api/v1/group/roles?expand=groups&keyword=${searchkey}${groupStr}&include_parent=${include_parent}${positionStr}`)
     .then(res => res.data);
 }
 
@@ -296,9 +275,14 @@ export function getAuditGroupsApi(params: { keyword, page, page_size }) {
   return axios.get(`/api/v1/group/list_audit`, {params});
 }
 
+// exportLogApi
+export function exportLogApi(params: { keyword, page, page_size }) {
+  return axios.get(`/api/v1/group/list_audit`, {params});
+}
+
 // 运营视角获取用户组列表
 export function getOperationGroupsApi(params: { keyword, page, page_size }) {
-  return axios.get(`/api/v1/group/list_operation`, {params});
+  return axios.get(`/api/v1/group/list_operation?export=1`, {params});
 }
 
 // 删除用户组post
