@@ -73,7 +73,7 @@ export default function SystemLog() {
             end: endTime
         }).then(res => {
             const fileUrl = res.file;
-            downloadFile(checkSassUrl(fileUrl), `系统操作${formatDate(new Date(), 'yyyy-MM-dd')}.xlsx`);
+            downloadFile(__APP_ENV__.BASE_URL + fileUrl, `系统操作${formatDate(new Date(), 'yyyy-MM-dd')}.xlsx`);
         })
     }
     useEffect(() => {
