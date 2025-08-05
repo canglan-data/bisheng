@@ -4,7 +4,7 @@ import { Button } from "@/components/bs-ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/bs-ui/popover";
 import FilterUserGroup from "@/components/bs-ui/select/filter";
 import FilterTreeUserGroup from "@/components/bs-ui/select/treeFilter";
-import { getRolesApi, getRolesCountApi, getUserGroupsApi, getUserGroupsCountApi, getUserPositionCountApi } from "@/controllers/API/user";
+import { getRolesCountApi, getUserGroupsApi, getUserGroupsCountApi, getUserPositionCountApi } from "@/controllers/API/user";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SearchInput } from "../../../components/bs-ui/input";
@@ -134,8 +134,7 @@ export default function Users(params) {
     const [userGroups, setUserGroups] = useState([])
     const getUserGoups = async () => {
         const res: any = await getUserGroupsCountApi()
-        console.log('res', res);
-        setUserGroups(res.records)
+        setUserGroups(res)
     }
     // 获取角色类型数据
     const [roles, setRoles] = useState([])
