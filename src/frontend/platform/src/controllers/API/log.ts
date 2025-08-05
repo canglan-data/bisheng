@@ -31,7 +31,7 @@ export async function getLogsApi({ page, pageSize, userIds, groupId = '', start,
     const uids = userIds?.reduce((pre, val) => `${pre}&operator_ids=${val}`, '') || ''
     const startStr = start ? `&start_time=${start}` : ''
     const endStr = end ? `&end_time=${end}` : ''
-    const monitorStr = params.monitorResult?.reduce((pre, val) => `${pre}&monitor_result=${val}`, '') || ''
+    const monitorStr = monitorResult?.reduce((pre, val) => `${pre}&monitor_result=${val}`, '') || ''
     return await axios.get(
         `/api/v1/audit?page=${page}&limit=${pageSize}&group_ids=${groupId}${uids}` +
         `&system_id=${moduleId}&event_type=${action}` + startStr + endStr + monitorStr
