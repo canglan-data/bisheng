@@ -14,11 +14,12 @@ import {
     TableHeader,
     TableRow
 } from "../../../components/bs-ui/table";
-import { delRoleApi, getRolesByGroupApi, getUserGroupsApi } from "../../../controllers/API/user";
+import { delRoleApi, getRolesByGroupApi, getUserGroupsApi, getUserGroupsCountApi, getUserPositionCountApi } from "../../../controllers/API/user";
 import { captureAndAlertRequestErrorHoc } from "../../../controllers/request";
 import { ROLE } from "../../../types/api/user";
 import EditRole from "./EditRole";
 import SelectSearch from "@/components/bs-ui/select/select"
+import { UsersFilter } from "./UserFilter";
 
 interface State {
     roles: ROLE[];
@@ -123,6 +124,37 @@ export default function Roles() {
         return state.groups.filter(group => group.label.toUpperCase().includes(keyWord.toUpperCase()) || group.value === state.group)
     }, [keyWord, state.group])
 
+    // 获取用户组类型数据
+    const [userGroups, setUserGroups] = useState([])
+    const getUserGoups = async () => {
+        const res: any = await getUserGroupsCountApi()
+        setUserGroups(res)
+    }
+    // 已选项上浮
+    const handleGroupChecked = (values) => {
+        setUserGroups(values)
+    }
+    
+    const [positions, setPositions] = useState([])
+    const getPositions = async () => {
+        const res: any = await getUserPositionCountApi()
+        const positions = Object.keys(res).map(key => ({
+            // position_name: `${key}(${res[key]})`,
+            position_name: `${key}`,
+            id: key
+        }))
+        setPositions(positions)
+    }
+    const handlePositionChecked = (values) => {
+        setPositions(values)
+    }
+
+    useEffect(() => {
+        getUserGoups()
+        getPositions()
+        return () => { setUserGroups([]); setPositions([]) }
+    }, [])
+
     if (state.role) {
         return <EditRole
             id={state.role.id || -1}
@@ -167,7 +199,31 @@ export default function Roles() {
                 <Table className="mb-10">
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[200px]">{t('system.roleName')}</TableHead>
+                            <TableHead className="w-[200px]">{t('system.roleName')}</TableHead><TableHead className="w-[200px]">
+                            <div className="flex items-center">
+                                {t('system.userPosition')}
+                                <UsersFilter
+                                    options={positions}
+                                    nameKey='position_name'
+                                    onChecked={handlePositionChecked}
+                                    placeholder={t('system.searchUserPositions')}
+                                    onFilter={(ids) => {}}
+                                ></UsersFilter>
+                                </div>
+                            </TableHead>
+                            <TableHead>
+                                <div className="flex items-center">
+                                    {t('system.userGroup')}
+                                    <UsersFilter
+                                        options={userGroups}
+                                        nameKey='group_name'
+                                        onChecked={handleGroupChecked}
+                                        placeholder={t('system.searchUserGroups')}
+                                        onFilter={(ids) => {}}
+                                        byTree
+                                    ></UsersFilter>
+                                </div>
+                            </TableHead>
                             <TableHead>{t('createTime')}</TableHead>
                             <TableHead className="text-right">{t('operations')}</TableHead>
                         </TableRow>
@@ -176,6 +232,8 @@ export default function Roles() {
                         {state.roles.map(el => (
                             <TableRow key={el.id}>
                                 <TableCell className="font-medium">{el.role_name}</TableCell>
+                                <TableCell>{el.positions.join(',')}</TableCell>
+                                <TableCell className="break-all">{(el.groups || []).map(el => el.group_name).join(',')}</TableCell>
                                 <TableCell>{el.create_time.replace('T', ' ')}</TableCell>
                                 <TableCell className="text-right">
                                     <Button variant="link" onClick={() => dispatch({ type: 'SET_ROLE', payload: el })} className="px-0 pl-6">{t('edit')}</Button>
