@@ -5,15 +5,16 @@ import AutoPagination from "@/components/bs-ui/pagination/autoPagination";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/bs-ui/select";
 import MultiSelect from "@/components/bs-ui/select/multi";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/bs-ui/table";
-import { getActionsApi, getActionsByModuleApi, getLogsApi, getModulesApi, getOperatorsApi } from "@/controllers/API/log";
+import { getActionsApi, getActionsByModuleApi, getLogsApi, getModulesApi, getOperatorsApi, exportLogApi } from "@/controllers/API/log";
 import { getAuditGroupsApi, getUserGroupsApi } from "@/controllers/API/user";
 import { useTable } from "@/util/hook";
-import { formatDate } from "@/util/utils";
+import { downloadFile, formatDate } from "@/util/utils";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { transformEvent, transformModule, transformObjectType } from "../utils";
 import { LoadingIcon } from "@/components/bs-icons/loading";
 import { X } from "lucide-react";
+import { checkSassUrl } from "@/components/bs-comp/FileView";
 
 const useGroups = () => {
     const [groups, setGroups] = useState([])
@@ -44,7 +45,8 @@ export default function SystemLog() {
         start: undefined,
         end: undefined,
         moduleId: '',
-        action: ''
+        action: '',
+        monitorResult: []
     }
 
     const [actions, setActions] = useState<any[]>([])
@@ -56,23 +58,34 @@ export default function SystemLog() {
     const handleSearch = () => {
         const startTime = keys.start && formatDate(keys.start, 'yyyy-MM-dd HH:mm:ss')
         const endTime = keys.end && formatDate(keys.end, 'yyyy-MM-dd HH:mm:ss').replace('00:00:00', '23:59:59')
-        filterData({ ...keys, start: startTime, end: endTime })
+        filterData({ ...keys, start: startTime, end: endTime, monitorResult: keys.monitorResult })
     }
     const handleReset = () => {
         setKeys({ ...init })
         filterData(init)
     }
     const handleExport = () => {
-        //TODO: 待补充导出逻辑
-        // exportLogApi({
-        //     ...keys,
-        //     start: keys.start && formatDate(keys.start, 'yyyy-MM-dd HH:mm:ss'),
-        //     end: keys.end && formatDate(keys.end, 'yyyy-MM-dd HH:mm:ss').replace('00:00:00', '23:59:59')
-        // })
+        const startTime = keys.start && formatDate(keys.start, 'yyyy-MM-dd HH:mm:ss')
+        const endTime = keys.end && formatDate(keys.end, 'yyyy-MM-dd HH:mm:ss').replace('00:00:00', '23:59:59')
+        exportLogApi({
+            ...keys,
+            start: startTime,
+            end: endTime
+        }).then(res => {
+            const fileUrl = res.file;
+            downloadFile(checkSassUrl(fileUrl), `系统操作${formatDate(new Date(), 'yyyy-MM-dd')}.xlsx`);
+        })
     }
     useEffect(() => {
         loadUsers()
     }, [])
+
+    {/* 定义操作监测结果映射 */}
+    const monitorResultMap = {
+        pass: t('log.pass'),
+        set_group_admin: t('log.setGroupAdmin'),
+        not_work_time: t('log.notWorkTime')
+    };
 
     return <div className="relative">
         {loading && (
@@ -134,7 +147,6 @@ export default function SystemLog() {
                 </SelectContent>
                 </Select>
                 </div>
-                {/* TODO： 用户职位 */}
                 <div className="w-[180px] relative">
                     <DatePicker value={keys.start} placeholder={t('log.startDate')} onChange={(t) => setKeys({ ...keys, start: t })} />
                 </div>
@@ -238,17 +250,34 @@ export default function SystemLog() {
                 </Select>
                 </div>
                 
-                {/* TODO： 操作监测 */}
+                {keys.moduleId === 'system' && (
+                <div className="w-[180px] relative">
+                <MultiSelect 
+                    contentClassName="overflow-y-auto max-w-[180px]" 
+                    multiple
+                    options={[
+                        { label: t('log.pass'), value: 'pass' },
+                        { label: t('log.setGroupAdmin'), value: 'set_group_admin' },
+                        { label: t('log.notWorkTime'), value: 'not_work_time' }
+                    ]}
+                    value={keys.monitorResult}
+                    placeholder={t('log.operationMonitor')}
+                    onChange={(values) => setKeys({ ...keys, monitorResult: values })}
+                ></MultiSelect>
+                </div>
+                )}
                 <div>
                     <Button className="mr-3 px-6" onClick={handleSearch}>
                         {t('log.searchButton')}
                     </Button>
-                    <Button variant="outline" className="px-6" onClick={handleReset}>
+                    <Button variant="outline" className="mr-3 px-6" onClick={handleReset}>
                         {t('log.resetButton')}
                     </Button>
-                    <Button className="mr-3 px-6" onClick={handleExport}>
-                        {'导出'}
+                    {keys.moduleId === 'system' && (
+                    <Button className="px-6" onClick={handleExport}>
+                        {t('log.exportButton')}
                     </Button>
+                    )}
                 </div>
             </div>
             <Table className="mb-[50px]">
@@ -256,6 +285,9 @@ export default function SystemLog() {
                     <TableRow>
                         <TableHead className="w-[200px]">{t('log.auditId')}</TableHead>
                         <TableHead className="w-[200px] min-w-[100px]">{t('log.username')}</TableHead>
+                        <TableHead className="w-[150px] min-w-[100px]">{t('log.userRole')}</TableHead>
+                        <TableHead className="w-[150px] min-w-[100px]">{t('log.userGroup')}</TableHead>
+                        <TableHead className="w-[150px] min-w-[100px]">{t('log.userPosition')}</TableHead>
                         <TableHead className="w-[200px] min-w-[100px]">{t('log.operationTime')}</TableHead>
                         <TableHead className="w-[100px] min-w-[100px]">{t('log.systemModule')}</TableHead>
                         <TableHead className="w-[150px] min-w-[100px]">{t('log.operationAction')}</TableHead>
@@ -263,6 +295,7 @@ export default function SystemLog() {
                         <TableHead className="w-[200px] min-w-[100px]">{t('log.operationObject')}</TableHead>
                         <TableHead className="w-[150px]">{t('log.ipAddress')}</TableHead>
                         <TableHead className="w-[250px] min-w-[250px]">{t('log.remark')}</TableHead>
+                        <TableHead className="w-[150px] min-w-[100px]">{t('log.operationMonitor')}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -270,6 +303,9 @@ export default function SystemLog() {
                         <TableRow key={log.id}>
                             <TableCell>{log.id}</TableCell>
                             <TableCell><div className="max-w-[200px] break-all truncate-multiline">{log.operator_name}</div></TableCell>
+                            <TableCell>{log.operator_info?.roles.join(',') || '无'}</TableCell>
+                            <TableCell>{log.operator_info?.groups.join(',') || '无'}</TableCell>
+                            <TableCell>{log.operator_info?.position || '无'}</TableCell>
                             <TableCell>{log.create_time.replace('T', ' ')}</TableCell>
                             <TableCell>{transformModule(log.system_id)}</TableCell>
                             <TableCell>{transformEvent(log.event_type)}</TableCell>
@@ -279,6 +315,7 @@ export default function SystemLog() {
                             <TableCell className="max-w-[250px]">
                                 <div className="whitespace-pre-line break-all">{log.note?.replace('编辑后', `\n编辑后`) || '无'}</div>
                             </TableCell>
+                            <TableCell>{log.monitor_result ? log.monitor_result.map(item => monitorResultMap[item] || '无').join(',') : '无'}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>

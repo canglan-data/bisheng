@@ -17,7 +17,7 @@ export async function getOperationGroupsApi(params: { keyword, page, page_size }
 }
 
 // 分页获取审计列表
-export async function getLogsApi({ page, pageSize, userIds, groupId = '', start, end, moduleId = '', action = '' }: {
+export async function getLogsApi({ page, pageSize, userIds, groupId = '', start, end, moduleId = '', action = '', monitorResult = [] }: {
     page: number,
     pageSize: number,
     userIds?: number[],
@@ -25,14 +25,16 @@ export async function getLogsApi({ page, pageSize, userIds, groupId = '', start,
     start?: string,
     end?: string,
     moduleId?: string,
-    action?: string
+    action?: string,
+    monitorResult?: string[]
 }): Promise<{ data: any[], total: number }> {
     const uids = userIds?.reduce((pre, val) => `${pre}&operator_ids=${val}`, '') || ''
     const startStr = start ? `&start_time=${start}` : ''
     const endStr = end ? `&end_time=${end}` : ''
+    const monitorStr = params.monitorResult?.reduce((pre, val) => `${pre}&monitor_result=${val}`, '') || ''
     return await axios.get(
         `/api/v1/audit?page=${page}&limit=${pageSize}&group_ids=${groupId}${uids}` +
-        `&system_id=${moduleId}&event_type=${action}` + startStr + endStr
+        `&system_id=${moduleId}&event_type=${action}` + startStr + endStr + monitorStr
     )
 }
 
@@ -109,7 +111,10 @@ export async function getActionsByModuleApi(moduleId) {
         case 'chat': return actions.filter(a => a.value.includes('chat'))
         case 'build': return actions.filter(a => a.value.includes('build'))
         case 'knowledge': return actions.filter(a => a.value.includes('knowledge') || a.value.includes('file'))
-        case 'system': return actions.filter(a => a.value.includes('user') || a.value.includes('role'))
+        case 'system': return actions.filter(a => 
+            (a.value.includes('user') || a.value.includes('role')) && 
+            !a.value.includes('user_group')
+        )
     }
 }
 
@@ -227,6 +232,25 @@ export async function getGroupsApi(
 //         params, paramsSerializer
 //     })
 // }
+
+// 导出审计日志
+export async function exportLogApi(params: {
+    userIds?: number[],
+    groupId?: string,
+    start?: string,
+    end?: string,
+    moduleId?: string,
+    action?: string,
+    monitorResult?: string[]
+}) {
+    const uids = params.userIds?.reduce((pre, val) => `${pre}&operator_ids=${val}`, '') || ''
+    const startStr = params.start ? `&start_time=${params.start}` : ''
+    const endStr = params.end ? `&end_time=${params.end}` : ''
+    const monitorStr = params.monitorResult?.reduce((pre, val) => `${pre}&monitor_result=${val}`, '') || ''
+    return await axios.get(
+        `/api/v1/audit?export=1${uids}&group_ids=${params.groupId || ''}` +
+        `&system_id=${params.moduleId || ''}&event_type=${params.action || ''}` + startStr + endStr + monitorStr)
+}
 
 // 导出csv
 

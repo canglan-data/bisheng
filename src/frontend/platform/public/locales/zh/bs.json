@@ -756,7 +756,19 @@
     "qaContent": "QA 内容",
     "empty": "空空如也",
     "selectQaLib": "请选择 QA 知识库",
-    "detailedSession": "详细会话"
+    "detailedSession": "详细会话",
+    "monitorResult": "操作监测",
+    "roleName": "角色名称",
+    "groupName": "组织架构",
+    "positionName": "职位",
+    "exportButton": "导出",
+    "pass": "通过",
+    "setGroupAdmin": "添加非组织架构管理员",
+    "notWorkTime": "非工作时间",
+    "operationMonitor": "操作监测",
+    "userRole": "用户角色",
+    "userGroup": "用户组织架构",
+    "userPosition": "用户职位"
   },
   "operation": {
       "appUsageRecord": "应用使用记录"
