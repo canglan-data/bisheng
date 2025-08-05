@@ -1,3 +1,4 @@
+// 审计系统操作页面
 import { Button } from "@/components/bs-ui/button";
 import { DatePicker } from "@/components/bs-ui/calendar/datePicker";
 import AutoPagination from "@/components/bs-ui/pagination/autoPagination";
@@ -60,6 +61,14 @@ export default function SystemLog() {
     const handleReset = () => {
         setKeys({ ...init })
         filterData(init)
+    }
+    const handleExport = () => {
+        //TODO: 待补充导出逻辑
+        // exportLogApi({
+        //     ...keys,
+        //     start: keys.start && formatDate(keys.start, 'yyyy-MM-dd HH:mm:ss'),
+        //     end: keys.end && formatDate(keys.end, 'yyyy-MM-dd HH:mm:ss').replace('00:00:00', '23:59:59')
+        // })
     }
     useEffect(() => {
         loadUsers()
@@ -125,6 +134,7 @@ export default function SystemLog() {
                 </SelectContent>
                 </Select>
                 </div>
+                {/* TODO： 用户职位 */}
                 <div className="w-[180px] relative">
                     <DatePicker value={keys.start} placeholder={t('log.startDate')} onChange={(t) => setKeys({ ...keys, start: t })} />
                 </div>
@@ -227,12 +237,17 @@ export default function SystemLog() {
                 </SelectContent>
                 </Select>
                 </div>
+                
+                {/* TODO： 操作监测 */}
                 <div>
                     <Button className="mr-3 px-6" onClick={handleSearch}>
                         {t('log.searchButton')}
                     </Button>
                     <Button variant="outline" className="px-6" onClick={handleReset}>
                         {t('log.resetButton')}
+                    </Button>
+                    <Button className="mr-3 px-6" onClick={handleExport}>
+                        {'导出'}
                     </Button>
                 </div>
             </div>

@@ -198,13 +198,17 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             <p className="text-xl mb-4">{t('system.roleName')}</p>
             <Input placeholder={t('system.roleName')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={60} showCount></Input>
         </div>
-        <div className="font-bold mt-4">
+        {/* <div className="font-bold mt-4">
             <p className="text-xl mb-4">人员范围</p>
             <div className="mb-4">
                 <Switch checked={form.bingAll} onCheckedChange={(b) => setForm({ ...form, bingAll: b })} />
                 <span className="ml-2 bisheng-label">对本组以及所有子用户组中的用户赋予角色</span>
             </div>
             {!form.bingAll && <SelectUserByGroup value={form.users} groupId={groupId} onChange={(users) => setForm({ ...form, users })} />}
+        </div> */}
+         <div className="font-bold mt-4">
+            <p className="text-xl mb-4">适用组织架构范围</p>
+            {<SelectUserByGroup value={form.users} groupId={groupId} onChange={(users) => setForm({ ...form, users })} />}
         </div>
         <div>
             <div className="mt-20 flex justify-between items-center relative">
