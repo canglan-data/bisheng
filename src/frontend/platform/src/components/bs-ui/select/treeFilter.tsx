@@ -1,15 +1,9 @@
 import React from 'react';
 import { useState, useRef } from "react";
-import { Select, SelectContent, SelectTrigger } from ".";
-
-import { X, ChevronRight, FilterIcon } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Button } from '@/components/bs-ui/button';
 import { SearchInput } from '@/components/bs-ui/input';
-import * as SelectPrimitive from '@radix-ui/react-select';
 import { Checkbox } from "@/components/bs-ui/checkBox";
-import { Badge } from "@/components/bs-ui/badge";
-import { cname } from "@/components/bs-ui/utils";
-import { generateUUID } from "@/utils";
 import { useTranslation } from "react-i18next";
 
 // 定义组件的 props 类型
@@ -49,9 +43,118 @@ const FilterTreeUserGroup: React.FC<TreeFilterUserGroupProps> = ({
     search(e);
   };
 
+  // 获取节点的所有子孙节点ID
+  const getAllDescendantIds = (node: any): string[] => {
+    let ids: string[] = [];
+    if (node.children && node.children.length > 0) {
+      node.children.forEach((child: any) => {
+        ids.push(child.id);
+        ids = ids.concat(getAllDescendantIds(child));
+      });
+    }
+    return ids;
+  };
+
+  // 获取节点的所有祖先节点ID
+  const getAllAncestorIds = (nodeId: string, nodes: any[]): string[] => {
+    const findAncestors = (id: string, nodeList: any[]): string[] => {
+      for (const node of nodeList) {
+        if (node.children && node.children.some((child: any) => child.id === id)) {
+          return [node.id, ...findAncestors(node.id, nodeList)];
+        }
+        if (node.children) {
+          const ancestors = findAncestors(id, node.children);
+          if (ancestors.length > 0) {
+            return [node.id, ...ancestors];
+          }
+        }
+      }
+      return [];
+    };
+    return findAncestors(nodeId, nodes);
+  };
+
+  // 查找节点
+  const findNode = (nodeId: string, nodes: any[]): any => {
+    for (const node of nodes) {
+      if (node.id === nodeId) return node;
+      if (node.children) {
+        const found = findNode(nodeId, node.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  // 检查节点的所有子节点是否都被选中（包括子节点的子孙节点）
+  const areAllChildrenSelected = (node: any, selectedIds: string[]): boolean => {
+    if (!node.children || node.children.length === 0) return false;
+    return node.children.every(child => {
+      // 检查子节点是否被选中，或者其子节点是否都被选中
+      return selectedIds.includes(child.id) || areAllChildrenSelected(child, selectedIds);
+    });
+  };
+
+  // 检查节点的所有子孙节点是否都被选中
+  const areAllDescendantsSelected = (node: any, selectedIds: string[]): boolean => {
+    const allDescendants = getAllDescendantIds(node);
+    // 如果没有子孙节点，则不自动选中
+    if (allDescendants.length === 0) return false;
+    return allDescendants.every(id => selectedIds.includes(id));
+  };
+
   // 处理选择/取消选择
   const handleSelect = (node: any) => {
-    onChecked(node.id);
+    const isSelected = value.includes(node.id);
+    let newSelectedIds = [...value];
+    
+    if (isSelected) {
+      // 取消选中节点
+      newSelectedIds = newSelectedIds.filter(id => id !== node.id);
+      
+      // 取消该节点的所有子孙节点
+      const descendantIds = getAllDescendantIds(node);
+      newSelectedIds = newSelectedIds.filter(id => !descendantIds.includes(id));
+      
+      // 递归取消祖先节点的选中状态
+      const ancestorIds = getAllAncestorIds(node.id, options);
+      ancestorIds.forEach(ancestorId => {
+        const ancestorNode = findNode(ancestorId, options);
+        if (ancestorNode && !areAllChildrenSelected(ancestorNode, newSelectedIds)) {
+          newSelectedIds = newSelectedIds.filter(id => id !== ancestorId);
+        }
+      });
+    } else {
+      // 选中节点
+      newSelectedIds.push(node.id);
+      
+      // 选中该节点的所有子孙节点
+      const descendantIds = getAllDescendantIds(node);
+      descendantIds.forEach(id => {
+        if (!newSelectedIds.includes(id)) {
+          newSelectedIds.push(id);
+        }
+      });
+      
+      // 检查是否需要自动选中祖先节点
+      const ancestorIds = getAllAncestorIds(node.id, options);
+      ancestorIds.forEach(ancestorId => {
+        const ancestorNode = findNode(ancestorId, options);
+        if (ancestorNode && areAllChildrenSelected(ancestorNode, newSelectedIds)) {
+          if (!newSelectedIds.includes(ancestorId)) {
+            newSelectedIds.push(ancestorId);
+          }
+        }
+      });
+    }
+    
+    // 计算选中状态变化
+    const addedIds = newSelectedIds.filter(id => !value.includes(id));
+    const removedIds = value.filter(id => !newSelectedIds.includes(id));
+    
+    // 触发相应的选中和取消选中事件
+    addedIds.forEach(id => onChecked(id));
+    removedIds.forEach(id => onChecked(id));
   };
 
   // 切换展开/折叠状态
@@ -81,7 +184,7 @@ const FilterTreeUserGroup: React.FC<TreeFilterUserGroupProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <Checkbox 
-              checked={isSelected}
+              checked={isSelected || (node.children && areAllDescendantsSelected(node, value))}
               onCheckedChange={() => handleSelect(node)}
             />
             
