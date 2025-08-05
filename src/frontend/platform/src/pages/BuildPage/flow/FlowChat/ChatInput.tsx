@@ -21,7 +21,7 @@ export const FileTypes = {
     ALL: ['.PNG', '.JPEG', '.JPG', '.BMP', '.PDF', '.TXT', '.MD', '.HTML', '.XLS', '.XLSX', '.CSV', '.DOC', '.DOCX', '.PPT', '.PPTX'],
     IMAGE: ['.PNG', '.JPEG', '.JPG', '.BMP'],
     FILE: ['.PDF', '.TXT', '.MD', '.HTML', '.XLS', '.XLSX', '.DOC', '.CSV', '.DOCX', '.PPT', '.PPTX'],
-    AUDIO: ['.MP3', '.AMR', 'WAV', 'AAC'],
+    AUDIO: ['.MP3', '.AMR', '.WAV', '.AAC'],
 }
 
 export default function ChatInput({ autoRun, v = 'v1', clear, form, wsUrl, onBeforSend, onLoad, flow }) {
