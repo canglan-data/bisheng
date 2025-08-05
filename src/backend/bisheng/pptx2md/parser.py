@@ -152,7 +152,10 @@ def process_picture(config: ConversionConfig, shape, slide_idx) -> Union[ImageEl
 
     file_prefix = ''.join(os.path.basename(config.pptx_path).split('.')[:-1])
     pic_name = file_prefix + f'_{picture_count}'
-    pic_ext = shape.image.ext
+    try:
+        pic_ext = shape.image.ext
+    except Exception as err:
+        raise Exception("上传文件中支持的图片格式['bmp', 'gif', 'jpeg', 'png', 'tiff', 'wmf']")
     if not os.path.exists(config.image_dir):
         os.makedirs(config.image_dir)
 
