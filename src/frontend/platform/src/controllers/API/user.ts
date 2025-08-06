@@ -104,7 +104,7 @@ export async function getRolesByGroupApi(
   positionIds: string[] = []
 ): Promise<{ data: ROLE[] }> {
   const groupStr = groupIds?.reduce((pre, id) => `${pre}&group_id=${id}`, '') || '';
-  const positionStr = positionIds?.reduce((pre, id) => `${pre}&position_id=${id}`, '') || '';
+  const positionStr = positionIds?.reduce((pre, id) => `${pre}&position=${id}`, '') || '';
   
   return await axios.get(`/api/v1/group/roles?expand=groups&keyword=${searchkey}${groupStr}&include_parent=${include_parent}${positionStr}`)
     .then(res => res.data);
