@@ -47,7 +47,30 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
       try {
         setLoading(true);
         const response = await getUserGroupPositionCountApi();
-        setDepartments(response || []);
+        // 接口请求后进行过滤，递归移除没有职位且没有子部门的节点
+        const filterTreeData = (data: any[]): any[] => {
+          return data.map(dept => {
+            // 递归过滤子部门
+            let filteredChildren: any[] = [];
+            if (dept.children && dept.children.length > 0) {
+              filteredChildren = filterTreeData(dept.children);
+            }
+            // 检查是否有职位
+            const hasPositions = dept.position_count && Object.entries(dept.position_count)
+            // 检查是否有子部门
+            const hasChildren = filteredChildren.length > 0;
+            // 保留有职位或有子部门的节点
+            if (hasPositions || hasChildren) {
+              return {
+                ...dept,
+                children: filteredChildren
+              };
+            }
+            return null;
+          }).filter(dept => dept !== null);
+        };
+        const filteredDepartments = filterTreeData(response || []);
+        setDepartments(filteredDepartments);
       } catch (error) {
         console.error('Failed to fetch departments and positions:', error);
       } finally {
@@ -81,8 +104,6 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
         const positionNodes: TreeNode[] = [];
         if (dept.position_count && typeof dept.position_count === 'object') {
           Object.entries(dept.position_count).forEach(([positionName, count]) => {
-            // 过滤"空"职位
-            if (positionName !== '空' && count > 0) {
               positionNodes.push({
                 id: `position_${dept.id}_${positionName}`,
                 title: `${positionName}`,
@@ -90,7 +111,6 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
                 group_id: dept.id,
                 position_name: positionName
               });
-            }
           });
         }
 
@@ -105,9 +125,6 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
         groupNode.children = [...positionNodes, ...childDeptNodes];
 
         return groupNode;
-      }).filter(node => {
-        // 过滤掉没有职位且没有子部门的节点
-        return node.children && node.children.length > 0;
       });
     };
 
@@ -116,12 +133,9 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
   }, [departments, departmentMap]);
 
   // 监听value变化，更新checkedKeys 
-  // TODO 逻辑冲突
   useEffect(() => {
     if (treeData.length === 0) return;
-
     const keys: string[] = [];
-
     // 当value为空时，清空keys
     if (Object.keys(value).length === 0) {
       if (JSON.stringify(keys) !== JSON.stringify(checkedKeys)) {
@@ -129,23 +143,15 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
       }
       return;
     }
-    console.log("------------------------------------------------------")
-    console.log('checkedKeys', checkedKeys, value);
     // 遍历所有选中的部门和职位
     Object.entries(value).forEach(([pureGroupId, positions]) => {
       console.log('[groupId, positions]', [pureGroupId, positions]);
 
       // 检查是否全选部门
       const dept = departmentMap.get(pureGroupId);
-      console.log('部门们', departmentMap, pureGroupId);
-      console.log('dept', dept);
-      
-      
       if (dept && dept.position_count) {
         const validPositions = Object.keys(dept.position_count)
-          .filter(pos => pos !== '空' && dept.position_count[pos] > 0)
-          .map(pos => `${pos}`);
-
+        console.log('validPositions', validPositions);
         // 如果选中的职位与部门所有有效职位相同，则同时选中部门节点和所有职位节点
         if (positions.length === validPositions.length && 
           positions.every(pos => validPositions.includes(pos))) {
@@ -255,7 +261,6 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
         if (dept && dept.position_count) {
           // 获取所有有效职位
           Object.keys(dept.position_count)
-            .filter(pos => pos !== '空' && dept.position_count[pos] > 0)
             .forEach(pos => {
               groupPositions[groupKey].add(`${pos}`);
             });
