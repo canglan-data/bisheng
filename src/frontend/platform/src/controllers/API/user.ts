@@ -217,7 +217,7 @@ export async function getRolePermissionsApi(
 /**
  * 更新角色基本信息
  */
-export async function updateRoleNameApi(roleId, data: { role_name: string, extra: string, is_bind_all: boolean, user_ids: number[] }) {
+export async function updateRoleNameApi(roleId, data: { role_name: string, extra: string, is_bind_all: boolean, user_ids: number[], group_positions: any }) {
   return axios.patch(`/api/v1/role/${roleId}`, {
     ...data,
     remark: "手动创建用户",
@@ -242,6 +242,12 @@ export function getUserGroupsApi(config) {
 export function getUserGroupsCountApi() {
   return axios.get(`/api/v1/group/tree?expand=role_count`);
 }
+
+// 组织架构+职位列表筛选项
+export function getUserGroupPositionCountApi() {
+  return axios.get(`/api/v1/group/tree?expand=position_count`);
+}
+
 
 // 职位列表筛选项 /api/v1/permission/position_user_count
 export function getUserPositionCountApi() {

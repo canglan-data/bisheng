@@ -19,6 +19,7 @@ import { createRole, getGroupResourcesApi, getRoleDetailApi, getRolePermissionsA
 import { captureAndAlertRequestErrorHoc } from "../../../controllers/request";
 import { useTable } from "../../../util/hook";
 import SelectUserByGroup from "./SelectUserByGroup";
+import PositionSelectTree from "./PositionSelectTree";
 
 const SearchPanne = ({ groupId, placeholder = '', title, type, children }) => {
     const { page, pageSize, data, total, loading, setPage, search } = useTable({ pageSize: 10 }, (params) => {
@@ -113,7 +114,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             })
             // 详情
             getRoleDetailApi(id).then(res => {
-                setForm(form => ({ ...form, users: res.user_ids || [], bingAll: res.is_bind_all, selectGroupKey: res.extra || {} }))
+                setForm(form => ({ ...form, users: res.user_ids || [], bingAll: res.is_bind_all, selectGroupKey: res.group_positions }))
             })
         }
     }, [id])
@@ -163,6 +164,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
                 role_name: form.name,
                 group_id: groupId,
                 is_bind_all: form.bingAll,
+                group_positions: form.selectGroupKey,
                 user_ids: form.users.map(el => el.user_id)
             }))
             roleId = res.id
@@ -171,6 +173,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             captureAndAlertRequestErrorHoc(updateRoleNameApi(roleId, {
                 role_name: form.name,
                 extra: "",
+                group_positions: form.selectGroupKey,
                 is_bind_all: form.bingAll,
                 user_ids: form.users.map(el => el.user_id)
             }))
@@ -208,7 +211,10 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
         </div> */}
          <div className="font-bold mt-4">
             <p className="text-xl mb-4">适用组织架构范围</p>
-            {<SelectUserByGroup value={form.users} groupId={groupId} onChange={(users) => setForm({ ...form, users })} />}
+            <PositionSelectTree value={form.selectGroupKey} onChange={(selectGroupKey) => {
+                setForm({ ...form, selectGroupKey })
+            }} />
+            {/* {<SelectUserByGroup value={form.users} groupId={groupId} onChange={(users) => setForm({ ...form, users })} />} */}
         </div>
         <div>
             <div className="mt-20 flex justify-between items-center relative">

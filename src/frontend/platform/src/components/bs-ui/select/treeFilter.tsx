@@ -35,9 +35,6 @@ const FilterTreeUserGroup: React.FC<TreeFilterUserGroupProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
 
-  console.log('FilterTreeUserGroupvalue', value, options);
-  
-
   // 处理搜索
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     search(e);
