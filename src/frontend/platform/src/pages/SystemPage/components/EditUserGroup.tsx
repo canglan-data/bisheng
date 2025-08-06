@@ -17,6 +17,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input, SearchInput } from "../../../components/bs-ui/input";
 import { useQuery } from "react-query";
+import { bsConfirm } from "@/components/bs-ui/alertDialog/useConfirm";
 
 /**
  * 
@@ -206,6 +207,35 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
             return toast({ title: t('prompt'), description: t('system.groupNameExists'), variant: 'error' });
         }
 
+        // 检查是否有新增管理员
+        const newAdmins = adminsSelected.filter(admin => 
+            !initialAdmins.some(initAdmin => initAdmin.value === admin.value)
+            && !lockOptions.includes(admin.value)
+        );
+
+        // 如果有新增管理员，显示确认弹窗
+        if (newAdmins.length > 0) {
+            const newAdminNames = newAdmins.map(admin => admin.label).join('、');
+            return bsConfirm({
+                title: t('prompt'),
+                desc: (
+                    <div>
+                        <span className="text-primary">{newAdminNames}</span> 无组织架构管理权限，添加组织管理权限，会记录"<strong>权限异常</strong>"操作，请确认是否添加。
+                    </div>
+                ),
+                onOk: async (next) => {
+                    await proceedSave();
+                    next();
+                }
+            });
+        }
+
+        // 没有新增管理员，直接保存
+        await proceedSave();
+    }
+
+    // 提取保存逻辑为单独的函数
+    const proceedSave = async () => {
         // 过滤系统管理员
         const users = selected.filter(item => !lockOptions.some(id => id === item.value))
         const admins = adminsSelected.filter(item => !lockOptions.some(id => id === item.value))
@@ -220,12 +250,15 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
                 adminUser: users.map(item => item.label).join(','),
                 adminUserId: users.map(item => item.value).join(','),
                 parent_id: form.department?.id
+            }).then(() => {
+                toast({ title: t('prompt'), description: t('system.saveSuccess'), variant: 'success' });
             }))
         }
 
         onChange(true)
         refetchGroupTree()
     }
+    const [initialAdmins, setInitialAdmins] = useState([]);
 
     useEffect(() => { // 初始化数据
         setForm({
@@ -254,6 +287,7 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
             setLockOptions([...defaultUsers.map(el => el.value), ...groupAdmins])
 
             setAdminsSelected([...defaultUsers, ...admins]);
+            setInitialAdmins([...defaultUsers, ...admins]); // 存储初始管理员
             // setAuditorsSelected([...defaultUsers, ...auditors]);
             // setOperatorsSelected([...defaultUsers, ...operators]);
 
