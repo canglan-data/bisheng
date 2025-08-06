@@ -249,9 +249,14 @@ export function getUserGroupPositionCountApi() {
 }
 
 
-// 职位列表筛选项 /api/v1/permission/position_user_count
+// 用户页 职位列表筛选项 /api/v1/permission/position_user_count
 export function getUserPositionCountApi() {
   return axios.get(`/api/v1/permission/position_user_count`);
+}
+  
+// 角色页 职位列表筛选项 /api/v1/permission/position_user_count
+export function getRolePositionCountApi() {
+  return axios.get(`/api/v1/permission/position_role_count`);
 }
 
 

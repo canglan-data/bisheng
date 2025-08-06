@@ -14,7 +14,7 @@ import {
     TableHeader,
     TableRow
 } from "../../../components/bs-ui/table";
-import { delRoleApi, getRolesByGroupApi, getUserGroupsApi, getUserGroupsCountApi, getUserPositionCountApi } from "../../../controllers/API/user";
+import { delRoleApi, getRolesByGroupApi, getUserGroupsApi, getUserGroupsCountApi, getRolePositionCountApi } from "../../../controllers/API/user";
 import { captureAndAlertRequestErrorHoc } from "../../../controllers/request";
 import { ROLE } from "../../../types/api/user";
 import EditRole from "./EditRole";
@@ -139,10 +139,10 @@ export default function Roles() {
     
     const [positions, setPositions] = useState([])
     const getPositions = async () => {
-        const res: any = await getUserPositionCountApi()
+        const res: any = await getRolePositionCountApi()
         const positions = Object.keys(res).map(key => ({
             // position_name: `${key}(${res[key]})`,
-            position_name: `${key}`,
+            position_name: `${key}(${res[key]})`,
             id: key
         }))
         setPositions(positions)
