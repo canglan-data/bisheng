@@ -96,6 +96,7 @@
     "flowControl": "组织架构整体流量控制",
     "AssistantFlowCtrl": "助手流量控制",
     "SkillFlowCtrl": "技能流量控制",
+    "searchPosition": "搜索用户职位",
     "flowCtrl": "工作流流量控制",
     "createdBy": "创建人",
     "flowCtrlStrategy": "流量控制策略",

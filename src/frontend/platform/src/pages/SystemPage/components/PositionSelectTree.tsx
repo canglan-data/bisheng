@@ -3,7 +3,6 @@ import { ChevronRight, Search, X } from 'lucide-react';
 import { Checkbox } from '@/components/bs-ui/checkBox';
 import { SearchInput } from '@/components/bs-ui/input';
 import { useTranslation } from 'react-i18next';
-import { getUserGroupPositionCountApi, getUserPositionCountApi } from '@/controllers/API/user'; // 假设的API接口
 
 // 定义节点类型
 interface TreeNode {
@@ -16,74 +15,43 @@ interface TreeNode {
   position_name?: string;
 }
 
+// 定义部门数据类型
+interface Department {
+  id: string;
+  group_name: string;
+  position_count: { [key: string]: number };
+  children?: Department[];
+}
+
 // 定义组件的 props 类型
 interface PositionSelectTreeProps {
   value: { [key: string]: string[] };
   onChange?: (value: { [key: string]: string[] }) => void;
   className?: string;
+  departments: Department[];
+  searchValue?: string;
 }
 
 // 树形职位选择组件
 const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
   value = {},
   onChange,
-  className = ""
+  className = "",
+  departments = [],
+  searchValue = ''
 }) => {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [departments, setDepartments] = useState<any[]>([]);
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [searchValue, setSearchValue] = useState('');
   const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
   const departmentMap = useMemo(() => new Map<string, any>(), []);
-
-  // 组件挂载时请求数据
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await getUserGroupPositionCountApi();
-        // 接口请求后进行过滤，递归移除没有职位且没有子部门的节点
-        const filterTreeData = (data: any[]): any[] => {
-          return data.map(dept => {
-            // 递归过滤子部门
-            let filteredChildren: any[] = [];
-            if (dept.children && dept.children.length > 0) {
-              filteredChildren = filterTreeData(dept.children);
-            }
-            // 检查是否有职位
-            const hasPositions = dept.position_count && Object.keys(dept.position_count).length > 0
-            // 检查是否有子部门
-            const hasChildren = filteredChildren.length > 0;
-            // 保留有职位或有子部门的节点
-            if (hasPositions || hasChildren) {
-              return {
-                ...dept,
-                children: filteredChildren
-              };
-            }
-            return null;
-          }).filter(dept => dept !== null);
-        };
-        const filteredDepartments = filterTreeData(response || []);
-        setDepartments(filteredDepartments);
-      } catch (error) {
-        console.error('Failed to fetch departments and positions:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   // 将原始数据转换为树形结构
   useEffect(() => {
     if (departments.length === 0) return;
 
     // 递归构建部门树并添加职位节点，过滤掉没有职位的组织架构
-    const buildTree = (depts: any[]): TreeNode[] => {
+    const buildTree = (depts: Department[]): TreeNode[] => {
       return depts.map(dept => {
         // 存储部门原始数据到Map
         departmentMap.set(String(dept.id), dept);
@@ -177,11 +145,6 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
       setCheckedKeys(keys);
     }
   }, [value, treeData, departmentMap]);
-
-  // 处理搜索
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(e.target.value);
-  };
 
   // 获取节点的所有子孙节点ID
   const getAllDescendantIds = (node: TreeNode): string[] => {
@@ -464,25 +427,9 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
 
   return (
     <div className={`h-full ${className}`}>
-      {loading ? (
-        <div className="flex items-center justify-center h-full">
-          <span className="text-gray-500">{t('loading')}...</span>
-        </div>
-      ) : (
-        <>
-          <div className="mb-4 relative">
-            <SearchInput
-              placeholder={t('system.selectPlaceholder')}
-              onChange={handleSearch}
-              value={searchValue}
-              className="w-full"
-            />
-          </div>
-          <div className="p-4 overflow-y-auto max-h-80 rounded-md">
-            {renderTree(filteredTreeData)}
-          </div>
-        </>
-      )}
+      <div className="p-4 overflow-y-auto max-h-80 rounded-md">
+        {renderTree(filteredTreeData)}
+      </div>
     </div>
   );
 };

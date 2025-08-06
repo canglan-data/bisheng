@@ -7,6 +7,15 @@ import { cname } from '@/components/bs-ui/utils';
 import { generateUUID } from '@/utils';
 import { Badge } from '@/components/bs-ui/badge';
 import { SearchInput } from '@/components/bs-ui/input';
+import { getUserGroupPositionCountApi } from '@/controllers/API/user';
+
+// 定义部门数据类型
+interface Department {
+  id: string;
+  group_name: string;
+  position_count: { [key: string]: number };
+  children?: Department[];
+}
 
 // 定义组件的 props 类型
 interface PositionSelectProps {
@@ -33,6 +42,51 @@ const PositionSelect: React.FC<PositionSelectProps> = ({
   const triggerRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(generateUUID(4));
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // 获取部门数据
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      setLoading(true);
+      setFetchError(null);
+      try {
+        const response = await getUserGroupPositionCountApi();
+        // 接口请求后进行过滤，递归移除没有职位且没有子部门的节点
+        const filterTreeData = (data: any[]): any[] => {
+          return data.map(dept => {
+            // 递归过滤子部门
+            let filteredChildren: any[] = [];
+            if (dept.children && dept.children.length > 0) {
+              filteredChildren = filterTreeData(dept.children);
+            }
+            // 检查是否有职位
+            const hasPositions = dept.position_count && Object.keys(dept.position_count).length > 0
+            // 检查是否有子部门
+            const hasChildren = filteredChildren.length > 0;
+            // 保留有职位或有子部门的节点
+            if (hasPositions || hasChildren) {
+              return {
+                ...dept,
+                children: filteredChildren
+              };
+            }
+            return null;
+          }).filter(dept => dept !== null);
+        };
+        const filteredDepartments = filterTreeData(response || []);
+        setDepartments(filteredDepartments);
+      } catch (err) {
+        setFetchError(t('system.fetchFailed'));
+        console.error('Failed to fetch departments:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
 
   // 格式化选中的值为显示标签
   useEffect(() => {
@@ -115,18 +169,38 @@ const PositionSelect: React.FC<PositionSelectProps> = ({
         ) : (
           <span className="text-gray-500">{placeholder || t('system.selectPlaceholder')}</span>
         )}
+        {!disabled && (
+          <ChevronDown
+            className="h-4 w-4 text-gray-500 absolute right-3 top-1/2 transform -translate-y-1/2 transition-transform group-hover:text-primary"
+            style={{ transform: isOpen ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%)' }}
+          />
+        )}
       </SelectTrigger>
       <SelectContent
         id={idRef.current}
-        className="w-full p-2"
+        className="w-full max-h-[400px] overflow-y-auto"
       >
-        <div className="max-h-96 overflow-y-auto">
+        <div className="p-2 border-b">
+          <SearchInput
+            placeholder={t('system.searchPosition')}
+            value={searchValue}
+            onChange={handleSearch}
+            prefix={<Search size={16} />}
+          />
+        </div>
+        {loading ? (
+          <div className="p-4 text-center text-gray-500">{t('system.loading')}</div>
+        ) : fetchError ? (
+          <div className="p-4 text-center text-red-500">{fetchError}</div>
+        ) : (
           <PositionSelectTree
             value={value}
             onChange={onChange}
+            searchValue={searchValue}
+            departments={departments}
             className="h-full"
           />
-        </div>
+        )}
       </SelectContent>
     </Select>
   );
