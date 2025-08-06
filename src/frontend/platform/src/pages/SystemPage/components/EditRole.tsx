@@ -18,8 +18,7 @@ import { alertContext } from "../../../contexts/alertContext";
 import { createRole, getGroupResourcesApi, getRoleDetailApi, getRolePermissionsApi, updateRoleNameApi, updateRolePermissionsApi } from "../../../controllers/API/user";
 import { captureAndAlertRequestErrorHoc } from "../../../controllers/request";
 import { useTable } from "../../../util/hook";
-import SelectUserByGroup from "./SelectUserByGroup";
-import PositionSelectTree from "./PositionSelectTree";
+import PositionSelect from "./PositionSelect";
 
 const SearchPanne = ({ groupId, placeholder = '', title, type, children }) => {
     const { page, pageSize, data, total, loading, setPage, search } = useTable({ pageSize: 10 }, (params) => {
@@ -211,7 +210,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
         </div> */}
          <div className="font-bold mt-4">
             <p className="text-xl mb-4">适用组织架构范围</p>
-            <PositionSelectTree value={form.selectGroupKey} onChange={(selectGroupKey) => {
+            <PositionSelect value={form.selectGroupKey} onChange={(selectGroupKey) => {
                 setForm({ ...form, selectGroupKey })
             }} />
             {/* {<SelectUserByGroup value={form.users} groupId={groupId} onChange={(users) => setForm({ ...form, users })} />} */}
