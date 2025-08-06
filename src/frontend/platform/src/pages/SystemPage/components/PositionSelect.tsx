@@ -138,6 +138,9 @@ const PositionSelect: React.FC<PositionSelectProps> = ({
     setIsOpen(open);
   };
 
+  console.log('value', value);
+  
+
   return (
     <Select
       disabled={disabled}

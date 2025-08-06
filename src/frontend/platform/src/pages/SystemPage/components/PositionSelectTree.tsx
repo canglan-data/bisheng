@@ -97,6 +97,23 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
     setTreeData(newTreeData);
   }, [departments, departmentMap]);
 
+  // 辅助函数：检查部门是否全部被选中（包括所有职位和子部门）
+  const isDepartmentFullySelected = (dept: Department, value: { [key: string]: string[] }): boolean => {
+    // 检查该部门的所有职位是否被选中
+    const validPositions = Object.keys(dept.position_count || {});
+    const deptValue = value[dept.id] || [];
+    const allPositionsSelected = validPositions.length === deptValue.length &&
+                                validPositions.every(pos => deptValue.includes(pos));
+
+    // 检查所有子部门是否都被完全选中
+    if (dept.children && dept.children.length > 0) {
+      return allPositionsSelected &&
+             dept.children.every(child => isDepartmentFullySelected(child, value));
+    }
+
+    return allPositionsSelected;
+  };
+
   // 监听value变化，更新checkedKeys 
   useEffect(() => {
     if (treeData.length === 0) return;
@@ -112,18 +129,11 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
     Object.entries(value).forEach(([pureGroupId, positions]) => {
       // 检查是否全选部门
       const dept = departmentMap.get(pureGroupId);
-      if (dept && dept.position_count) {
-        const validPositions = Object.keys(dept.position_count)
-        
-        // 检查是否所有子部门都被选中
-        const areAllChildrenSelected = dept.children && dept.children.length > 0
-          ? dept.children.every(child => checkedKeys.includes(`group_${child.id}`))
-          : true; // 如果没有子部门，则视为满足条件
+      if (dept) {
+        const validPositions = Object.keys(dept.position_count || {});
+        const isFullySelected = isDepartmentFullySelected(dept, value);
 
-        // 如果选中的职位与部门所有有效职位相同，且所有子部门都被选中，则同时选中部门节点和所有职位节点
-        if (positions.length === validPositions.length && 
-          positions.every(pos => validPositions.includes(pos)) && 
-          areAllChildrenSelected) {
+        if (isFullySelected) {
           keys.push(`group_${pureGroupId}`);
           validPositions.forEach(pos => {
             keys.push(`position_${pureGroupId}_${pos}`);
