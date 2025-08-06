@@ -157,7 +157,7 @@ export default function SystemLog() {
                 <Select 
                     value={keys.moduleId} 
                     onOpenChange={loadModules} 
-                    onValueChange={(value) => setKeys({ ...keys, action: '', moduleId: value })}
+                    onValueChange={(value) => setKeys({ ...keys, action: '', moduleId: value, monitorResult: [] })}
                 >
                     <SelectTrigger className="w-[180px] group">
                         <div className="flex flex-1 items-center justify-between overflow-hidden">
@@ -315,7 +315,13 @@ export default function SystemLog() {
                             <TableCell className="max-w-[250px]">
                                 <div className="whitespace-pre-line break-all">{log.note?.replace('编辑后', `\n编辑后`) || '无'}</div>
                             </TableCell>
-                            <TableCell>{log.monitor_result ? log.monitor_result.map(item => monitorResultMap[item] || '无').join(',') : '无'}</TableCell>
+                            <TableCell>
+                                {log.monitor_result ? log.monitor_result.map((item, index) => (
+                                    <span key={index} className={item === 'pass' ? 'text-green-500' : 'text-red-500'}>
+                                        {monitorResultMap[item] || '无'}{index < log.monitor_result.length - 1 ? ',' : ''}
+                                    </span>
+                                )) : '无'}
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
