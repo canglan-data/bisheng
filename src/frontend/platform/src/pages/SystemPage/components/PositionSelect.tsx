@@ -169,12 +169,6 @@ const PositionSelect: React.FC<PositionSelectProps> = ({
         ) : (
           <span className="text-gray-500">{placeholder || t('system.selectPlaceholder')}</span>
         )}
-        {!disabled && (
-          <ChevronDown
-            className="h-4 w-4 text-gray-500 absolute right-3 top-1/2 transform -translate-y-1/2 transition-transform group-hover:text-primary"
-            style={{ transform: isOpen ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%)' }}
-          />
-        )}
       </SelectTrigger>
       <SelectContent
         id={idRef.current}
