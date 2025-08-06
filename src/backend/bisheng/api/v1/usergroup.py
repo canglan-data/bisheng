@@ -2,6 +2,7 @@
 import json
 from typing import Annotated, List, Optional
 
+from bisheng.api.services.permission_service import PermissionService
 from bisheng.database.models.assistant import AssistantDao
 from bisheng.database.models.flow import FlowDao
 from bisheng.database.models.gpts_tools import GptsToolsDao
@@ -36,13 +37,7 @@ async def get_all_group(login_user: UserPayload = Depends(get_login_user),
     if login_user.is_admin():
         groups = []
     else:
-        # 查询下是否是其他用户组的管理员
-        user_groups = UserGroupDao.get_user_admin_group(login_user.user_id)
-        groups = []
-        for one in user_groups:
-            if one.is_group_admin:
-                groups.append(one.group_id)
-        # 不是任何用户组的管理员无查看权限
+        groups = PermissionService.get_manage_user_group_ids(login_user.user_id)
         if not groups:
             raise HTTPException(status_code=500, detail='无查看权限')
 
@@ -66,13 +61,7 @@ async def get_all_group2(login_user: UserPayload = Depends(get_login_user),
     if login_user.is_admin():
         groups = []
     else:
-        # 查询下是否是其他用户组的管理员
-        user_groups = UserGroupDao.get_user_admin_group(login_user.user_id)
-        groups = []
-        for one in user_groups:
-            if one.is_group_admin:
-                groups.append(one.group_id)
-        # 不是任何用户组的管理员无查看权限
+        groups = PermissionService.get_manage_user_group_ids(login_user.user_id)
         if not groups:
             raise HTTPException(status_code=500, detail='无查看权限')
 
@@ -138,10 +127,13 @@ async def get_all_group(*,login_user: UserPayload = Depends(get_login_user),
 
 @router.get('/tree')
 async def get_all_group_tree(login_user: UserPayload = Depends(get_login_user),
-                             group_id: Optional[int] = None):
+                             group_id: Optional[int] = None,
+                             expand: Optional[list[str]] = Query([])
+                             ):
     """
     获取所有分组树
     """
+    group_id = None  # 不筛选了，获取权限范围内的全部
     if login_user.is_admin():
         groups = [group_id] if group_id else []
     else:
@@ -159,7 +151,7 @@ async def get_all_group_tree(login_user: UserPayload = Depends(get_login_user),
                 raise UnAuthorizedError.http_exception()
             groups = [group_id]
 
-    groups_res = RoleGroupService().get_group_tree(groups)
+    groups_res = RoleGroupService().get_group_tree(groups, expand=expand)
     return resp_200(groups_res)
 
 
@@ -344,10 +336,10 @@ async def get_group_resources(*,
     获取用户组下的资源列表
     """
     # 判断是否是用户组的管理员
-    if not user.check_group_admin(group_id):
-        return UnAuthorizedError.return_resp()
-    res, total = RoleGroupService().get_group_resources(
-        group_id,
+    # if not user.check_group_admin(group_id):
+    #     return UnAuthorizedError.return_resp()
+    res, total = RoleGroupService().get_group_resources_v2(
+        user=user,
         resource_type=ResourceTypeEnum(resource_type),
         name=name,
         page_size=page_size,
@@ -392,18 +384,46 @@ async def get_audit_resources(*, request: Request, login_user: UserPayload = Dep
         "total": total
     })
 
+async def process_group_ids(
+    group_id: Optional[List[str]] = Query(None, description="用户组ID列表，不传则查询所有有权限的角色列表")
+) -> List[int] | None:
+    if group_id is None:
+        return None
+
+    processed_ids = []
+    for gid_str in group_id:
+        if gid_str and gid_str.strip():
+            try:
+                processed_ids.append(int(gid_str))
+            except ValueError:
+                pass
+    return processed_ids
+
 @router.get("/roles")
 async def get_group_roles(*,
-                          group_id: list[int] = Query(None, description="用户组ID列表，不传则查询所有有权限的角色列表"),
+                          group_id: Optional[List[int]] = Depends(process_group_ids),  # 用户组筛选项
+                          position: Optional[list[str]] = Query(None, description="职位筛选项"),
+                          expand: Optional[list[str]] = Query([], description="展开项"),
                           keyword: str = Query(None, description="搜索关键字"),
                           include_parent: bool = Query(False, description="是否包含父用户组绑定的角色"),
                           page: int = 0,
                           limit: int = 0,
                           user: UserPayload = Depends(get_login_user)):
-    """
-    获取用户组内的角色列表
-    """
-    res, total = RoleGroupService().get_group_roles(user, group_id, keyword, page, limit, include_parent)
+    res, total = RoleGroupService().get_group_roles(user, group_id, keyword, page, limit, include_parent, positions=position)
+
+    if 'groups' in expand or 'positions' in expand:
+        # 填充用户组和职位
+        role_ids = [r.id for r in res]
+        if role_ids:
+            new_result = []
+            group_dict, position_dict = PermissionService.get_role_group_positions(role_ids=role_ids)
+            for role in res:
+                role_item = role.model_dump()
+                role_item['groups'] = group_dict.get(role.id, [])
+                role_item['positions'] = list(position_dict.get(role.id, []))
+                new_result.append(role_item)
+
+            res = new_result
 
     return resp_200(data={
         "data": res,
@@ -411,17 +431,17 @@ async def get_group_roles(*,
     })
 
 
-@router.get("/manage/resources")
-async def get_manage_resources(login_user: UserPayload = Depends(get_login_user),
-                               keyword: str = Query(None, description="搜索关键字"),
-                               page: int = 1,
-                               page_size: int = 10):
-    """ 获取管理的用户组下的应用列表 """
-    res, total = RoleGroupService().get_manage_resources(login_user=login_user, keyword=keyword, page=page, page_size=page_size)
-    return resp_200(data={
-        "data": res,
-        "total": total
-    })
+# @router.get("/manage/resources")
+# async def get_manage_resources(login_user: UserPayload = Depends(get_login_user),
+#                                keyword: str = Query(None, description="搜索关键字"),
+#                                page: int = 1,
+#                                page_size: int = 10):
+#     """ 获取管理的用户组下的应用列表 """
+#     res, total = RoleGroupService().get_manage_resources(login_user=login_user, keyword=keyword, page=page, page_size=page_size)
+#     return resp_200(data={
+#         "data": res,
+#         "total": total
+#     })
 
 @router.get("/user/roles", response_model=UnifiedResponseModel)
 async def get_user_group_roles(login_user: UserPayload = Depends(get_login_user),

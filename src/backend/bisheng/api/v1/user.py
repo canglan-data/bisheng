@@ -36,15 +36,17 @@ from bisheng.database.base import session_getter
 from bisheng.database.models.group import GroupDao
 from bisheng.database.models.role import Role, RoleCreate, RoleDao, RoleUpdate
 from bisheng.database.constants import AdminRole, DefaultRole
-from bisheng.database.models.role_access import RoleAccess, RoleRefresh
+from bisheng.database.models.role_access import RoleAccess, RoleRefresh, RoleAccessDao
 from bisheng.database.models.role import Role, RoleCreate, RoleDao, RoleUpdate, AdminRole, DefaultRole
 from bisheng.database.models.role_access import AccessType, RoleAccess, RoleRefresh
+from bisheng.database.models.role_position import RolePosition, RolePositionDao
 from bisheng.database.models.user import User, UserCreate, UserDao, UserLogin, UserRead, UserUpdate
 from bisheng.database.models.user_group import UserGroupDao
 from bisheng.database.models.user_role import UserRole, UserRoleCreate, UserRoleDao
 from bisheng.settings import settings
 from bisheng.utils.constants import CAPTCHA_PREFIX, RSA_KEY, USER_PASSWORD_ERROR, USER_CURRENT_SESSION
 from bisheng.utils.logger import logger
+from bisheng.api.services.permission_service import PermissionService
 
 # build router
 router = APIRouter(prefix='', tags=['User'])
@@ -229,6 +231,72 @@ async def logout(Authorize: AuthJWT = Depends()):
     return resp_200()
 
 
+@router.get('/user/list_v2', status_code=201)
+async def list_user_v2(*,
+                    name: Optional[str] = None,
+                    page_size: Optional[int] = 10,
+                    page_num: Optional[int] = 1,
+                    group_id: Annotated[List[int], Query()] = None,
+                    role_id: Annotated[List[int], Query()] = None,
+                    position: Annotated[List[str], Query()] = None,
+                    group_role_type: Optional[str] = None,
+                    expand: Optional[list[str]] = Query([]),
+                    login_user: UserPayload = Depends(get_login_user)):
+
+    manage_group_ids = None
+    manage_role_ids = None
+    if not login_user.is_admin():
+        manage_group_ids = PermissionService.get_manage_user_group_ids(login_user.user_id)
+        group_id = list(set(manage_group_ids) & set(group_id)) if group_id is not None else manage_group_ids
+        if not group_id:
+            return resp_200({'data': [], 'total': 0})
+
+        if role_id:
+            manage_role_ids = PermissionService.get_manage_role_ids(login_user.user_id, manage_group_ids)
+            role_id = list(set(manage_role_ids) & set(role_id)) if role_id is not None else manage_role_ids
+            if not role_id:
+                return resp_200({'data': [], 'total': 0})
+
+        logger.debug(f"list_user_v2 manage_group_ids:{manage_group_ids} group_id:{group_id} manage_role_ids:{manage_role_ids} role_id:{role_id}")
+
+    user_ids = None
+    if group_id:
+        user_ids = UserGroupDao.get_groups_user(group_id)
+        if not user_ids:
+            return resp_200({'data': [], 'total': 0})
+
+    if role_id:
+        result = PermissionService.get_role_user_linked_list(role_ids=role_id)
+        if not result:
+            return resp_200({'data': [], 'total': 0})
+        role_user_ids = [d['user_id'] for d in result]
+        user_ids = list(set(user_ids) & set(role_user_ids)) if user_ids else role_user_ids
+
+    users, total_count = UserDao.filter_users(user_ids, name, page_num, page_size, positions=position)
+    if not users:
+        return resp_200({'data': [], 'total': 0})
+
+    res = []
+    for one in users:
+        one_data = one.model_dump()
+        res.append(one_data)
+
+    user_ids = [u['user_id'] for u in res]
+    if 'roles' in expand:
+        manage_role_ids = PermissionService.get_manage_role_ids(login_user.user_id, manage_group_ids)
+        result = PermissionService.get_user_role_dict(user_ids=user_ids, role_ids=manage_role_ids)
+        for one in res:
+            one['roles'] = result.get(one['user_id'], [])
+
+    if 'groups' in expand:
+        result = PermissionService.get_user_group_dict(user_ids=user_ids, group_ids=manage_group_ids)
+        for one in res:
+            one['groups'] = result.get(one['user_id'], [])
+
+    return resp_200({'data': res, 'total': total_count})
+
+
+
 @router.get('/user/list', status_code=201)
 async def list_user(*,
                     name: Optional[str] = None,
@@ -378,11 +446,16 @@ async def create_role(*,
                       login_user: UserPayload = Depends(get_login_user)):
     service = RoleService(request=request, login_user=login_user)
     try:
+        # role.group_positions = {
+        #     "70": ["员工职务", "空"],
+        #     "72": ["员工职务", "空"]
+        # }
+
         db_role = service.add_role(role)
         create_role_hook(request, login_user, db_role)
         return resp_200(db_role)
-    except Exception:
-        logger.exception('add role error')
+    except Exception as e:
+        logger.exception(f'add role error e:{e}')
         raise HTTPException(status_code=500, detail='添加失败，检查是否重复添加')
 
 
@@ -405,6 +478,11 @@ async def update_role(*,
                       role: RoleUpdate,
                       login_user: UserPayload = Depends(get_login_user)):
     service = RoleService(request=request, login_user=login_user)
+    # role.group_positions = {
+    #     "70": ["员工职务", "空"],
+    #     "72": ["员工职务", "空"]
+    # }
+
     db_role = service.update_role(role_id, role)
     update_role_hook(request, login_user, db_role)
     return resp_200(db_role)
@@ -454,8 +532,10 @@ async def delete_role(*,
     if not db_role:
         return resp_200()
 
-    if not login_user.check_group_admin(db_role.group_id):
-        return UnAuthorizedError.return_resp()
+    if not login_user.is_admin():
+        role_ids = PermissionService.get_manage_role_ids(login_user.user_id)
+        if role_id not in role_ids:
+            return HTTPException(status_code=500, detail='无当前角色管理权限')
 
     if db_role.id == AdminRole or db_role.id == DefaultRole:
         raise HTTPException(status_code=500, detail='内置角色不能删除')
@@ -463,6 +543,12 @@ async def delete_role(*,
     # 删除role相关的数据
     try:
         RoleDao.delete_role(role_id)
+        # 清理绑定的职位
+        RolePositionDao.delete([role_id])
+        # 清理绑定的资源
+        RoleAccessDao.delete([role_id])
+        # 清理绑定的用户
+        UserRoleDao.delete_role_users(db_role.id)
     except Exception as e:
         logger.exception(e)
         raise HTTPException(status_code=500, detail='删除角色失败')
@@ -551,8 +637,12 @@ async def access_refresh(*, request: Request, data: RoleRefresh, login_user: Use
     if db_role.id == AdminRole:
         raise HTTPException(status_code=500, detail='系统管理员不允许编辑')
 
-    if not login_user.check_group_admin(db_role.group_id):
-        return UnAuthorizedError.return_resp()
+    if not login_user.is_admin():
+        manage_role_ids = PermissionService.get_manage_role_ids(login_user.user_id)
+        if data.role_id not in manage_role_ids:
+            return UnAuthorizedError.return_resp()
+
+    # 小权限的管理员会把大权限的管理员添加的授权记录也提交上来，这里不用判断大小权限的数据范围
 
     role_id = data.role_id
     access_type = data.type
@@ -579,8 +669,10 @@ async def access_list(*, role_id: int, type: Optional[int] = None, login_user: U
     if not db_role:
         raise HTTPException(status_code=500, detail='角色不存在')
 
-    if not login_user.check_group_admin(db_role.group_id):
-        return UnAuthorizedError.return_resp()
+    if not login_user.is_admin():
+        manage_role_ids = PermissionService.get_manage_role_ids(login_user.user_id)
+        if role_id not in manage_role_ids:
+            return UnAuthorizedError.return_resp()
 
     sql = select(RoleAccess).where(RoleAccess.role_id == role_id)
     count_sql = select(func.count(RoleAccess.id)).where(RoleAccess.role_id == role_id)

@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, text
-from sqlmodel import Field, select
+from sqlmodel import Field, select, delete
 
 from bisheng.database.base import session_getter
 from bisheng.database.models.base import SQLModelSerializable
@@ -57,6 +57,13 @@ class RoleRefresh(BaseModel):
 
 
 class RoleAccessDao(RoleAccessBase):
+
+    @classmethod
+    def delete(cls, role_ids: list[int]):
+        with session_getter() as session:
+            statement = delete(RoleAccess).where(RoleAccess.role_id.in_(role_ids))
+            session.exec(statement)
+            session.commit()
 
     @classmethod
     def get_role_access(cls, role_ids: List[int], access_type: AccessType) -> List[RoleAccess]:
