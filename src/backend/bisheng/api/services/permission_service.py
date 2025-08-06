@@ -270,13 +270,12 @@ class PermissionService:
 
             RolePositionDao.delete([role.id])  # 先删再插入
         else:
-            user_admin_group = PermissionService.get_manage_user_group(user.user_id)
-            group_ids = [ug.group_id for ug in user_admin_group]
-            if not group_ids:
+            manage_group_ids = PermissionService.get_manage_user_group_ids(user.user_id)
+            if not manage_group_ids:
                 raise ValueError('当前管理员未管理任何组')
 
             for group_id, positions in group_positions.items():
-                if int(group_id) in group_ids:  # 当前管理员有权限的组
+                if int(group_id) in manage_group_ids:  # 当前管理员有权限的组
                     for position in positions:
                         role_position = RolePosition(role_id=role.id, group_id=group_id, position=position)
                         insert.append(role_position)
@@ -284,13 +283,14 @@ class PermissionService:
             if not insert:
                 raise ValueError('未找到可关联的职位')
 
-            RolePositionDao.delete([role.id], group_ids)  # 先删再插入
+            logger.debug(f"jjxx888 RolePositionDao.delete role_id:{role.id} manage_group_ids:{manage_group_ids}")
+            RolePositionDao.delete([role.id], manage_group_ids)  # 先删再插入
 
         for role_position in insert:
             RolePositionDao.insert(role_position)
 
     @staticmethod
-    def get_role_group_positions(role_ids: list[int]):
+    def get_role_group_positions(role_ids: list[int], group_ids: list[int] = []):
         if not role_ids:
             return {}
 
@@ -302,8 +302,11 @@ class PermissionService:
                                             LEFT JOIN role_position as rp on r.id = rp.role_id 
                                             where r.id in :role_ids"""
 
+            # if group_ids:
+            #     sql += " and (r.group_id in :group_ids or rp.group_id in :group_ids)"
+
             statement = text(sql)
-            result = session.exec(statement, params={"role_ids": role_ids})
+            result = session.exec(statement, params={"role_ids": role_ids, "group_ids": group_ids})
 
             for d in result:
                 if d.position:
@@ -313,6 +316,9 @@ class PermissionService:
 
                 for group_id in [d.group_id, d.linked_group_id]:
                     if group_id:
+                        if group_ids and group_id not in group_ids:
+                            continue
+
                         if d.id not in role_group_dict:
                             role_group_dict[d.id] = {}
 

@@ -96,8 +96,10 @@ class RoleService(BaseModel):
         if not db_role:
             raise NotFoundError.http_exception()
 
+        manage_group_ids = []
         if not self.login_user.is_admin():
-            manage_role_ids = PermissionService.get_manage_role_ids(self.login_user.user_id)
+            manage_group_ids = PermissionService.get_manage_user_group_ids(self.login_user.user_id)
+            manage_role_ids = PermissionService.get_manage_role_ids(user_id=self.login_user.user_id, manage_group_ids=manage_group_ids)
             if role_id not in manage_role_ids:
                 raise UnAuthorizedError.http_exception()
 
@@ -116,6 +118,10 @@ class RoleService(BaseModel):
         rp_list = RolePositionDao.select(role_ids=[role_id])
         if rp_list:
             for rp in rp_list:
+                # 只返回有管理权限的组
+                if manage_group_ids and rp.group_id not in manage_group_ids:
+                    continue
+
                 if rp.group_id not in group_positions:
                     group_positions[rp.group_id] = []
 
