@@ -62,7 +62,7 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
   useEffect(() => {
     if (departments.length === 0) return;
 
-    // 递归构建部门树并添加职位节点
+    // 递归构建部门树并添加职位节点，过滤掉没有职位的组织架构
     const buildTree = (depts: any[]): TreeNode[] => {
       console.log('depts', depts);
       
@@ -99,6 +99,7 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
         // 处理子部门
         const childDeptNodes: TreeNode[] = [];
         if (dept.children && dept.children.length > 0) {
+          // 递归构建子部门树
           childDeptNodes.push(...buildTree(dept.children));
         }
 
@@ -106,6 +107,9 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
         groupNode.children = [...positionNodes, ...childDeptNodes];
 
         return groupNode;
+      }).filter(node => {
+        // 过滤掉没有职位且没有子部门的节点
+        return node.children && node.children.length > 0;
       });
     };
 
