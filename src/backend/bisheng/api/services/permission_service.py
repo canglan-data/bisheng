@@ -445,6 +445,7 @@ class PermissionService:
             if role_ids:
                 sql1 += " and rp.role_id in :role_ids"
 
+            # 原有关联关系赋予的角色
             sql2 = """select 'user_role' as source,0 as group_id,r.id as role_id,r.role_name,u.* from userrole ur
 	left JOIN role r on ur.role_id = r.id
 	left JOIN `user` u on u.user_id = ur.user_id

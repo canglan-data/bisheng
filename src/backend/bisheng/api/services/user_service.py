@@ -33,7 +33,7 @@ class UserPayload:
         self.user_id = kwargs.get('user_id')
         self.user_role = kwargs.get('role')
         self.group_cache = {}
-        # if self.user_role != 'admin':  # 非管理员用户，需要获取他的角色列表
+        # if self.user_role != 'admin':  # 非管理员用户，需要获取他的角色列表（下方有获取，这里重复了）
         #     roles = UserRoleDao.get_user_roles(self.user_id)
         #     self.user_role = [one.role_id for one in roles]
         self.role_cache = {}
@@ -42,9 +42,9 @@ class UserPayload:
 
         roles = UserRoleDao.get_user_roles(self.user_id)
         self.user_role = [one.role_id for one in roles]
-        user_groups = UserGroupDao.get_user_group(self.user_id)
-        group_bind_roles = self.get_group_bind_role([one.group_id for one in user_groups])
-        self.user_role.extend([one['id'] for one in group_bind_roles])
+        # user_groups = UserGroupDao.get_user_group(self.user_id) # 绑定的角色不需要了
+        # group_bind_roles = self.get_group_bind_role([one.group_id for one in user_groups])
+        # self.user_role.extend([one['id'] for one in group_bind_roles])
 
     def is_admin(self):
         if self.user_role == 'admin':
