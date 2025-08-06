@@ -64,11 +64,9 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
 
     // 递归构建部门树并添加职位节点，过滤掉没有职位的组织架构
     const buildTree = (depts: any[]): TreeNode[] => {
-      console.log('depts', depts);
-      
       return depts.map(dept => {
         // 存储部门原始数据到Map
-        departmentMap.set(dept.id, dept);
+        departmentMap.set(String(dept.id), dept);
 
         // 创建部门节点
         const groupNode: TreeNode = {
@@ -117,7 +115,8 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
     setTreeData(newTreeData);
   }, [departments, departmentMap]);
 
-  // 监听value变化，更新checkedKeys
+  // 监听value变化，更新checkedKeys 
+  // TODO 逻辑冲突
   useEffect(() => {
     if (treeData.length === 0) return;
 
@@ -130,32 +129,36 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
       }
       return;
     }
-
+    console.log("------------------------------------------------------")
+    console.log('checkedKeys', checkedKeys, value);
     // 遍历所有选中的部门和职位
-    Object.entries(value).forEach(([groupId, positions]) => {
-      // 去掉部门ID前缀
-      const pureGroupId = groupId;
+    Object.entries(value).forEach(([pureGroupId, positions]) => {
+      console.log('[groupId, positions]', [pureGroupId, positions]);
 
       // 检查是否全选部门
       const dept = departmentMap.get(pureGroupId);
+      console.log('部门们', departmentMap, pureGroupId);
+      console.log('dept', dept);
+      
+      
       if (dept && dept.position_count) {
         const validPositions = Object.keys(dept.position_count)
           .filter(pos => pos !== '空' && dept.position_count[pos] > 0)
           .map(pos => `${pos}`);
 
         // 如果选中的职位与部门所有有效职位相同，则同时选中部门节点和所有职位节点
-          if (positions.length === validPositions.length && 
-              positions.every(pos => validPositions.includes(pos))) {
-            keys.push(`group_${pureGroupId}`);
-            validPositions.forEach(pos => {
-              keys.push(`position_${pureGroupId}_${pos}`);
-            });
-          } else {
-            // 否则只选中具体职位节点
-            positions.forEach(pos => {
-              keys.push(`position_${pureGroupId}_${pos}`);
-            });
-          }
+        if (positions.length === validPositions.length && 
+          positions.every(pos => validPositions.includes(pos))) {
+          keys.push(`group_${pureGroupId}`);
+          validPositions.forEach(pos => {
+            keys.push(`position_${pureGroupId}_${pos}`);
+          });
+        } else {
+          // 否则只选中具体职位节点
+          positions.forEach(pos => {
+            keys.push(`position_${pureGroupId}_${pos}`);
+          });
+        }
       } else {
         // 如果部门不存在，仍然添加部门节点（可能是外部传入的无效部门）
         keys.push(`group_${pureGroupId}`);
@@ -166,6 +169,9 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
     if (JSON.stringify(keys) !== JSON.stringify(checkedKeys)) {
       setCheckedKeys(keys);
     }
+    console.log('keys', keys);
+    
+    console.log("------------------------------------------------------")
   }, [value, treeData, departmentMap]);
 
   // 处理搜索
@@ -289,9 +295,11 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
         // 取消选中节点
         newCheckedKeys = newCheckedKeys.filter(id => id !== node.id);
 
-        // 取消该节点的所有子孙节点
-        const descendantIds = getAllDescendantIds(node);
-        newCheckedKeys = newCheckedKeys.filter(id => !descendantIds.includes(id));
+        // 如果是部门节点，取消该节点的所有子孙节点
+        if (node.type === 'group') {
+          const descendantIds = getAllDescendantIds(node);
+          newCheckedKeys = newCheckedKeys.filter(id => !descendantIds.includes(id));
+        }
 
         // 递归更新祖先节点的选中状态
         const updateAncestorStates = (nodeId: string) => {
@@ -305,6 +313,9 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
 
               // 如果所有职位子节点都被取消选中，则取消选中父部门节点
               if (positionChildren.length > 0 && selectedPositionChildren.length === 0) {
+                newCheckedKeys = newCheckedKeys.filter(id => id !== ancestorId);
+              } else if (selectedPositionChildren.length > 0 && selectedPositionChildren.length < positionChildren.length) {
+                // 如果部分职位子节点被选中，则确保父部门节点未被选中
                 newCheckedKeys = newCheckedKeys.filter(id => id !== ancestorId);
               }
             }
@@ -322,7 +333,7 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
           // 确保所有子孙节点都被添加到选中列表
           const allDescendants = [...descendantIds, node.id];
           newCheckedKeys = Array.from(new Set([...newCheckedKeys, ...allDescendants]));
-        } else {
+        } else if (node.type === 'position') {
           // 对于职位节点，直接选中该节点
           // 检查是否需要自动选中父部门节点
           const updateParentGroupState = (nodeId: string) => {
@@ -339,6 +350,9 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
                   if (!newCheckedKeys.includes(ancestorId)) {
                     newCheckedKeys.push(ancestorId);
                   }
+                } else if (newCheckedKeys.includes(ancestorId)) {
+                  // 如果部分职位子节点被选中，则取消选中父部门节点
+                  newCheckedKeys = newCheckedKeys.filter(id => id !== ancestorId);
                 }
               }
             });
@@ -416,8 +430,6 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
 
   // 过滤搜索结果
   const filteredTreeData = useMemo(() => {
-    console.log('treeData1', treeData);
-    
     if (!searchValue) return treeData;
 
     const filterNode = (node: TreeNode): TreeNode | null => {
@@ -442,10 +454,6 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
       // 如果当前节点匹配且没有子节点，返回节点
       return isMatch ? node : null;
     };
-    console.log('treeData', treeData
-      .map(node => filterNode(node))
-      .filter((node): node is TreeNode => node !== null));
-    
 
     return treeData
       .map(node => filterNode(node))
