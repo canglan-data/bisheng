@@ -157,7 +157,7 @@ export default function SystemLog() {
                 <Select 
                     value={keys.moduleId} 
                     onOpenChange={loadModules} 
-                    onValueChange={(value) => setKeys({ ...keys, action: '', moduleId: value })}
+                    onValueChange={(value) => setKeys({ ...keys, action: '', moduleId: value, monitorResult: [] })}
                 >
                     <SelectTrigger className="w-[180px] group">
                         <div className="flex flex-1 items-center justify-between overflow-hidden">
