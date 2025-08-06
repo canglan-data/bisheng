@@ -97,20 +97,30 @@ const PositionSelect: React.FC<PositionSelectProps> = ({
 
     const labels: string[] = [];
     Object.entries(value).forEach(([groupId, positions]) => {
-      // 简化处理，实际项目中可能需要根据groupId获取部门名称
-      // TODO：获取部门名称
-      const groupLabel = `部门${groupId}`;
+      // 根据groupId从departments中查找对应的部门
+      const findDepartment = (depts: Department[]): Department | undefined => {
+        for (const dept of depts) {
+          if (String(dept.id) === String(groupId)) return dept;
+          if (dept.children) {
+            const found = findDepartment(dept.children);
+            if (found) return found;
+          }
+        }
+        return undefined;
+      };
+      const department = findDepartment(departments);
+      const groupName = department?.group_name || `部门${groupId}`;
       if (positions.length === 0) {
-        labels.push(groupLabel);
+        labels.push(`${groupName}`);
       } else {
         positions.forEach(pos => {
-          labels.push(`${groupLabel}-${pos}`);
+          labels.push(`${pos}（${groupName}）`);
         });
       }
     });
 
     setSelectedLabels(labels);
-  }, [value]);
+  }, [value, departments]);
 
   // 处理清除选中值
   const handleClearClick = () => {
