@@ -34,7 +34,9 @@ class WorkflowClient(BaseClient):
         self.latest_history: Optional[ChatMessage] = None
         self.ws_closed = False
 
-    async def close(self, force_stop=True):
+    async def close(self, force_stop=True, is_hold_history=False):
+        if is_hold_history:
+            self.workflow.set_chat_history(status='stopped')
         if not force_stop:
             self.ws_closed = True
         # 非会话模式关闭workflow执行, 会话模式判断是否是用户主动关闭的
@@ -97,7 +99,7 @@ class WorkflowClient(BaseClient):
         elif message.get('action') == 'input':
             await self.handle_user_input(message.get('data') , msg_id)
         elif message.get('action') == 'stop':
-            await self.close(force_stop=True)
+            await self.close(force_stop=True, is_hold_history = message.get('is_hold_history', False))
             # await self.stop_handle_message(message)
         elif message.get('action') == 'restart':
             await self.restart(message)
