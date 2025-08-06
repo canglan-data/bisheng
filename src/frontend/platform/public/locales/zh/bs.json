@@ -47,6 +47,7 @@
     "changePwd": "修改密码"
   },
   "system": {
+    "saveSuccess": "保存成功",
     "userManagement": "用户管理",
     "userGroupsM": "用户组织架构",
     "roleManagement": "角色管理",
