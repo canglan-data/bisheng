@@ -38,9 +38,6 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
   const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
   const departmentMap = useMemo(() => new Map<string, any>(), []);
 
-
-  console.log('value', value);
-  
   // 组件挂载时请求数据
   useEffect(() => {
     const fetchData = async () => {
@@ -145,14 +142,10 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
     }
     // 遍历所有选中的部门和职位
     Object.entries(value).forEach(([pureGroupId, positions]) => {
-      console.log('[groupId, positions]', [pureGroupId, positions]);
-
       // 检查是否全选部门
       const dept = departmentMap.get(pureGroupId);
       if (dept && dept.position_count) {
         const validPositions = Object.keys(dept.position_count)
-        console.log('validPositions', validPositions);
-        console.log(dept.group_name,dept, positions.length, validPositions.length, dept.children.length);
         
         // 检查是否所有子部门都被选中
         const areAllChildrenSelected = dept.children && dept.children.length > 0
@@ -183,9 +176,6 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
     if (JSON.stringify(keys) !== JSON.stringify(checkedKeys)) {
       setCheckedKeys(keys);
     }
-    console.log('keys', keys);
-    
-    console.log("------------------------------------------------------")
   }, [value, treeData, departmentMap]);
 
   // 处理搜索
@@ -444,7 +434,6 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
   // 过滤搜索结果
   const filteredTreeData = useMemo(() => {
     if (!searchValue) return treeData;
-
     const filterNode = (node: TreeNode): TreeNode | null => {
       // 检查当前节点是否匹配搜索
       const isMatch = node.title.toLowerCase().includes(searchValue.toLowerCase());
@@ -483,13 +472,13 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
         <>
           <div className="mb-4 relative">
             <SearchInput
-              placeholder={t('position.selectPlaceholder')}
+              placeholder={t('system.selectPlaceholder')}
               onChange={handleSearch}
               value={searchValue}
-              className="w-full md:w-[240px]"
+              className="w-full"
             />
           </div>
-          <div className="p-4 overflow-y-auto max-h-80 border border-gray-200 rounded-md">
+          <div className="p-4 overflow-y-auto max-h-80 rounded-md">
             {renderTree(filteredTreeData)}
           </div>
         </>
