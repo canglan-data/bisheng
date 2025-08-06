@@ -137,7 +137,7 @@ const PositionSelect: React.FC<PositionSelectProps> = ({
       <SelectTrigger
         ref={triggerRef}
         className={cname(
-          `group min-h-9 py-1 relative ${error ? 'border-red-500' : 'border-gray-300'}`,
+          `h-auto group min-h-9 py-1 relative ${error ? 'border-red-500' : 'border-gray-300'}`,
           className
         )}
       >
