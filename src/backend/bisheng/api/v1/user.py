@@ -450,7 +450,7 @@ async def create_role(*,
         #     "70": ["员工职务", "空"],
         #     "72": ["员工职务", "空"]
         # }
-
+        role.group_id = 0  # 不需要原来的所属组
         db_role = service.add_role(role)
         create_role_hook(request, login_user, db_role)
         return resp_200(db_role)

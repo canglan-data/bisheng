@@ -31,7 +31,7 @@ class RolePositionDao:
         with session_getter() as session:
             statement = delete(RolePosition).where(RolePosition.role_id.in_(role_ids))
             if group_ids:
-                statement.where(RolePosition.group_id.in_(group_ids))
+                statement = statement.where(RolePosition.group_id.in_(group_ids))
 
             session.exec(statement)
             session.commit()
@@ -41,11 +41,11 @@ class RolePositionDao:
         with session_getter() as session:
             statement = select(RolePosition)
             if role_ids:
-                statement.where(RolePosition.role_id.in_(role_ids))
+                statement = statement.where(RolePosition.role_id.in_(role_ids))
             if group_ids:
-                statement.where(RolePosition.group_id.in_(group_ids))
+                statement = statement.where(RolePosition.group_id.in_(group_ids))
             if positions:
-                statement.where(RolePosition.position.in_(positions))
+                statement = statement.where(RolePosition.position.in_(positions))
             return session.exec(statement).all()
 
     @classmethod

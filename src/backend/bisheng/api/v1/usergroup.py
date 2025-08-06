@@ -416,7 +416,10 @@ async def get_group_roles(*,
         role_ids = [r.id for r in res]
         if role_ids:
             new_result = []
-            group_dict, position_dict = PermissionService.get_role_group_positions(role_ids=role_ids)
+            group_ids = []
+            if not user.is_admin():
+                group_ids = PermissionService.get_manage_user_group_ids(user.user_id)
+            group_dict, position_dict = PermissionService.get_role_group_positions(role_ids=role_ids, group_ids=group_ids)
             for role in res:
                 role_item = role.model_dump()
                 role_item['groups'] = group_dict.get(role.id, [])
