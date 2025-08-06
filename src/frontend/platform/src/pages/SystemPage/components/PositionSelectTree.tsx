@@ -56,7 +56,7 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
               filteredChildren = filterTreeData(dept.children);
             }
             // 检查是否有职位
-            const hasPositions = dept.position_count && Object.entries(dept.position_count)
+            const hasPositions = dept.position_count && Object.keys(dept.position_count).length > 0
             // 检查是否有子部门
             const hasChildren = filteredChildren.length > 0;
             // 保留有职位或有子部门的节点
@@ -152,9 +152,17 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
       if (dept && dept.position_count) {
         const validPositions = Object.keys(dept.position_count)
         console.log('validPositions', validPositions);
-        // 如果选中的职位与部门所有有效职位相同，则同时选中部门节点和所有职位节点
+        console.log(dept.group_name,dept, positions.length, validPositions.length, dept.children.length);
+        
+        // 检查是否所有子部门都被选中
+        const areAllChildrenSelected = dept.children && dept.children.length > 0
+          ? dept.children.every(child => checkedKeys.includes(`group_${child.id}`))
+          : true; // 如果没有子部门，则视为满足条件
+
+        // 如果选中的职位与部门所有有效职位相同，且所有子部门都被选中，则同时选中部门节点和所有职位节点
         if (positions.length === validPositions.length && 
-          positions.every(pos => validPositions.includes(pos))) {
+          positions.every(pos => validPositions.includes(pos)) && 
+          areAllChildrenSelected) {
           keys.push(`group_${pureGroupId}`);
           validPositions.forEach(pos => {
             keys.push(`position_${pureGroupId}_${pos}`);
