@@ -158,12 +158,17 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
         }
         // 没有id时需要走创建流程，否则修改
         let roleId = id
+        // 过滤掉 selectGroupKey 中值为空数组的 key
+        const filteredSelectGroupKey = Object.fromEntries(
+            Object.entries(form.selectGroupKey).filter(([_, value]) => Array.isArray(value) ? value.length > 0 : true)
+        );
+
         if (id === -1) {
             const res = await captureAndAlertRequestErrorHoc(createRole({
                 role_name: form.name,
                 group_id: groupId,
                 is_bind_all: form.bingAll,
-                group_positions: form.selectGroupKey,
+                group_positions: filteredSelectGroupKey,
                 user_ids: form.users.map(el => el.user_id)
             }))
             roleId = res.id
@@ -172,7 +177,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             captureAndAlertRequestErrorHoc(updateRoleNameApi(roleId, {
                 role_name: form.name,
                 extra: "",
-                group_positions: form.selectGroupKey,
+                group_positions: filteredSelectGroupKey,
                 is_bind_all: form.bingAll,
                 user_ids: form.users.map(el => el.user_id)
             }))

@@ -53,6 +53,7 @@ const PositionSelect: React.FC<PositionSelectProps> = ({
       setFetchError(null);
       try {
         const response = await getUserGroupPositionCountApi();
+
         // 接口请求后进行过滤，递归移除没有职位且没有子部门的节点
         const filterTreeData = (data: any[]): any[] => {
           return data.map(dept => {
@@ -111,7 +112,8 @@ const PositionSelect: React.FC<PositionSelectProps> = ({
       const department = findDepartment(departments);
       const groupName = department?.group_name || `部门${groupId}`;
       if (positions.length === 0) {
-        labels.push(`${groupName}`);
+        // 组织架构下面没有职位 什么都不做
+        // labels.push(`${groupName}`);
       } else {
         positions.forEach(pos => {
           labels.push(`${pos}（${groupName}）`);

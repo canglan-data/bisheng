@@ -26,6 +26,7 @@ import UserRoleModal from "./UserRoleModal";
 import UserPwdModal from "@/pages/LoginPage/UserPwdModal";
 import { PlusIcon } from "@/components/bs-icons";
 import CreateUser from "./CreateUser";
+import { message } from "@/components/bs-ui/toast/use-toast";
 
 function UsersFilter({ options, onChecked, nameKey, placeholder, onFilter, byTree = false }) {
     const [open, setOpen] = useState(false)
@@ -111,6 +112,12 @@ export default function Users(params) {
             onOk(next) {
                 captureAndAlertRequestErrorHoc(disableUserApi(user.user_id, 1).then(res => {
                     reload()
+                    // 禁用成功提示
+                    message({
+                        variant: 'success',
+                        title: t('tip'),
+                        description: t('system.disableSuccess')
+                    });
                 }))
                 next()
             }
@@ -119,6 +126,12 @@ export default function Users(params) {
     const handleEnableUser = (user) => {
         captureAndAlertRequestErrorHoc(disableUserApi(user.user_id, 0).then(res => {
             reload()
+            // 开启成功提示
+            message({
+                variant: 'success',
+                title: t('tip'),
+                description: t('system.enableSuccess')
+            });
         }))
     }
 

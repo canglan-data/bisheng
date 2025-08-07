@@ -251,7 +251,7 @@ export default function SystemLog() {
                 </div>
                 
                 {keys.moduleId === 'system' && (
-                <div className="w-[180px] relative">
+                <div className="w-[200px] relative">
                 <MultiSelect 
                     contentClassName="overflow-y-auto max-w-[180px]" 
                     multiple

@@ -60,6 +60,8 @@
     "userGroupList": "用户组列表",
     "searchUserPositions": "搜索用户职位",
     "confirmText": "是否删除",
+    "disableSuccess": "禁用成功",
+    "enableSuccess": "启用成功",
     "roleName": "角色名称",
     "skillAuthorization": "技能授权",
     "knowledgeAuthorization": "知识库授权",
