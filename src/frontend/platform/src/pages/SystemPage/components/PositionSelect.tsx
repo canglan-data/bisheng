@@ -167,12 +167,52 @@ const PositionSelect: React.FC<PositionSelectProps> = ({
                 {!disabled && (
                   <X
                     className="h-3 w-3 min-w-3"
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
-                      // 此处简化处理，实际项目中需要根据label找到对应的value并删除
-                      console.log('label', label);
-                      
-                      handleClearClick();
+                      // 解析label，获取职位和部门信息
+                      const labelParts = label.split('（');
+                      let positionName = labelParts[0];
+                      let groupName = labelParts.length > 1 ? labelParts[1].replace('）', '') : '';
+                       
+                      // 查找对应的部门ID
+                      let targetGroupId = '';
+                      const findGroupId = (depts: Department[]) => {
+                        for (const dept of depts) {
+                          if (dept.group_name === groupName) {
+                            targetGroupId = dept.id;
+                            return true;
+                          }
+                          if (dept.children && findGroupId(dept.children)) {
+                            return true;
+                          }
+                        }
+                        return false;
+                      };
+                      findGroupId(departments);
+                       
+                      if (targetGroupId) {
+                        // 创建新的value对象，避免直接修改原对象
+                        const newValue = { ...value };
+                       
+                        if (newValue[targetGroupId]) {
+                          // 如果是具体职位（不是整个部门）
+                          if (positionName !== groupName) {
+                            newValue[targetGroupId] = newValue[targetGroupId].filter(pos => pos !== positionName);
+                           
+                            // 如果该部门没有选中的职位了，删除该部门
+                            if (newValue[targetGroupId].length === 0) {
+                              delete newValue[targetGroupId];
+                            }
+                          } else {
+                            // 如果是整个部门
+                            delete newValue[targetGroupId];
+                          }
+                           
+                          // 调用onChange更新值
+                          onChange?.(newValue);
+                        }
+                      }
                     }}
                   ></X>
                 )}
