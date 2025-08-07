@@ -33,18 +33,18 @@ class UserPayload:
         self.user_id = kwargs.get('user_id')
         self.user_role = kwargs.get('role')
         self.group_cache = {}
-        if self.user_role != 'admin':  # 非管理员用户，需要获取他的角色列表
-            roles = UserRoleDao.get_user_roles(self.user_id)
-            self.user_role = [one.role_id for one in roles]
+        # if self.user_role != 'admin':  # 非管理员用户，需要获取他的角色列表（下方有获取，这里重复了）
+        #     roles = UserRoleDao.get_user_roles(self.user_id)
+        #     self.user_role = [one.role_id for one in roles]
         self.role_cache = {}
         self.bind_role_cache = {}
         self.user_name = kwargs.get('user_name')
 
         roles = UserRoleDao.get_user_roles(self.user_id)
         self.user_role = [one.role_id for one in roles]
-        user_groups = UserGroupDao.get_user_group(self.user_id)
-        group_bind_roles = self.get_group_bind_role([one.group_id for one in user_groups])
-        self.user_role.extend([one['id'] for one in group_bind_roles])
+        # user_groups = UserGroupDao.get_user_group(self.user_id) # 绑定的角色不需要了
+        # group_bind_roles = self.get_group_bind_role([one.group_id for one in user_groups])
+        # self.user_role.extend([one['id'] for one in group_bind_roles])
 
     def is_admin(self):
         if self.user_role == 'admin':
@@ -229,16 +229,25 @@ def gen_user_role(db_user: User):
             groups_roles = RoleDao.get_role_by_groups([one.group_id for one in user_groups], include_parent=True, only_bind=True)
             role_ids.extend([one.id for one in groups_roles])
         # 判断是否是用户组管理员
-        db_user_admin_groups = UserGroupDao.get_user_admin_group(db_user.user_id)
-        db_user_audit_groups = UserGroupDao.get_user_audit_group(db_user.user_id)
-        db_user_operation_groups = UserGroupDao.get_user_operation_group(db_user.user_id)
         gr = []
-        if len(db_user_audit_groups) > 0:
-            gr.append('group_audit')
-        if len(db_user_operation_groups) > 0:
-            gr.append('group_operation')
+
+        db_user_admin_groups = UserGroupDao.get_user_admin_group(db_user.user_id)
+        # db_user_audit_groups = UserGroupDao.get_user_audit_group(db_user.user_id)
+        # db_user_operation_groups = UserGroupDao.get_user_operation_group(db_user.user_id)
+
+        # if len(db_user_audit_groups) > 0:
+        #     gr.append('group_audit')
+        # if len(db_user_operation_groups) > 0:
+        #     gr.append('group_operation')
+        # if len(db_user_admin_groups) > 0:
+        #     gr.append('group_admin')
+        #     gr.append('group_operation')
+        #     gr.append('group_audit')
+
         if len(db_user_admin_groups) > 0:
             gr.append('group_admin')
+
+        gr = list(set(gr))
         if len(gr) > 0:
             role = "|".join(gr)
         else:
