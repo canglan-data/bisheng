@@ -25,7 +25,7 @@ const options: { value: FileType, label: string }[] = [
         value: 'image'
     },
     {
-        label: '音频（mp3）',
+        label: '音频（mp3、amr、wav、aac）',
         value: 'audio'
     }
 ];

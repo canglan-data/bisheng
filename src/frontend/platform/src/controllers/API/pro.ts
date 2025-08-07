@@ -82,7 +82,7 @@ export function getUserGroupsProApi({ name = '', page, pageSize, groupId, roleId
 }): Promise<{ data: any[]; total: number }>  {
     const groupStr = groupId?.reduce((res, id) => `${res}&group_id=${id}`, '') || ''
     const roleStr = roleId?.reduce((res, id) => `${res}&role_id=${id}`, '') || ''
-    return axios.get(`/api/group/list?page=${page}&page_size=${pageSize}&keyword=${name}`);
+    return axios.get(`/api/group/list?page=${page}&pageSize=${pageSize}&keyword=${name}`);
 }
 
 // GET sso URL

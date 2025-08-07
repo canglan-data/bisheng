@@ -283,6 +283,26 @@ class ChatMessageDao(MessageBase):
             return session.exec(st).all()
 
     @classmethod
+    def get_msg_by_filter(cls, chat_ids: List[str] = None,
+                          flow_ids: List[str] = None,
+                          user_ids:list[int] = None,
+                          start_time: datetime = None,
+                          end_time:datetime = None) -> List[ChatMessage]:
+        with session_getter() as session:
+            st = select(ChatMessage).where(ChatMessage.is_delete == 0)
+            if chat_ids:
+                st = st.where(ChatMessage.chat_id.in_(chat_ids))
+            if flow_ids:
+                st = st.where(ChatMessage.flow_id.in_(flow_ids))
+            if user_ids:
+                st = st.where(ChatMessage.user_id.in_(user_ids))
+            if start_time:
+                st = st.where(ChatMessage.create_time >= start_time)
+            if end_time:
+                st = st.where(ChatMessage.create_time < end_time)
+            return session.exec(st).all()
+
+    @classmethod
     def delete_by_user_chat_id(cls, user_id: int, chat_id: str):
         if user_id is None or chat_id is None:
             logger.info('delete_param_error user_id={} chat_id={}', user_id, chat_id)
