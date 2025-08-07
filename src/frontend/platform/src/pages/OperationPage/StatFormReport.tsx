@@ -64,6 +64,11 @@ export default function StatFormReport({ onBack, onJump }) {
                 const appOptions = await loadApps("");
                 const groupOptions = await loadGroups("")
                 const config = await getConfigVitalOrgStatusApi();
+
+                // 确保收件邮箱有默认值
+                if (!config.receivedEmails || !Array.isArray(config.receivedEmails) || config.receivedEmails.length === 0) {
+                    config.receivedEmails = [''];
+                }
                 
                 if (config.appName && Array.isArray(config.appName) && appOptions.length > 0) {
                     config.appName = config.appName.map(item => {
@@ -97,6 +102,13 @@ export default function StatFormReport({ onBack, onJump }) {
         fetchData();
     }, []);
 
+    // 邮箱格式验证函数
+    const isValidEmail = (email: string) => {
+      // 验证邮箱前缀格式（不包含域名部分）
+      const emailRegex = /^[a-zA-Z0-9._%+-]+$/;
+      return emailRegex.test(email.trim());
+    };
+
     const handleSave = () => {
         if (!form.appName || form.appName.length === 0) {
             return message({
@@ -126,10 +138,10 @@ export default function StatFormReport({ onBack, onJump }) {
             });
         }
         
-        if (!form.answerTime) {
+        if (!form.answerTime || isNaN(form.answerTime) || !Number.isInteger(form.answerTime) || form.answerTime < 1 || form.answerTime > 100) {
             return message({
                 variant: 'warning',
-                description: '问答次数不可为空',
+                description: '问答次数必须为1-100之间的整数',
             });
         }
         
@@ -137,6 +149,14 @@ export default function StatFormReport({ onBack, onJump }) {
             return message({
                 variant: 'warning',
                 description: '发送邮箱不可为空',
+            });
+        }
+
+        // 验证发送邮箱格式
+        if (!isValidEmail(form.email)) {
+            return message({
+                variant: 'warning',
+                description: '发送邮箱格式不正确，请输入有效的邮箱前缀',
             });
         }
         
@@ -152,6 +172,16 @@ export default function StatFormReport({ onBack, onJump }) {
                 variant: 'warning',
                 description: '收件邮箱不可为空',
             });
+        }
+
+        // 验证所有收件邮箱格式
+        for (const email of form.receivedEmails) {
+            if (email && !isValidEmail(email)) {
+                return message({
+                    variant: 'warning',
+                    description: `收件邮箱格式不正确: ${email}，请输入有效的邮箱前缀`,
+                });
+            }
         }
 
         // if (form.emailCode.length !== 16) {
@@ -202,7 +232,7 @@ export default function StatFormReport({ onBack, onJump }) {
                     <CardHeader>
                         <CardTitle>
                         <div className="flex gap-2 items-center">
-                            <span className="text-lg"> 统计规则</span>
+                            <span className="text-lg">统计规则</span>
                         </div>
                         </CardTitle>
                     </CardHeader>
@@ -265,14 +295,14 @@ export default function StatFormReport({ onBack, onJump }) {
                             {/* Sender Email */}
                             <label className="text-right font-medium"><span className="text-red-500">*</span>发送邮箱</label>
                             <div className="relative">
-                                <Input type="text" className="pr-40" maxLength={256} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value})} />
+                                <Input type="text" placeholder="请输入发件邮箱地址" className="pr-40" maxLength={64} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value})} />
                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">@aviva-cofco.com.cn</span>
                             </div>
 
                             {/* Authorization Code */}
                             <label className="text-right font-medium"><span className="text-red-600">*</span>邮箱授权码</label>
                             <div className="flex items-center gap-2 relative">
-                                <Input type="text" placeholder="请输入16位授权码" maxLength={50} className="flex-grow" value={form.emailCode} onChange={(e) => setForm({ ...form, emailCode: e.target.value})}/>
+                                <Input type="text" placeholder="请输入16位授权码" maxLength={16} className="flex-grow" value={form.emailCode} onChange={(e) => setForm({ ...form, emailCode: e.target.value})}/>
                                 <div className="absolute left-full ml-2">
                                     <QuestionTooltip
                                         content={
@@ -295,9 +325,10 @@ export default function StatFormReport({ onBack, onJump }) {
                                         <div key={index} className="relative">
                                         <Input
                                             type="text"
+                                            placeholder="请输入收件邮箱地址"
                                             className="pr-40"
                                             value={email}
-                                            maxLength={256}
+                                            maxLength={64}
                                             onChange={(e) => {
                                             const newEmails = [...form.receivedEmails];
                                             newEmails[index] = e.target.value;

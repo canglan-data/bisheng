@@ -6,6 +6,7 @@ import { textToSpeech } from '@/controllers/API/flow';
 import { checkSassUrl } from '../bs-comp/FileView';
 import { ThunmbIcon } from '../bs-icons';
 import { formatTTSText } from '@/util/utils';
+import { message } from '../bs-ui/toast/use-toast';
 
 interface AudioPlayButtonProps {
   messageId: string;
@@ -22,6 +23,8 @@ export const AudioPlayComponent = ({ messageId, msg }: AudioPlayButtonProps) => 
     pauseAudio,
     resumeAudio,
     stopAudio,
+    setLoading,
+    setCurrentPlayingId,
   } = useAudioPlayerStore();
 
   const getAudioUrl = async (msg: string) => {
@@ -34,28 +37,32 @@ export const AudioPlayComponent = ({ messageId, msg }: AudioPlayButtonProps) => 
   const isPlaying = currentPlayingId === messageId && soundInstance?.playing();
   const isThisLoading = currentPlayingId === messageId && isLoading;
   console.log('isPlaying', isPlaying);
+  console.log('soundInstance', soundInstance);
 
   const handlePlay = async () => {
     try {
       setError('');
       
-      // 当前存在正在播放的音频 则暂停
-      if (soundInstance?.playing()) {
-        pauseAudio();
-        // 猴子补丁
-        if (currentPlayingId === messageId) {
-          // 如果是暂停当前播放的 直接跳出，否则继续后续逻辑获取新的播放
-          return;
+      // 如果点击的是当前正在播放的音频
+      if (currentPlayingId === messageId) {
+        if (soundInstance?.playing()) {
+          // 如果正在播放，则暂停
+          pauseAudio();
+        } else {
+          // 如果已暂停，则继续播放
+          resumeAudio();
         }
-      }
-
-      // 如果是暂停状态，恢复播放
-      if (currentPlayingId === messageId && soundInstance) {
-        resumeAudio();
         return;
       }
 
-      // 否则获取新的音频
+      // 如果是新的音频，停止当前播放的音频
+      if (currentPlayingId) {
+        stopAudio();
+      }
+      // 设置当前音频为加载状态
+      setLoading(true);
+      setCurrentPlayingId(messageId);
+      // 获取新的音频
       const audioUrl = await getAudioUrl(msg);
       playAudio({
         id: messageId,
@@ -65,7 +72,12 @@ export const AudioPlayComponent = ({ messageId, msg }: AudioPlayButtonProps) => 
         },
       });
     } catch (err) {
-      setError('Failed to play audio');
+      message({
+          variant: 'warning',
+          description: '文本较长，后台转录中，请稍后再试'
+      })
+      setLoading(false);
+      setCurrentPlayingId(null);
       console.error(err);
     }
   };

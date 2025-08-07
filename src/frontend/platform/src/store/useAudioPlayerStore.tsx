@@ -17,6 +17,7 @@ interface AudioPlayerState {
   resumeAudio: () => void;
   stopAudio: () => void;
   setLoading: (isLoading: boolean) => void;
+  setCurrentPlayingId: (id: string | null) => void;
 }
 
 export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
@@ -40,8 +41,17 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
       src: [audioUrl],
       html5: true, // 使用 HTML5 Audio API
       onload: () => {
-        set({ isLoading: false, duration: sound.duration() });
-        sound.play();
+        const currentId = get().currentPlayingId;
+        // 只有当当前播放ID仍然是该音频的ID时，才播放
+        if (currentId === id) {
+          set({ isLoading: false, duration: sound.duration() });
+          sound.play();
+        } else {
+          // 否则，清理该音频的状态
+          set({ isLoading: false });
+          // 销毁声音实例
+          sound.unload();
+        }
       },
       onplay: () => {
         // 更新进度
@@ -90,4 +100,5 @@ export const useAudioPlayerStore = create<AudioPlayerState>((set, get) => ({
   },
 
   setLoading: (isLoading) => set({ isLoading }),
+  setCurrentPlayingId: (id) => set({ currentPlayingId: id }),
 }));
