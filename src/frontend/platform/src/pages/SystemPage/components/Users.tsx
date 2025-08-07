@@ -200,9 +200,9 @@ export default function Users(params) {
         return <div>
             {/* 编辑 */}
             {/* <Button variant="link" disabled={user.user_id === el.user_id} onClick={() => setCurrentUser(el)} className="px-0">{t('edit')}</Button> */}
-            {/* 重置密码 */}
-            {/* {(isAdmin || hasGroupAdminRole) &&
-                <Button variant="link" className="px-0 pl-4" onClick={() => userPwdModalRef.current.open(el.user_id)}>{t('system.resetPwd')}</Button>} */}
+            {/* TODO： 隐藏重置密码 */}
+            {(isAdmin || hasGroupAdminRole) &&
+                <Button variant="link" className="px-0 pl-4" onClick={() => userPwdModalRef.current.open(el.user_id)}>{t('system.resetPwd')}</Button>}
             {/* 禁用 */}
             {
                 el.delete === 1 ? <Button variant="link" onClick={() => handleEnableUser(el)} className="text-green-500 px-0 pl-4">{t('enable')}</Button> :
