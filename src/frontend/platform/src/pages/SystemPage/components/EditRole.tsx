@@ -19,6 +19,7 @@ import { createRole, getGroupResourcesApi, getRoleDetailApi, getRolePermissionsA
 import { captureAndAlertRequestErrorHoc } from "../../../controllers/request";
 import { useTable } from "../../../util/hook";
 import PositionSelect from "./PositionSelect";
+import { message } from "@/components/bs-ui/toast/use-toast";
 
 const SearchPanne = ({ groupId, placeholder = '', title, type, children }) => {
     const { page, pageSize, data, total, loading, setPage, search } = useTable({ pageSize: 10 }, (params) => {
@@ -163,6 +164,11 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             Object.entries(form.selectGroupKey).filter(([_, value]) => Array.isArray(value) ? value.length > 0 : true)
         );
 
+        if (Object.keys(filteredSelectGroupKey).length === 0) {
+            return message({title: t('prompt'), variant: 'warning', description: t('system.roleGroupRequired')});
+        }
+
+
         if (id === -1) {
             const res = await captureAndAlertRequestErrorHoc(createRole({
                 role_name: form.name,
@@ -202,7 +208,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
 
     return <div className="max-w-[600px] mx-auto pt-4 h-[calc(100vh-128px)] overflow-y-auto pb-40 scrollbar-hide">
         <div className="font-bold mt-4">
-            <p className="text-xl mb-4">{t('system.roleName')}</p>
+            <p className="text-xl mb-4"><span className="text-red-500">*</span>{t('system.roleName')}</p>
             <Input placeholder={t('system.roleName')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={60} showCount></Input>
         </div>
         {/* <div className="font-bold mt-4">
@@ -214,7 +220,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             {!form.bingAll && <SelectUserByGroup value={form.users} groupId={groupId} onChange={(users) => setForm({ ...form, users })} />}
         </div> */}
          <div className="font-bold mt-4">
-            <p className="text-xl mb-4">适用组织架构范围</p>
+            <p className="text-xl mb-4"><span className="text-red-500">*</span>适用组织架构范围</p>
             <PositionSelect value={form.selectGroupKey} onChange={(selectGroupKey) => {
                 setForm({ ...form, selectGroupKey })
             }} />
