@@ -410,6 +410,7 @@ class AssistantService(BaseService, AssistantUtils):
                 role_access = RoleAccessDao.get_role_access(role_ids, AccessType.GPTS_TOOL_READ)
                 if role_access:
                     tool_type_ids_extra = [int(access.third_id) for access in role_access]
+        logger.debug(f"jjxx get_gpts_tools tool_type_ids_extra:{tool_type_ids_extra}")
         # 获取用户可见的所有工具列表
         user_company_ids = cls.get_company_members_by_uid(user.user_id)
         if is_preset is None:

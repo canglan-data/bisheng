@@ -17,7 +17,7 @@ export async function getOperationGroupsApi(params: { keyword, page, page_size }
 }
 
 // 分页获取审计列表
-export async function getLogsApi({ page, pageSize, userIds, groupId = '', start, end, moduleId = '', action = '' }: {
+export async function getLogsApi({ page, pageSize, userIds, groupId = '', start, end, moduleId = '', action = '', monitorResult = [] }: {
     page: number,
     pageSize: number,
     userIds?: number[],
@@ -25,14 +25,16 @@ export async function getLogsApi({ page, pageSize, userIds, groupId = '', start,
     start?: string,
     end?: string,
     moduleId?: string,
-    action?: string
+    action?: string,
+    monitorResult?: string[]
 }): Promise<{ data: any[], total: number }> {
     const uids = userIds?.reduce((pre, val) => `${pre}&operator_ids=${val}`, '') || ''
     const startStr = start ? `&start_time=${start}` : ''
     const endStr = end ? `&end_time=${end}` : ''
+    const monitorStr = monitorResult?.reduce((pre, val) => `${pre}&monitor_result=${val}`, '') || ''
     return await axios.get(
         `/api/v1/audit?page=${page}&limit=${pageSize}&group_ids=${groupId}${uids}` +
-        `&system_id=${moduleId}&event_type=${action}` + startStr + endStr
+        `&system_id=${moduleId}&event_type=${action}` + startStr + endStr + monitorStr
     )
 }
 
@@ -109,7 +111,10 @@ export async function getActionsByModuleApi(moduleId) {
         case 'chat': return actions.filter(a => a.value.includes('chat'))
         case 'build': return actions.filter(a => a.value.includes('build'))
         case 'knowledge': return actions.filter(a => a.value.includes('knowledge') || a.value.includes('file'))
-        case 'system': return actions.filter(a => a.value.includes('user') || a.value.includes('role'))
+        case 'system': return actions.filter(a => 
+            (a.value.includes('user') || a.value.includes('role')) && 
+            !a.value.includes('user_group')
+        )
     }
 }
 
@@ -227,6 +232,25 @@ export async function getGroupsApi(
 //         params, paramsSerializer
 //     })
 // }
+
+// 导出审计日志
+export async function exportLogApi(params: {
+    userIds?: number[],
+    groupId?: string,
+    start?: string,
+    end?: string,
+    moduleId?: string,
+    action?: string,
+    monitorResult?: string[]
+}) {
+    const uids = params.userIds?.reduce((pre, val) => `${pre}&operator_ids=${val}`, '') || ''
+    const startStr = params.start ? `&start_time=${params.start}` : ''
+    const endStr = params.end ? `&end_time=${params.end}` : ''
+    const monitorStr = params.monitorResult?.reduce((pre, val) => `${pre}&monitor_result=${val}`, '') || ''
+    return await axios.get(
+        `/api/v1/audit?export=1${uids}&group_ids=${params.groupId || ''}` +
+        `&system_id=${params.moduleId || ''}&event_type=${params.action || ''}` + startStr + endStr + monitorStr)
+}
 
 // 导出csv
 
@@ -365,6 +389,51 @@ export async function getOperationAppListApi(params: {
     return await axios.get('/api/v1/operation/session', {
         params, paramsSerializer
     })
+}
+
+// 获取邮件配置信息
+export async function getConfigVitalOrgStatusApi(): Promise<any> {
+    return await axios.get('/api/v1/operation/session/vital_org_status_config').then(res => {
+        const formData = {
+            appName: res.flow_ids?.map(id => ({ value: id, label: id })),
+            selectedDepartments: res.group_ids ? res.group_ids.map(id => ({ value: id.toString(), label: id.toString() })) : [],
+            selectPeriod: res.execution_interval_days?.toString() || '7',
+            selectDay: res.start_date ? new Date(res.start_date) : '',
+            answerTime: res.min_qa_count || 5,
+            email: res.sender_email || '',
+            emailCode: res.sender_password || '',
+            receivedEmails: res.recipient_emails || ['']
+        };
+        
+        return formData;
+    })
+}
+
+// 更新邮件任务
+export async function configVitalOrgStatusApi(params: {
+        sender_email: string,
+        sender_password: string,
+        recipient_emails: string[]
+        execution_interval_days: number,
+        start_date: string,
+        min_qa_count: number,
+        flow_ids: string[],
+        group_ids: number[],
+    }) {
+    const backendData = {
+        msg_from:  "智慧中英",
+        ...params,
+        execution_hour: 10,
+        execution_minute: 0,
+        smtp_host: "smtp.qq.com",
+        smtp_port: 465
+    };
+    return await axios.post('/api/v1/operation/session/vital_org_status_config', backendData)
+}
+
+// 获取用户组织架构相关应用
+export async function getSendEmailGroupsApi(params: { keyword, page, page_size }) {
+    return await axios.get('/api/v1/operation/send_mail/group/list', { params })
 }
 
 // 获取运营应用列表

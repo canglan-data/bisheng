@@ -21,11 +21,17 @@ import { locationContext } from "@/contexts/locationContext";
 import { getUserGroupsProApi } from "@/controllers/API/pro";
 import AutoPagination from "@/components/bs-ui/pagination/autoPagination";
 import { useTable } from "@/util/hook";
+import { SettingIcon } from "@/components/bs-icons";
+import EditUserGroupManages from "./EditUserGroupManages";
+import { userContext } from "@/contexts/userContext";
 
 export default function UserGroups() {
+    const { user } = useContext(userContext);
+
     const { t } = useTranslation()
     const [userGroups, setUserGroups] = useState<UserGroup[]>([])
     const [userGroup, setUserGroup] = useState(null)
+    const [showManage, setShowManage] = useState(false)
     const tempRef = useRef<UserGroup[]>([]) // 搜索功能的数据暂存
     const { appConfig } = useContext(locationContext)
     const defaultAdminsRef = useRef([])
@@ -49,13 +55,13 @@ export default function UserGroups() {
     useEffect(() => {
         const groups = groupsData.map((g: any)=> {
             const group_admins = [...defaultAdminsRef.current, ...g.group_admins];
-            const group_audits = [...defaultAdminsRef.current, ...g.group_audits];
-            const group_operations = [...defaultAdminsRef.current, ...g.group_operations];
+            // const group_audits = [...defaultAdminsRef.current, ...g.group_audits];
+            // const group_operations = [...defaultAdminsRef.current, ...g.group_operations];
             return {
                 ...g,
                 group_admins,
-                group_audits,
-                group_operations
+                // group_audits,
+                // group_operations
             }
         });
         setUserGroups(groups);
@@ -77,11 +83,18 @@ export default function UserGroups() {
         return (userGroups.find(ug =>
             ug.group_name === name && ug.id !== userGroup.id))
     }
+    const handlePositionChange = () => {
+        setShowManage(false);
+        reload()
+    }
     const handleChange = () => {
         setUserGroup(null)
         reload()
     }
 
+    if (showManage) return <EditUserGroupManages
+        onChange={handlePositionChange}
+    />
 
     if (userGroup) return <EditUserGroup
         data={userGroup}
@@ -95,20 +108,26 @@ export default function UserGroups() {
                 <div className="w-[180px] relative">
                     <SearchInput placeholder={t('system.groupName')} onChange={(e) => search(e.target.value)}></SearchInput>
                 </div>
-                <Button className="flex justify-around" onClick={() => setUserGroup({})}>
+                {user.role === 'admin' && <Button className="text-red-500" onClick={() => {
+                    setShowManage(true);
+                }} variant="secondary">
+                    <SettingIcon className="text-red-500" />
+                    {'组织架构默认管理员'}
+                </Button>}
+                {/* <Button className="flex justify-around" onClick={() => setUserGroup({})}>
                     <PlusIcon className="text-primary" />
                     <span className="text-[#fff] mx-4">{t('create')}</span>
-                </Button>
+                </Button> */}
             </div>
             <Table className="mb-10">
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[200px]">{t('system.groupName')}</TableHead>
                         <TableHead>{t('system.permissionsAdmins')}</TableHead>
-                        <TableHead>{t('system.auditor')}</TableHead>
-                        <TableHead>{t('system.operator')}</TableHead>
+                        {/* <TableHead>{t('system.auditor')}</TableHead>
+                        <TableHead>{t('system.operator')}</TableHead> */}
                         {appConfig.isPro && <TableHead className="w-[150px]">{t('system.flowControl')}</TableHead>}
-                        <TableHead className="w-[160px]">上级用户组</TableHead>
+                        <TableHead className="w-[160px]">上级组织架构</TableHead>
                         <TableHead className="w-[160px]">{t('system.changeTime')}</TableHead>
                         <TableHead className="text-right w-[130px]">{t('operations')}</TableHead>
                     </TableRow>
@@ -119,8 +138,8 @@ export default function UserGroups() {
                             <TableCell className="font-medium">{ug.group_name}</TableCell>
                             {/* TODO: admin_user是啥？ zzy */}
                             <TableCell className="break-all">{(ug.admin_user || ug.group_admins).map(el => el.user_name).join(',')}</TableCell>
-                            <TableCell className="break-all">{(ug.admin_user || ug.group_audits).map(el => el.user_name).join(',')}</TableCell>
-                            <TableCell className="break-all">{(ug.admin_user || ug.group_operations).map(el => el.user_name).join(',')}</TableCell>
+                            {/* <TableCell className="break-all">{(ug.admin_user || ug.group_audits).map(el => el.user_name).join(',')}</TableCell>
+                            <TableCell className="break-all">{(ug.admin_user || ug.group_operations).map(el => el.user_name).join(',')}</TableCell> */}
                             {appConfig.isPro && <TableCell>{ug.group_limit ? t('system.limit') : t('system.unlimited')}</TableCell>}
                             <TableCell>{ug.parent_group_path || '无'}</TableCell>
                             <TableCell>{ug.update_time.replace('T', ' ')}</TableCell>
@@ -128,12 +147,12 @@ export default function UserGroups() {
                                 <Button variant="link" onClick={() => setUserGroup({
                                     ...ug,
                                     group_admins: ug.group_admins.slice(defaultAdminsRef.current.length),
-                                    group_audits: ug.group_audits.slice(defaultAdminsRef.current.length),
-                                    group_operations: ug.group_operations.slice(defaultAdminsRef.current.length),
+                                    // group_audits: ug.group_audits.slice(defaultAdminsRef.current.length),
+                                    // group_operations: ug.group_operations.slice(defaultAdminsRef.current.length),
                                 })}
                                     className="px-0 pl-6">{t('edit')}
                                 </Button>
-                                <Button variant="link" disabled={ug.id === 2} onClick={() => handleDelete(ug)} className="text-red-500 px-0 pl-6">{t('delete')}</Button>
+                                {/* <Button variant="link" disabled={ug.id === 2} onClick={() => handleDelete(ug)} className="text-red-500 px-0 pl-6">{t('delete')}</Button> */}
                             </TableCell>
                         </TableRow>
                     ))}
