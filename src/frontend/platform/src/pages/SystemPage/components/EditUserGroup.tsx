@@ -305,7 +305,7 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
     return <div className="max-w-[630px] mx-auto pt-4 h-[calc(100vh-128px)] overflow-y-auto pb-10 scrollbar-hide">
         <div className="font-bold mt-4">
             <p className="text-xl mb-4">{t('system.groupName')}</p>
-            <Input placeholder={t('system.userGroupName')} required value={form.groupName} onChange={(e) => setForm({ ...form, groupName: e.target.value })}></Input>
+            <Input disabled placeholder={t('system.userGroupName')} required value={form.groupName} onChange={(e) => setForm({ ...form, groupName: e.target.value })}></Input>
         </div>
         {/* 有group_name表示是修改页面 同时有上级用户组 才展示上级用户组 */}
         {(data.group_name && form.department) && <div className="font-bold mt-4">
