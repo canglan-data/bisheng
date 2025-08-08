@@ -24,7 +24,6 @@ class ConfigKeyEnum(Enum):
     VITAL_ORG_STATS = 'vital_org_stats' # 组织统计相关配置
     GROUP_ADMIN_POSITION = 'group_admin_position'
 
-
 class ConfigBase(SQLModelSerializable):
     key: str = Field(index=True, unique=True)
     value: str = Field(sa_column=Column(Text))

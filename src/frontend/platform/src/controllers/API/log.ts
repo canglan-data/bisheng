@@ -113,7 +113,8 @@ export async function getActionsByModuleApi(moduleId) {
         case 'knowledge': return actions.filter(a => a.value.includes('knowledge') || a.value.includes('file'))
         case 'system': return actions.filter(a => 
             (a.value.includes('user') || a.value.includes('role')) && 
-            !a.value.includes('user_group')
+            !(a.value.includes('delete_user_group') || a.value.includes('create_user_group'))
+
         )
     }
 }

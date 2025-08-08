@@ -25,11 +25,41 @@ export function UsersFilter({ options, onChecked, nameKey, placeholder, onFilter
         onFilter(_value)
         setOpen(false)
     }
-    // 搜索
+
+    // 搜索 - 支持树形结构
     const _options = useMemo(() => {
         if (!searchKey) return options
+
+        // 树形结构的搜索逻辑
+        if (byTree) {
+            // 递归过滤树形结构
+            const filterTree = (nodes: any[]): any[] => {
+                return nodes.reduce((acc, node) => {
+                    // 检查当前节点是否匹配搜索条件
+                    const isMatch = node[nameKey].toUpperCase().includes(searchKey.toUpperCase());
+                     
+                    // 递归过滤子节点
+                    const filteredChildren = node.children ? filterTree(node.children) : [];
+                     
+                    // 如果当前节点匹配或者有匹配的子节点，则保留该节点
+                    if (isMatch || filteredChildren.length > 0) {
+                        acc.push({
+                            ...node,
+                            children: filteredChildren
+                        });
+                    }
+                     
+                    return acc;
+                }, [] as any[]);
+            };
+             
+            return filterTree(options);
+        }
+
+        // 扁平结构的搜索逻辑
         return options.filter(a => a[nameKey].toUpperCase().includes(searchKey.toUpperCase()))
-    }, [searchKey, options])
+    }, [searchKey, options, byTree, nameKey])
+    
     // 重置
     const reset = () => {
         setValue([])

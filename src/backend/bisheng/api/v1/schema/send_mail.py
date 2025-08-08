@@ -55,7 +55,7 @@ class VitalOrgStatsConfig(BaseModel):
         days_diff = (target_date - datetime.strptime(self.start_date, "%Y-%m-%d").date()).days
 
         # 如果天数差为负数（目标日期早于开始日期），返回False
-        if days_diff < 0:
+        if days_diff <= 0:
             return False
 
         # 判断天数差是否为间隔天数的整数倍
