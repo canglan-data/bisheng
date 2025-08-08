@@ -171,6 +171,7 @@ export async function getGroupResourcesApi(
 ): Promise<{ data: any[]; total: number }> {
   return await axios.get(`/api/v1/group/get_group_resources`, { params });
 }
+
 /**
  * 新增角色
  */
