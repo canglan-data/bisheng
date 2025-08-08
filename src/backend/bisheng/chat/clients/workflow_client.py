@@ -5,6 +5,7 @@ from typing import Dict, Optional
 
 from fastapi import Request, WebSocket, status
 from loguru import logger
+from sqlmodel import select
 
 from bisheng.api.services.audit_log import AuditLogService
 from bisheng.api.services.user_service import UserPayload
@@ -14,12 +15,46 @@ from bisheng.api.v1.schema.workflow import WorkflowEventType
 from bisheng.chat.clients.base import BaseClient
 from bisheng.chat.types import WorkType
 from bisheng.database.models.flow import FlowDao, FlowStatus
-from bisheng.database.models.message import ChatMessageDao, ChatMessage
 from bisheng.utils import generate_uuid
 from bisheng.worker.workflow.redis_callback import RedisCallback
 from bisheng.worker.workflow.tasks import execute_workflow, continue_workflow
 from bisheng.workflow.common.workflow import WorkflowStatus
 from bisheng.database.models.message import ChatMessageDao, ChatMessage, ChatMessageType
+from bisheng.database.base import session_getter
+
+
+def get_chat_histories_from_db(flow_id: str, chat_id: str):
+    count = 10
+    flow = FlowDao.get_flow_by_id(flow_id)
+    if flow:
+        start_node = next((n for n in flow.data.get('nodes', []) if n.get('data', {}).get('type') == 'start'), None)
+        if start_node:
+            group_param = next((g for g in start_node['data'].get('group_params', []) if g.get('name') == '全局变量'), None)
+            if group_param:
+                param = next((p for p in group_param.get('params', []) if p.get('key') == 'chat_history'), None)
+                if param:
+                    count = param.get('value')
+    where = (
+        select(ChatMessage.message, ChatMessage.type)
+        .where(ChatMessage.flow_id == flow_id, ChatMessage.chat_id == chat_id)
+        .where(ChatMessage.category.in_(['question', 'stream_msg', 'output_msg']))
+        .order_by(ChatMessage.id.desc())
+        .limit(count)
+    )
+
+    with session_getter() as session:
+        results = session.exec(where).all()
+        messages_dicts = []
+        for result in results:
+            if result.type == 'human':
+                messages_dict = {'type': 'human', 'data': {"content": result.message}}
+                messages_dicts.append(messages_dict)
+            else:
+                message_dict = json.loads(result.message)
+                message = message_dict.get('msg', "")
+                messages_dict = {'type': 'ai', 'data': {"content": message}}
+                messages_dicts.append(messages_dict)
+        return list(reversed(messages_dicts))
 
 
 class WorkflowClient(BaseClient):
@@ -34,7 +69,9 @@ class WorkflowClient(BaseClient):
         self.latest_history: Optional[ChatMessage] = None
         self.ws_closed = False
 
-    async def close(self, force_stop=True):
+    async def close(self, force_stop=True, is_hold_history=False):
+        if is_hold_history:
+            self.workflow.set_chat_history(status='stopped')
         if not force_stop:
             self.ws_closed = True
         # 非会话模式关闭workflow执行, 会话模式判断是否是用户主动关闭的
@@ -97,7 +134,7 @@ class WorkflowClient(BaseClient):
         elif message.get('action') == 'input':
             await self.handle_user_input(message.get('data') , msg_id)
         elif message.get('action') == 'stop':
-            await self.close(force_stop=True)
+            await self.close(force_stop=True, is_hold_history = message.get('is_hold_history', False))
             # await self.stop_handle_message(message)
         elif message.get('action') == 'restart':
             await self.restart(message)
@@ -122,7 +159,9 @@ class WorkflowClient(BaseClient):
         unique_id = generate_uuid()
         if self.chat_id:
             await self.init_history()
-            unique_id = f'{self.chat_id}_async_task_id' + unique_id # 修改于2025.7.25,修改原因:在restart工作流时,由于close和init_workflow对应的新旧workflow的unique_id是同一个,可能导致其他线程或进程删除workflow的数据.
+            # 修改于2025.7.25, 修改原因: 在restart工作流时, 由于close和init_workflow对应的新旧workflow的unique_id是同一个,
+            # 可能导致其他stop操作的线程或进程删除重新init的workflow的数据.
+            unique_id = f'{self.chat_id}_async_task_id' + unique_id
         logger.debug(f'init workflow with unique_id: {unique_id}, workflow_id: {workflow_id}, chat_id: {self.chat_id}')
         self.workflow = RedisCallback(unique_id, workflow_id, self.chat_id, str(self.user_id))
         # 判断workflow是否已上线，未上线的话关闭当前websocket链接
@@ -187,6 +226,8 @@ class WorkflowClient(BaseClient):
             self.workflow.set_workflow_data(workflow_data)
             self.workflow.set_workflow_status(WorkflowStatus.WAITING.value)
             self.workflow.workflow_exec_unique_id = message.get('exec_unique_id')
+            if message.get('is_hold_history', False):
+                self.workflow.set_chat_history('stopped', get_chat_histories_from_db(workflow_id, self.chat_id))
 
             # 发起异步任务
             execute_workflow.delay(unique_id, workflow_id, self.chat_id, str(self.user_id), message.get('exec_unique_id'))
