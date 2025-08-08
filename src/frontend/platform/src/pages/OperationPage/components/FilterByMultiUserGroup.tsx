@@ -11,12 +11,13 @@ import { generateUUID } from "@/utils";
 
 // 多选层级用户组组件
 export default function FilterByMultiUserGroup({ value = [], onChange }) {
-    const { groups, loadData, searchData } = useGroups();
+    const { groups, loadData, flatGroups, searchData } = useGroups();
 
     return (
         <div className="w-auto relative">
             <MultiLevelSelect
                 options={groups}
+                flatGroups={flatGroups}
                 value={value}
                 onChange={onChange}
                 onSearch={searchData}
@@ -30,6 +31,7 @@ export default function FilterByMultiUserGroup({ value = [], onChange }) {
 // 多级选择组件
 const MultiLevelSelect = ({ 
     options = [], 
+    flatGroups = [],
     value = [], 
     onChange, 
     onSearch,
@@ -57,18 +59,88 @@ const MultiLevelSelect = ({
         onSearch?.(e?.target?.value || '');
     };
 
+    // 获取所有后代节点ID
+    const getAllDescendants = (nodeId) => {
+        const descendants = [nodeId];
+        const findChildren = (id) => {
+            const children = flatGroups.filter(g => g.parent_id === id);
+            children.forEach(child => {
+                descendants.push(child.id);
+                findChildren(child.id);
+            });
+        };
+        findChildren(nodeId);
+        return descendants;
+    };
+
+    // 更新父节点选择状态
+    const updateParentSelection = (nodeId, currentValue) => {
+        const node = flatGroups.find(g => g.id === nodeId);
+        if (!node || !node.parent_id) return currentValue;
+        
+        const parentId = node.parent_id;
+        const parentNode = flatGroups.find(g => g.id === parentId);
+        if (!parentNode) return currentValue;
+        
+        // 获取父节点的所有子节点
+        const parentChildren = flatGroups.filter(g => g.parent_id === parentId);
+        // 检查是否所有子节点都未被选中
+        const allUnselected = parentChildren.every(child => 
+            !currentValue.some(v => v.value === child.id)
+        );
+        // 检查是否所有子节点都被选中
+        const allSelected = parentChildren.every(child => 
+            currentValue.some(v => v.value === child.id)
+        );
+        
+        let newValue = [...currentValue];
+        if (allUnselected) {
+            // 所有子节点都未被选中，取消父节点
+            newValue = newValue.filter(v => v.value !== parentId);
+        } else if (allSelected) {
+            // 所有子节点都被选中，选中父节点
+            if (!newValue.some(v => v.value === parentId)) {
+                newValue.push({ value: parentId, label: parentNode.group_name });
+            }
+        } else {
+            // 部分子节点被选中，取消父节点
+            newValue = newValue.filter(v => v.value !== parentId);
+        }
+        
+        // 递归检查父节点的父节点
+        return updateParentSelection(parentId, newValue);
+    };
+
     // 处理选择/取消选择
     const handleSelect = (node) => {
         const nodeValue = { value: node.id, label: node.group_name };
         const isSelected = value.some(item => item.value === node.id);
+        const descendants = getAllDescendants(node.id);
         
         let newValue;
         if (isSelected) {
-            newValue = value.filter(item => item.value !== node.id);
+            // 取消选择：移除当前节点及其所有后代
+            newValue = value.filter(item => !descendants.includes(item.value));
         } else {
-            newValue = [...value, nodeValue];
+            // 选择：添加当前节点及其所有后代
+            newValue = [...value];
+            // 添加当前节点
+            if (!newValue.some(v => v.value === node.id)) {
+                newValue.push(nodeValue);
+            }
+            // 添加所有后代
+            descendants.forEach(id => {
+                if (id !== node.id) {
+                    const childNode = flatGroups.find(g => g.id === id);
+                    if (childNode && !newValue.some(v => v.value === id)) {
+                        newValue.push({ value: id, label: childNode.group_name });
+                    }
+                }
+            });
         }
         
+        // 无论选择还是取消选择，都更新父节点状态
+        newValue = updateParentSelection(node.id, newValue);
         onChange(newValue);
     };
 
@@ -152,7 +224,10 @@ const MultiLevelSelect = ({
                                         className="h-3 w-3 min-w-3" 
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onChange(value.filter(val => val.value !== item.value));
+                                            // 取消选择时触发级联更新
+                                            let newValue = value.filter(val => val.value !== item.value);
+                                            newValue = updateParentSelection(item.value, newValue);
+                                            onChange(newValue);
                                         }}
                                     />
                                 </Badge>
