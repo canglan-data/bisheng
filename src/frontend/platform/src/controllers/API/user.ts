@@ -39,17 +39,20 @@ export async function registerApi(name, pwd, captcha_key?, captcha?) {
 }
 
 // 管理员视角 获取用户列表
-export async function getUsersApi({ name = '', page, pageSize, groupId, roleId }: {
+export async function getUsersApi({ name = '', page, pageSize, groupId, roleId, positions }: {
   name: string,
   page: number,
   pageSize: number,
   groupId?: number[],
   roleId?: number[],
+  positions?: string[]
 }): Promise<{ data: User[]; total: number }> {
   const groupStr = groupId?.reduce((res, id) => `${res}&group_id=${id}`, '') || ''
   const roleStr = roleId?.reduce((res, id) => `${res}&role_id=${id}`, '') || ''
+  const positionStr = positions?.reduce((res, id) => `${res}&position=${id}`, '') || ''
   return await axios.get(
-    `/api/v1/user/list?page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}`
+    `/api/v1/user/list_v2?expand=roles&expand=groups&page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}${positionStr}`
+    // `/api/v1/user/list?page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}${positionStr}`
   );
 }
 
@@ -66,7 +69,7 @@ export async function getUsersApiForUser({ name = '', page, pageSize, groupId, r
   const roleStr = roleId?.reduce((res, id) => `${res}&role_id=${id}`, '') || ''
   const role = isAudit ? 'audit' : 'operation';
   return await axios.get(
-    `/api/v1/user/list?group_role_type=${role}&page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}`
+    `/api/v1/user/list_v2?expand=roles&expand=groups&group_role_type=${role}&page_num=${page}&page_size=${pageSize}&name=${name}${groupStr}${roleStr}`
   );
 }
 
@@ -85,15 +88,8 @@ export async function disableUserApi(userid, status) {
   });
 }
 // 角色列表
-export async function getRolesApi(params: {
-  group_id: string[],
-  keyword: string,
-  include_parent: boolean,
-  page: number,
-  limit: number
-}): Promise<{ data: ROLE[] }> {
-  return await axios.get(`/api/v1/group/roles?role_name`, { params, paramsSerializer })
-    .then(res => res.data);
+export async function getRolesCountApi(){
+  return await axios.get(`/api/v1/permission/role_user_count`);
 }
 
 // 角色详情
@@ -101,9 +97,16 @@ export async function getRoleDetailApi(roleId: number) {
   return await axios.get(`/api/v1/role/${roleId}`)
 }
 // 用户组下角色列表
-export async function getRolesByGroupApi(searchkey = "", groupIds: any[], include_parent: boolean = false): Promise<{ data: ROLE[] }> {
-  const groupStr = groupIds?.reduce((pre, id) => `${pre}&group_id=${id}`, '') || ''
-  return await axios.get(`/api/v1/group/roles?keyword=${searchkey}${groupStr}&include_parent=${include_parent}`)
+export async function getRolesByGroupApi(
+  searchkey = "", 
+  groupIds: any[], 
+  include_parent: boolean = false,
+  positionIds: string[] = []
+): Promise<{ data: ROLE[] }> {
+  const groupStr = groupIds?.reduce((pre, id) => `${pre}&group_id=${id}`, '') || '';
+  const positionStr = positionIds?.reduce((pre, id) => `${pre}&position=${id}`, '') || '';
+  
+  return await axios.get(`/api/v1/group/roles?expand=groups&keyword=${searchkey}${groupStr}&include_parent=${include_parent}${positionStr}`)
     .then(res => res.data);
 }
 
@@ -214,7 +217,7 @@ export async function getRolePermissionsApi(
 /**
  * 更新角色基本信息
  */
-export async function updateRoleNameApi(roleId, data: { role_name: string, extra: string, is_bind_all: boolean, user_ids: number[] }) {
+export async function updateRoleNameApi(roleId, data: { role_name: string, extra: string, is_bind_all: boolean, user_ids: number[], group_positions: any }) {
   return axios.patch(`/api/v1/role/${roleId}`, {
     ...data,
     remark: "手动创建用户",
@@ -235,6 +238,38 @@ export function getUserGroupsApi(config) {
   });
 }
 
+// 用户组带数字列表
+export function getUserGroupsCountApi() {
+  return axios.get(`/api/v1/group/tree?expand=role_count`);
+}
+
+// 组织架构+职位列表筛选项
+export function getUserGroupPositionCountApi() {
+  return axios.get(`/api/v1/group/tree?expand=position_count`);
+}
+
+
+// 用户页 职位列表筛选项 /api/v1/permission/position_user_count
+export function getUserPositionCountApi() {
+  return axios.get(`/api/v1/permission/position_user_count`);
+}
+  
+// 角色页 职位列表筛选项 /api/v1/permission/position_user_count
+export function getRolePositionCountApi() {
+  return axios.get(`/api/v1/permission/position_role_count`);
+}
+
+
+// 获取职位列表
+export function getUserPositionApi() {
+  return axios.get(`/api/v1/permission/get_group_admin_position`);
+}
+
+// 保存职位列表
+export function saveUserPositionApi(positionObj) {
+  return axios.post(`/api/v1/permission/set_group_admin_position`, positionObj);
+}
+
 // 用户组列表 用于列表页
 export function getUserGroupsProApiV2({ name = '', page, pageSize, groupId, roleId }: {
   name: string,
@@ -251,9 +286,14 @@ export function getAuditGroupsApi(params: { keyword, page, page_size }) {
   return axios.get(`/api/v1/group/list_audit`, {params});
 }
 
+// exportLogApi
+export function exportLogApi(params: { keyword, page, page_size }) {
+  return axios.get(`/api/v1/group/list_audit`, {params});
+}
+
 // 运营视角获取用户组列表
 export function getOperationGroupsApi(params: { keyword, page, page_size }) {
-  return axios.get(`/api/v1/group/list_operation`, {params});
+  return axios.get(`/api/v1/group/list_operation?export=1`, {params});
 }
 
 // 删除用户组post
@@ -263,20 +303,18 @@ export function delUserGroupApi(group_id) {
 }
 
 // 保存用户组
-export function saveUserGroup(form, admins, audits, operations) {
+export function saveUserGroup(form, admins) {
   console.log('form :>> ', form);
   const { groupName: group_name } = form
   return axios.post(`/api/v1/group/create`, {
     group_name,
     group_admins: admins.map(item => item.value),
-    group_audits: audits.map(item => item.value),
-    group_operations: operations.map(item => item.value),
     parent_id: form.department.id
   });
 }
 
 // 修改用户组
-export function updateUserGroup(id, form, admins, audits, operations) {
+export function updateUserGroup(id, form, admins) {
   const { groupName: group_name } = form
   const a = axios.put(`/api/v1/group/create`, {
     id,
@@ -286,15 +324,7 @@ export function updateUserGroup(id, form, admins, audits, operations) {
     group_id: id,
     user_ids: admins.map(item => item.value)
   })
-  const c = axios.post(`/api/v1/group/set_group_audit`, {
-    group_id: id,
-    user_ids: audits.map(item => item.value)
-  })
-  const d = axios.post(`/api/v1/group/set_group_operation`, {
-    group_id: id,
-    user_ids: operations.map(item => item.value)
-  })
-  return Promise.all([a, b, c, d])
+  return Promise.all([a, b])
 }
 
 
@@ -370,7 +400,7 @@ export async function loggedChangePasswordApi(password, new_password): Promise<a
 }
 
 // 用户组树数据
-export async function getUserGroupTreeApi(groupId: string): Promise<any> {
+export async function getUserGroupTreeApi(groupId?: string): Promise<any> {
   return axios.get(`/api/v1/group/tree`, { params: { group_id: groupId } });
 }
 

@@ -23,6 +23,7 @@ router = APIRouter(prefix='/audit', tags=['Audit'])
 @router.get('')
 def get_audit_logs(*,
                    group_ids: Optional[List[str]] = Query(default=[], description='分组id列表'),
+                   monitor_result: Optional[List[str]] = Query(default=[], description='操作监测'),
                    operator_ids: Optional[List[int]] = Query(default=[], description='操作人id列表'),
                    start_time: Optional[datetime] = Query(default=None, description='开始时间'),
                    end_time: Optional[datetime] = Query(default=None, description='结束时间'),
@@ -30,11 +31,19 @@ def get_audit_logs(*,
                    event_type: Optional[str] = Query(default=None, description='操作行为'),
                    page: Optional[int] = Query(default=0, description='页码'),
                    limit: Optional[int] = Query(default=0, description='每页条数'),
+                   export: Optional[int] = Query(default=0, description='是否导出'),
                    login_user: UserPayload = Depends(get_login_user)):
     group_ids = [one for one in group_ids if one]
     operator_ids = [one for one in operator_ids if one]
-    return AuditLogService.get_audit_log(login_user, group_ids, operator_ids,
-                                         start_time, end_time, system_id, event_type, page, limit)
+
+    if export:
+        page = 0
+        limit = 0
+
+    result = AuditLogService.get_audit_log(login_user, group_ids, operator_ids,
+                                         start_time, end_time, system_id, event_type, page, limit, monitor_result=monitor_result, export=export)
+
+    return result
 
 
 @router.get('/operators')

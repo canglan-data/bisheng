@@ -37,8 +37,11 @@ class UserRoleDao(UserRoleBase):
 
     @classmethod
     def get_user_roles(cls, user_id: int) -> List[UserRole]:
-        with session_getter() as session:
-            return session.exec(select(UserRole).where(UserRole.user_id == user_id)).all()
+        # TODO 不推荐的做法，后期改到service层
+        from bisheng.api.services.permission_service import PermissionService
+        return PermissionService.get_user_roles(user_id)
+        # with session_getter() as session:
+        #     return session.exec(select(UserRole).where(UserRole.user_id == user_id)).all()
 
     @classmethod
     def get_roles_user(cls, role_ids: List[int], page: int = 0, limit: int = 0) -> List[UserRole]:

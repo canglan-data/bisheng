@@ -22,6 +22,7 @@ class ConfigKeyEnum(Enum):
     REVIEW_SESSION_CONFIG = 'session_config'  # 审计的会话分析策略配置
     VOICE_LLM = 'voice_llm' # 语音大模型相关配置
     VITAL_ORG_STATS = 'vital_org_stats' # 组织统计相关配置
+    GROUP_ADMIN_POSITION = 'group_admin_position'
 
 
 class ConfigBase(SQLModelSerializable):
