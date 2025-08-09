@@ -272,6 +272,9 @@ async def list_user_v2(*,
         role_user_ids = [d['user_id'] for d in result]
         user_ids = list(set(user_ids) & set(role_user_ids)) if user_ids else role_user_ids
 
+    if user_ids is not None and len(user_ids) == 0:  # 取交集后没有符合条件的用户
+        user_ids = [0]  # 追加一个不存在的用户，使数据不能查出来
+
     users, total_count = UserDao.filter_users(user_ids, name, page_num, page_size, positions=position)
     if not users:
         return resp_200({'data': [], 'total': 0})
