@@ -82,6 +82,7 @@ class InputNode(BaseNode):
         msg_id = self.node_params.get('msg_id')
         if self.callback_manager and hasattr(self.callback_manager, 'msg_id'):
             self.callback_manager.msg_id = msg_id
+        del self.node_params['msg_id']
         if self.old_input:
             res = self.old_input._run(unique_id)
             return res
