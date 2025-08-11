@@ -74,7 +74,6 @@ class AuditLogBase(SQLModelSerializable):
     object_name: Optional[str] = Field(sa_column=Column(Text), description="操作对象名称")
     note: Optional[str] = Field(sa_column=Column(Text), description="操作备注")
     ip_address: Optional[str] = Field(index=True, description="操作时客户端的IP地址")
-    monitor_result: Optional[List[str]] = Field(sa_column=Column(JSON), default=["pass"], description="操作监测")
     create_time: Optional[datetime] = Field(sa_column=Column(
         DateTime, nullable=False, index=True, server_default=text('CURRENT_TIMESTAMP')), description="操作时间")
     update_time: Optional[datetime] = Field(
@@ -94,7 +93,7 @@ class AuditLogDao(AuditLogBase):
     @classmethod
     def get_audit_logs(cls, group_ids: List[int], operator_ids: List[int] = 0, start_time: datetime = None,
                        end_time: datetime = None, system_id: str = None, event_type: str = None,
-                       page: int = 0, limit: int = 0, monitor_result: list[str] = None) -> (List[AuditLog], int):
+                       page: int = 0, limit: int = 0) -> (List[AuditLog], int):
         """
         通过用户组来筛选日志
         """
@@ -106,12 +105,6 @@ class AuditLogDao(AuditLogBase):
                 group_filters.append(func.json_contains(AuditLog.group_ids, str(one)))
             statement = statement.where(or_(*group_filters))
             count_statement = count_statement.where(or_(*group_filters))
-        if monitor_result:
-            filters = []
-            for m in monitor_result:
-                filters.append(func.json_contains(AuditLog.monitor_result, f'"{m}"'))
-            statement = statement.where(or_(*filters))
-            count_statement = count_statement.where(or_(*filters))
         if operator_ids:
             statement = statement.where(AuditLog.operator_id.in_(operator_ids))
             count_statement = count_statement.where(AuditLog.operator_id.in_(operator_ids))
@@ -128,8 +121,7 @@ class AuditLogDao(AuditLogBase):
             statement = statement.where(AuditLog.event_type == event_type)
             count_statement = count_statement.where(AuditLog.event_type == event_type)
         if page and limit:
-            statement = statement.offset((page - 1) * limit).limit(limit)
-        statement = statement.order_by(AuditLog.create_time.desc())
+            statement = statement.offset((page - 1) * limit).limit(limit).order_by(AuditLog.create_time.desc())
         with session_getter() as session:
             return session.exec(statement).all(), session.scalar(count_statement)
 
