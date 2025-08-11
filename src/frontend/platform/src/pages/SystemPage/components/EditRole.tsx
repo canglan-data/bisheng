@@ -18,7 +18,7 @@ import { alertContext } from "../../../contexts/alertContext";
 import { createRole, getGroupResourcesApi, getRoleDetailApi, getRolePermissionsApi, updateRoleNameApi, updateRolePermissionsApi } from "../../../controllers/API/user";
 import { captureAndAlertRequestErrorHoc } from "../../../controllers/request";
 import { useTable } from "../../../util/hook";
-import PositionSelect from "./PositionSelect";
+import SelectUserByGroup from "./SelectUserByGroup";
 
 const SearchPanne = ({ groupId, placeholder = '', title, type, children }) => {
     const { page, pageSize, data, total, loading, setPage, search } = useTable({ pageSize: 10 }, (params) => {
@@ -113,7 +113,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             })
             // 详情
             getRoleDetailApi(id).then(res => {
-                setForm(form => ({ ...form, users: res.user_ids || [], bingAll: res.is_bind_all, selectGroupKey: res.group_positions }))
+                setForm(form => ({ ...form, users: res.user_ids || [], bingAll: res.is_bind_all, selectGroupKey: res.extra || {} }))
             })
         }
     }, [id])
@@ -163,7 +163,6 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
                 role_name: form.name,
                 group_id: groupId,
                 is_bind_all: form.bingAll,
-                group_positions: form.selectGroupKey,
                 user_ids: form.users.map(el => el.user_id)
             }))
             roleId = res.id
@@ -172,7 +171,6 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             captureAndAlertRequestErrorHoc(updateRoleNameApi(roleId, {
                 role_name: form.name,
                 extra: "",
-                group_positions: form.selectGroupKey,
                 is_bind_all: form.bingAll,
                 user_ids: form.users.map(el => el.user_id)
             }))
@@ -200,20 +198,13 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             <p className="text-xl mb-4">{t('system.roleName')}</p>
             <Input placeholder={t('system.roleName')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={60} showCount></Input>
         </div>
-        {/* <div className="font-bold mt-4">
+        <div className="font-bold mt-4">
             <p className="text-xl mb-4">人员范围</p>
             <div className="mb-4">
                 <Switch checked={form.bingAll} onCheckedChange={(b) => setForm({ ...form, bingAll: b })} />
                 <span className="ml-2 bisheng-label">对本组以及所有子用户组中的用户赋予角色</span>
             </div>
             {!form.bingAll && <SelectUserByGroup value={form.users} groupId={groupId} onChange={(users) => setForm({ ...form, users })} />}
-        </div> */}
-         <div className="font-bold mt-4">
-            <p className="text-xl mb-4">适用组织架构范围</p>
-            <PositionSelect value={form.selectGroupKey} onChange={(selectGroupKey) => {
-                setForm({ ...form, selectGroupKey })
-            }} />
-            {/* {<SelectUserByGroup value={form.users} groupId={groupId} onChange={(users) => setForm({ ...form, users })} />} */}
         </div>
         <div>
             <div className="mt-20 flex justify-between items-center relative">

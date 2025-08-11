@@ -173,12 +173,14 @@ export default function Tasks() {
 
     // 系统管理员(超管、组超管)
     const isAdmin = useMemo(() => {
-        return user.role === 'admin';
+        console.log('user', user);
+        
+        return user.role?.includes('admin')
     }, [user])
     
     // 拥有权限管理权限
     const hasGroupAdminRole = useMemo(() => {
-        return user.role === 'group_admin';
+        return user.role?.includes('group_admin')
     }, [user])
 
     return (

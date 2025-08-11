@@ -18,19 +18,6 @@ export type ROLE = {
     remark: string
     role_name: string
     update_time: string
-    positions: string[]
-    groups: {
-        code: string
-        create_time: string
-        update_time: string
-        group_name: string
-        id: number
-        level: number
-        parent_id: number
-        remark: string
-        third_id: number
-        update_user: number
-    }[]
 }
 
 export type UserGroup = {

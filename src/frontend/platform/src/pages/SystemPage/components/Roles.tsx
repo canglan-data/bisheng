@@ -14,12 +14,11 @@ import {
     TableHeader,
     TableRow
 } from "../../../components/bs-ui/table";
-import { delRoleApi, getRolesByGroupApi, getUserGroupsApi, getUserGroupsCountApi, getRolePositionCountApi } from "../../../controllers/API/user";
+import { delRoleApi, getRolesByGroupApi, getUserGroupsApi } from "../../../controllers/API/user";
 import { captureAndAlertRequestErrorHoc } from "../../../controllers/request";
 import { ROLE } from "../../../types/api/user";
 import EditRole from "./EditRole";
 import SelectSearch from "@/components/bs-ui/select/select"
-import { UsersFilter } from "./UserFilter";
 
 interface State {
     roles: ROLE[];
@@ -65,8 +64,6 @@ export default function Roles() {
     const { t } = useTranslation();
     const [state, dispatch] = useReducer(reducer, initialState);
     const allRolesRef = useRef<ROLE[]>([]);
-    const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([])
-    const [selectedPositionIds, setSelectedPositionIds] = useState<string[]>([])
 
     const loadData = useCallback(async () => {
         const inputDom = document.getElementById('role-input') as HTMLInputElement;
@@ -74,16 +71,13 @@ export default function Roles() {
             inputDom.value = '';
         }
         try {
-            // 使用通过onFilter回调获取的筛选条件
-            console.log('selectedOrgIds', selectedOrgIds);
-            
-            const data:any = await getRolesByGroupApi('', selectedOrgIds, false, selectedPositionIds);
+            const data:any = await getRolesByGroupApi('', [state.group]);
             dispatch({ type: 'SET_ROLES', payload: data });
             allRolesRef.current = data;
         } catch (error) {
             console.error(error);
         }
-    }, [state.group, selectedPositionIds, selectedOrgIds]);
+    }, [state.group]);
 
     useEffect(() => {
         getUserGroupsApi().then((res:any) => {
@@ -119,40 +113,15 @@ export default function Roles() {
         dispatch({ type: 'SET_SEARCH_WORD', payload: word });
         dispatch({ type: 'SET_ROLES', payload: allRolesRef.current.filter(item => item.role_name.toUpperCase().includes(word.toUpperCase())) });
     };
-    // 当筛选条件变化时重新加载数据
     useEffect(() => {
         loadData()
-    }, [state.group, selectedPositionIds, selectedOrgIds])
+    }, [state.group])
 
     const [keyWord, setKeyWord] = useState('')
     const options = useMemo(() => {
         if (!keyWord || !state.group) return state.groups
         return state.groups.filter(group => group.label.toUpperCase().includes(keyWord.toUpperCase()) || group.value === state.group)
     }, [keyWord, state.group])
-
-    // 获取用户组类型数据
-    const [userGroups, setUserGroups] = useState([])
-    const getUserGoups = async () => {
-        const res: any = await getUserGroupsCountApi()
-        setUserGroups(res)
-    }
-    
-    const [positions, setPositions] = useState([])
-    const getPositions = async () => {
-        const res: any = await getRolePositionCountApi()
-        const positions = Object.keys(res).map(key => ({
-            // position_name: `${key}(${res[key]})`,
-            position_name: `${key}(${res[key]})`,
-            id: key
-        }))
-        setPositions(positions)
-    }
-
-    useEffect(() => {
-        getUserGoups()
-        getPositions()
-        return () => { setUserGroups([]); setPositions([]) }
-    }, [])
 
     if (state.role) {
         return <EditRole
@@ -170,8 +139,8 @@ export default function Roles() {
     return (
         <div className="relative">
             <div className="h-[calc(100vh-128px)] overflow-y-auto pt-2 pb-10">
-                <div className="flex justify-end">
-                    {/* <div className="flex items-center">
+                <div className="flex justify-between">
+                    <div className="flex items-center">
                         <Label>{t('system.currentGroup')}</Label>
                         <SelectSearch value={state.group} options={options} selectPlaceholder={t('system.defaultGroup')} 
                         inputPlaceholder={t('log.selectUserGroup')}
@@ -184,7 +153,7 @@ export default function Roles() {
                         }}
                         onChange={e => setKeyWord(e.target.value)}
                         />
-                    </div> */}
+                    </div>
                     <div className="flex gap-6 items-center justify-between">
                         <div className="w-[180px] relative">
                             <SearchInput id="role-input" placeholder={t('system.roleName')} onChange={handleSearch} />
@@ -198,36 +167,7 @@ export default function Roles() {
                 <Table className="mb-10">
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[200px]">{t('system.roleName')}</TableHead><TableHead className="w-[200px]">
-                            <div className="flex items-center">
-                                {t('system.userPosition')}
-                                <UsersFilter
-                                        options={positions}
-                                        nameKey='position_name'
-                                        placeholder={t('system.searchUserPositions')}
-                                        onChecked={(values) => setPositions(values)}
-                                        onFilter={(ids) => {
-                                                setSelectedPositionIds(ids);
-                                            }}
-                                    ></UsersFilter>
-                                </div>
-                            </TableHead>
-                            <TableHead>
-                                <div className="flex items-center">
-                                    {t('system.userGroup')}
-                                    <UsersFilter
-                                            options={userGroups}
-                                            nameKey='group_name'
-                                            placeholder={t('system.searchUserGroups')}
-                                            onChecked={(values) => setUserGroups(values)}
-                                            onFilter={(ids) => {
-                                                console.log('ids', ids);
-                                                setSelectedOrgIds(ids);
-                                            }}
-                                            byTree
-                                        ></UsersFilter>
-                                </div>
-                            </TableHead>
+                            <TableHead className="w-[200px]">{t('system.roleName')}</TableHead>
                             <TableHead>{t('createTime')}</TableHead>
                             <TableHead className="text-right">{t('operations')}</TableHead>
                         </TableRow>
@@ -236,8 +176,6 @@ export default function Roles() {
                         {state.roles.map(el => (
                             <TableRow key={el.id}>
                                 <TableCell className="font-medium">{el.role_name}</TableCell>
-                                <TableCell>{el.positions.join(',')}</TableCell>
-                                <TableCell className="break-all">{(el.groups || []).map(el => el.group_name).join(',')}</TableCell>
                                 <TableCell>{el.create_time.replace('T', ' ')}</TableCell>
                                 <TableCell className="text-right">
                                     <Button variant="link" onClick={() => dispatch({ type: 'SET_ROLE', payload: el })} className="px-0 pl-6">{t('edit')}</Button>

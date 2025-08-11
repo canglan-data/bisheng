@@ -275,14 +275,14 @@ export default function StatFormReport({ onBack, onJump }) {
                                 <Input type="text" placeholder="请输入16位授权码" maxLength={50} className="flex-grow" value={form.emailCode} onChange={(e) => setForm({ ...form, emailCode: e.target.value})}/>
                                 <div className="absolute left-full ml-2">
                                     <QuestionTooltip
-                                        content={
-                                            <div>
-                                            <p className="font-medium mb-2">如何申请/获取企业微信邮箱授权码？</p>
-                                            <p>1. 登录网页版QQ邮箱 → 顶部【设置】→ 【账号】</p>
-                                            <p>2. 找到【POP3/IMAP服务】→ 点击【开启】服务（需验证密保）</p>
-                                            <p>3. 点击【生成授权码】→ 按提示发送短信 → 获得<b>16位授权码</b>（如 `abcd1234efgh5678`）</p>
-                                            </div>
-                                        }
+                                    content={
+                                        <div>
+                                        <p className="font-medium mb-2">如何申请/获取企业微信邮箱授权码？</p>
+                                        <p>1. 登录网页版QQ邮箱 → 顶部【设置】→ 【账号】</p>
+                                        <p>2. 找到【POP3/IMAP服务】→ 点击【开启】服务（需验证密保）</p>
+                                        <p>3. 点击【生成授权码】→ 按提示发送短信 → 获得<b>16位授权码</b>（如 `abcd1234efgh5678`）</p>
+                                        </div>
+                                    }
                                     />
                                 </div>
                             </div>
