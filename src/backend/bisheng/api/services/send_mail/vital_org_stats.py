@@ -28,8 +28,25 @@ class VitalOrgStatsService:
         start_day = date - timedelta(days=config.execution_interval_days)
         end_day = date - timedelta(days=1)
         group_ids = config.group_ids
-        group_user = UserGroupDao.get_groups_users(group_ids=group_ids)
         group_infos = GroupDao.get_group_by_ids(group_ids)
+        # 统计范围不局限于本身组织和子组织，也包括子组织的子组织
+        child_group_infos = {one:GroupDao.get_all_child_groups_by_id([one]) for one in group_ids}
+        all_group_id = []  # 所有组织的id
+        group_root = {}  # 组织的根id
+        for k,gl in child_group_infos.items():
+            if k not in group_root:
+                group_root[k] = []
+            group_root[k].append(k)
+            all_group_id.append(k)
+            for g in gl:
+                if g.id not in group_root:
+                    group_root[g.id] = []
+                all_group_id.append(g.id)
+                group_root[g.id].append(k)
+        all_group_id = list(set(all_group_id))
+        group_user = UserGroupDao.get_groups_users(group_ids=all_group_id) # 获取所有组织，子组织的用户。
+        id_to_obj = {item.user_id: item for item in group_user}
+        group_user = id_to_obj.values()
         all_user_id = [one.user_id for one in group_user]
         flow_ids = config.flow_ids
         messages = ChatMessageDao.get_msg_by_filter(user_ids=all_user_id, flow_ids=flow_ids, start_time=start_day,
@@ -49,19 +66,28 @@ class VitalOrgStatsService:
                 user_chat_status[key] = 0
         ginfo_index = {g.id: {"name": g.group_name} for g in group_infos}
         for user in group_user:
-            if "total_user_num" not in ginfo_index[user.group_id]:
-                ginfo_index[user.group_id]["total_user_num"] = 0
-                ginfo_index[user.group_id]["total_chat_num"] = 0
-                ginfo_index[user.group_id]["ok_user_num"] = 0
-            ginfo_index[user.group_id]["total_user_num"] += 1
-            ginfo_index[user.group_id]["total_chat_num"] += user_chat_num.get(user.user_id, 0)
-            if user_chat_num.get(user.user_id, 0) >= config.min_qa_count:
-                ginfo_index[user.group_id]["ok_user_num"] += 1
+            if user.group_id not in group_root:
+                continue
+            ugids = group_root[user.group_id]
+            if user.group_id in config.group_ids:
+                ugids.append(user.group_id)
+            ugids = list(set(ugids))
+            for ugid in ugids:
+                if "total_user_num" not in ginfo_index[ugid]:
+                    ginfo_index[ugid]["total_user_num"] = 0
+                    ginfo_index[ugid]["total_chat_num"] = 0
+                    ginfo_index[ugid]["ok_user_num"] = 0
+                ginfo_index[ugid]["total_user_num"] += 1
+                ginfo_index[ugid]["total_chat_num"] += user_chat_num.get(user.user_id, 0)
+                if user_chat_num.get(user.user_id, 0) >= config.min_qa_count:
+                    ginfo_index[ugid]["ok_user_num"] += 1
+            print("xx"*100)
+            print(ginfo_index)
         df = pd.DataFrame.from_dict(ginfo_index, orient="index").reset_index(drop=True)
         df["用户组织架构"] = df["name"]
         df["使用覆盖率%"] = df["ok_user_num"] / df["total_user_num"].where(df["total_user_num"] != 0, 1) * 100
         df["人均AI次数"] = df["total_chat_num"] / df["total_user_num"].where(df["total_user_num"] != 0, 1)
-        df = df[["用户组织架构", "使用覆盖率%", "人均AI次数"]]
+        # df = df[["用户组织架构", "使用覆盖率%", "人均AI次数"]]
         df.fillna(0, inplace=True)
         df["使用覆盖率%"] = df["使用覆盖率%"].apply(lambda x: f"{round(x, 2):.2f}%")
         df["人均AI次数"] = df["人均AI次数"].apply(lambda x: f"{round(x, 2):.2f}")
@@ -88,5 +114,6 @@ class VitalOrgStatsService:
             "recipient_emails": config.recipient_emails,
             "file_name": file_name,
             "success": success,
+            "user_chat_num": user_chat_num,
         }
         return json.dumps(logs)
