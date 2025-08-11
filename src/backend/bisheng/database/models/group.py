@@ -44,6 +44,10 @@ class GroupRead(GroupBase):
     # 记录从根节点到当前节点的name路径  a/b/c
     parent_group_path: Optional[str] = ''
 
+    # 当前用户组下职位的统计信息 {"职位名": 职位下的用户数}
+    position_count: Optional[dict] = {}
+    role_count: Optional[int] = 0
+
     # 子用户组
     children: Optional[List[Any]] = []
 
@@ -127,6 +131,15 @@ class GroupDao(GroupBase):
         with session_getter() as session:
             statement = select(Group).order_by(Group.update_time.desc())
             return session.exec(statement).all()
+
+    @classmethod
+    def get_all_group_dict(cls) -> dict:
+        result = {}
+        all_group = GroupDao.get_all_group()
+        for g in all_group:
+            result[g.id] = g
+
+        return result
 
     @classmethod
     def get_group_by_ids(cls, ids: List[int]) -> list[Group]:

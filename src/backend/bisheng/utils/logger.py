@@ -5,6 +5,7 @@ import orjson
 from loguru import logger
 from rich.console import Console
 from rich.logging import RichHandler
+import os
 
 from bisheng.settings import LoggerConf
 
@@ -83,3 +84,9 @@ logging.basicConfig(handlers=[InterceptHandler()], level=log_level_value)
 # # 设置所有导入模块的日志级别
 # for name in list(sys.modules.keys()):
 #     logging.getLogger(name).setLevel(logging.DEBUG)
+
+SQL_LOG_LEVEL = os.environ.get("SQL_LOG_LEVEL", "").upper()
+if SQL_LOG_LEVEL:
+    # INFO  包括SQL、参数
+    # DEBUG 包括SQL、参数、返回的结果
+    logging.getLogger('sqlalchemy.engine').setLevel(SQL_LOG_LEVEL)
