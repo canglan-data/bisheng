@@ -14,7 +14,7 @@ from loguru import logger
 
 class VitalOrgStatsService:
     @classmethod
-    def send(cls, date=None):
+    def send(cls, date=None,debug=False):
         if date is None:
             date = datetime.now().date()
         ret = {}
@@ -65,6 +65,7 @@ class VitalOrgStatsService:
                 user_chat_num[msg.user_id] += 1
                 user_chat_status[key] = 0
         ginfo_index = {g.id: {"name": g.group_name} for g in group_infos}
+        group_includes_user = {}
         for user in group_user:
             if user.group_id not in group_root:
                 continue
@@ -73,6 +74,9 @@ class VitalOrgStatsService:
                 ugids.append(user.group_id)
             ugids = list(set(ugids))
             for ugid in ugids:
+                if ugid not in group_includes_user:
+                    group_includes_user[ugid] = []
+                group_includes_user[ugid].append(user.user_id)
                 if "total_user_num" not in ginfo_index[ugid]:
                     ginfo_index[ugid]["total_user_num"] = 0
                     ginfo_index[ugid]["total_chat_num"] = 0
@@ -81,17 +85,15 @@ class VitalOrgStatsService:
                 ginfo_index[ugid]["total_chat_num"] += user_chat_num.get(user.user_id, 0)
                 if user_chat_num.get(user.user_id, 0) >= config.min_qa_count:
                     ginfo_index[ugid]["ok_user_num"] += 1
-            print("xx"*100)
-            print(ginfo_index)
         df = pd.DataFrame.from_dict(ginfo_index, orient="index").reset_index(drop=True)
         df["用户组织架构"] = df["name"]
         df["使用覆盖率%"] = df["ok_user_num"] / df["total_user_num"].where(df["total_user_num"] != 0, 1) * 100
         df["人均AI次数"] = df["total_chat_num"] / df["total_user_num"].where(df["total_user_num"] != 0, 1)
-        df = df[["用户组织架构", "使用覆盖率%", "人均AI次数"]]
         df.fillna(0, inplace=True)
         df["使用覆盖率%"] = df["使用覆盖率%"].apply(lambda x: f"{round(x, 2):.2f}%")
         df["人均AI次数"] = df["人均AI次数"].apply(lambda x: f"{round(x, 2):.2f}")
-
+        df_s = df
+        df = df[["用户组织架构", "使用覆盖率%", "人均AI次数"]]
         file_name = f"HR活力组织提数报表{start_day.strftime('%Y-%m-%d')}至{end_day.strftime('%Y-%m-%d')}.xlsx"
         email_client = EmailClient(mail=str(config.sender_email), password=config.sender_password,
                                    msg_from=config.msg_from,
@@ -104,6 +106,24 @@ class VitalOrgStatsService:
         df.to_excel(csv_buffer, index=False)
         csv_buffer.seek(0)
         email_client.add_file_obj(csv_buffer, file_name)
+        if debug:
+            csv_buffer2 = io.BytesIO()
+            df_s.to_excel(csv_buffer2, index=False)
+            file_name = f"HR活力组织提数报表{start_day.strftime('%Y-%m-%d')}至{end_day.strftime('%Y-%m-%d')}_debug.xlsx"
+            email_client.add_file_obj(csv_buffer2, file_name)
+            csv_buffer3 = io.BytesIO()
+            pd.DataFrame(group_root).to_excel(csv_buffer3, index=False)
+            file_name = f"组织的子组织信息_debug.xlsx"
+            email_client.add_file_obj(csv_buffer3, file_name)
+            csv_buffer4 = io.BytesIO()
+            pd.DataFrame(user_chat_num).to_excel(csv_buffer4, index=False)
+            file_name = f"用户的聊天次数信息_debug.xlsx"
+            email_client.add_file_obj(csv_buffer4, file_name)
+            csv_buffer5 = io.BytesIO()
+            group_includes_user = {k: "-".join(v) for k, v in group_includes_user.items()}
+            pd.DataFrame(group_includes_user).to_excel(csv_buffer5, index=False)
+            file_name = f"组织(包含子组织)的成员_debug.xlsx"
+            email_client.add_file_obj(csv_buffer5, file_name)
         success = email_client.send_mail()
         if not success:
             logger.warning(f"活力组织统计邮件发送失败，时间：{date}")
