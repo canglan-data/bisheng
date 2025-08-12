@@ -87,7 +87,7 @@ class VitalOrgStatsService:
         df["用户组织架构"] = df["name"]
         df["使用覆盖率%"] = df["ok_user_num"] / df["total_user_num"].where(df["total_user_num"] != 0, 1) * 100
         df["人均AI次数"] = df["total_chat_num"] / df["total_user_num"].where(df["total_user_num"] != 0, 1)
-        # df = df[["用户组织架构", "使用覆盖率%", "人均AI次数"]]
+        df = df[["用户组织架构", "使用覆盖率%", "人均AI次数"]]
         df.fillna(0, inplace=True)
         df["使用覆盖率%"] = df["使用覆盖率%"].apply(lambda x: f"{round(x, 2):.2f}%")
         df["人均AI次数"] = df["人均AI次数"].apply(lambda x: f"{round(x, 2):.2f}")
