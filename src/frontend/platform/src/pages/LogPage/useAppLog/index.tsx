@@ -129,6 +129,7 @@ export default function AppUseLog({ initFilter, clearFilter }) {
     };
 
     const [auditing, setAuditing] = useState(false);
+    const [exporting, setExporting] = useState(false);
     const handleRunClick = () => {
         bsConfirm({
             title: t('prompt'),
@@ -164,7 +165,7 @@ export default function AppUseLog({ initFilter, clearFilter }) {
             }
             return `Export_${str}_${formatDate(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.xlsx`;
         };
-        setAuditing(true);
+        setExporting(true);
          // 处理时间范围逻辑
          const dateRange = filters.dateRange || [];
          let originalStart = dateRange[0];
@@ -205,7 +206,7 @@ export default function AppUseLog({ initFilter, clearFilter }) {
                      variant: 'error',
                      description: '导出时间范围不能超过 60 天，请缩小范围后重试',
                  })
-                 setAuditing(false);
+                 setExporting(false);
                  return;
              }
          }
@@ -236,7 +237,7 @@ export default function AppUseLog({ initFilter, clearFilter }) {
             } else {
                 console.error('导出失败');
             }
-            setAuditing(false);
+            setExporting(false);
         })
     }
 
@@ -270,8 +271,8 @@ export default function AppUseLog({ initFilter, clearFilter }) {
                     <SearchInput className="w-64" value={filters.keyword} placeholder={'历史聊天记录查询'} onChange={(e) => handleFilterChange('keyword', e.target.value)}></SearchInput>
                     <Button onClick={searchClick} >查询</Button>
                     <Button onClick={resetClick} variant="outline">重置</Button>
-                    <Button onClick={handleExport} disabled={auditing}>
-                        {auditing && <LoadIcon className="mr-1" />}导出 
+                    <Button onClick={handleExport} disabled={exporting}>
+                        {exporting && <LoadIcon className="mr-1" />}导出 
                     </Button>
                     {showReviewResult && <Button onClick={handleRunClick} disabled={auditing}>
                         {auditing && <LoadIcon className="mr-1" />}手动审查</Button>}
