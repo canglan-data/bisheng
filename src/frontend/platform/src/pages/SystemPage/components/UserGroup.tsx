@@ -32,6 +32,7 @@ export default function UserGroups() {
     const [userGroups, setUserGroups] = useState<UserGroup[]>([])
     const [userGroup, setUserGroup] = useState(null)
     const [showManage, setShowManage] = useState(false)
+    const [keyword, setKeyWord] = useState('');
     const tempRef = useRef<UserGroup[]>([]) // 搜索功能的数据暂存
     const { appConfig } = useContext(locationContext)
     const defaultAdminsRef = useRef([])
@@ -92,6 +93,15 @@ export default function UserGroups() {
         reload()
     }
 
+    useEffect(() => {
+        search(keyword)
+    }, [keyword])
+
+     useEffect(() => {
+        setKeyWord('')
+    }, [showManage, userGroup])
+
+
     if (showManage) return <EditUserGroupManages
         onChange={handlePositionChange}
     />
@@ -106,7 +116,13 @@ export default function UserGroups() {
         <div className="h-[calc(100vh-128px)] overflow-y-auto pb-10">
             <div className="flex gap-6 items-center justify-end">
                 <div className="w-[180px] relative">
-                    <SearchInput placeholder={t('system.groupName')} onChange={(e) => search(e.target.value)}></SearchInput>
+                    <SearchInput
+                        placeholder={t('system.groupName')} 
+                        value={keyword}
+                        onChange={(e) => {
+                            setKeyWord(e.target.value)
+                        }}
+                    />
                 </div>
                 {user.role === 'admin' && <Button className="text-red-500" onClick={() => {
                     setShowManage(true);

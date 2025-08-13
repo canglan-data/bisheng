@@ -55,7 +55,6 @@ export default function EditUserGroupManages({ onChange }) {
 
     const init = async () => {
         const res = await getUserPositionApi()
-        console.log('res', res);
         const resOptions = Object.keys(res).map(key => ({
             label: key,
             value: key
