@@ -75,6 +75,9 @@ class VitalOrgStatsService:
         group_includes_user = {}
         group_includes_user2 = {}
         for user in group_user:
+            if user.group_id not in group_includes_user2:
+                group_includes_user2[user.group_id] = []
+            group_includes_user2[user.group_id].append(user.user_id)
             if user.group_id not in group_root:
                 continue
             ugids = group_root[user.group_id]
@@ -89,11 +92,7 @@ class VitalOrgStatsService:
                 if ugid not in group_includes_user:
                     group_includes_user[ugid] = []
                 group_includes_user[ugid].append(user.user_id)
-                if user.group_id not in group_includes_user2:
-                    group_includes_user2[user.group_id] = []
-
                 ginfo_index[ugid]["member"].add(user.user_id)
-                group_includes_user2[user.group_id].append(user.user_id)
                 if "total_user_num" not in ginfo_index[ugid]:
                     ginfo_index[ugid]["total_user_num"] = 0
                     ginfo_index[ugid]["total_chat_num"] = 0
