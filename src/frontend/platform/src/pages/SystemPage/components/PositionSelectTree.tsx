@@ -125,27 +125,39 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
       }
       return;
     }
-    // 遍历所有选中的部门和职位
-    Object.entries(value).forEach(([pureGroupId, positions]) => {
-      // 检查是否全选部门
-      const dept = departmentMap.get(pureGroupId);
-      if (dept) {
-        const validPositions = Object.keys(dept.position_count || {});
+    
+    // 遍历所有部门，检查是否应该被选中
+    const checkAllDepartments = (depts: Department[]) => {
+      depts.forEach(dept => {
         const isFullySelected = isDepartmentFullySelected(dept, value);
-
+        const pureGroupId = dept.id;
+        
         if (isFullySelected) {
           keys.push(`group_${pureGroupId}`);
+          const validPositions = Object.keys(dept.position_count || {});
           validPositions.forEach(pos => {
             keys.push(`position_${pureGroupId}_${pos}`);
           });
-        } else {
-          // 否则只选中具体职位节点
-          positions.forEach(pos => {
+        } else if (value[pureGroupId]) {
+          // 如果部门未被全选但在value中有记录，选中指定的职位
+          value[pureGroupId].forEach(pos => {
             keys.push(`position_${pureGroupId}_${pos}`);
           });
         }
-      } else {
-        // 如果部门不存在，仍然添加部门节点（可能是外部传入的无效部门）
+        
+        // 递归检查子部门
+        if (dept.children && dept.children.length > 0) {
+          checkAllDepartments(dept.children);
+        }
+      });
+    };
+    
+    // 从根部门开始检查
+    checkAllDepartments(departments);
+    
+    // 添加value中可能存在但不在departments中的部门（外部传入的无效部门）
+    Object.keys(value).forEach(pureGroupId => {
+      if (!departmentMap.has(pureGroupId)) {
         keys.push(`group_${pureGroupId}`);
       }
     });
@@ -154,7 +166,7 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
     if (JSON.stringify(keys) !== JSON.stringify(checkedKeys)) {
       setCheckedKeys(keys);
     }
-  }, [value, treeData, departmentMap]);
+  }, [value, treeData, departmentMap, departments]);
 
   // 获取节点的所有子孙节点ID
   const getAllDescendantIds = (node: TreeNode): string[] => {
