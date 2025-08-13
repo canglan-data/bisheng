@@ -33,6 +33,10 @@ class VitalOrgStatsService:
         # 统计范围不局限于本身组织和子组织，也包括子组织的子组织
         child_group_infos = {one:GroupDao.get_all_child_groups_by_id([one]) for one in group_ids}
         all_group_id = []  # 所有组织的id
+        group_name = {}
+        for g in group_infos:
+            group_name[g.id] = g.group_name
+        # 将子组织和服组织对应起来，父组织和自己对应
         group_root = {}  # 组织的根id
         for k,gl in child_group_infos.items():
             if k not in group_root:
@@ -42,12 +46,12 @@ class VitalOrgStatsService:
             for g in gl:
                 if g.id not in group_root:
                     group_root[g.id] = []
+                group_name[g.id] = g.group_name
                 all_group_id.append(g.id)
                 group_root[g.id].append(k)
         all_group_id = list(set(all_group_id))
+        # 注意此处一个用户可能属于多个组织
         group_user = UserGroupDao.get_groups_users(group_ids=all_group_id) # 获取所有组织，子组织的用户。
-        id_to_obj = {item.user_id: item for item in group_user}
-        group_user = id_to_obj.values()
         all_user_id = [one.user_id for one in group_user]
         all_users_info,total = UserDao.filter_users(all_user_id, None, None, None)
         all_user_id = [one.user_id for one in all_users_info]
@@ -69,6 +73,7 @@ class VitalOrgStatsService:
                 user_chat_status[key] = 0
         ginfo_index = {g.id: {"name": g.group_name} for g in group_infos}
         group_includes_user = {}
+        group_includes_user2 = {}
         for user in group_user:
             if user.group_id not in group_root:
                 continue
@@ -77,9 +82,18 @@ class VitalOrgStatsService:
                 ugids.append(user.group_id)
             ugids = list(set(ugids))
             for ugid in ugids:
+                if "member" not in ginfo_index[ugid]:
+                    ginfo_index[ugid]["member"] = set()
+                if user.user_id in ginfo_index[ugid]["member"]:
+                    continue
                 if ugid not in group_includes_user:
                     group_includes_user[ugid] = []
                 group_includes_user[ugid].append(user.user_id)
+                if user.group_id not in group_includes_user2:
+                    group_includes_user2[user.group_id] = []
+
+                ginfo_index[ugid]["member"].add(user.user_id)
+                group_includes_user2[user.group_id].append(user.user_id)
                 if "total_user_num" not in ginfo_index[ugid]:
                     ginfo_index[ugid]["total_user_num"] = 0
                     ginfo_index[ugid]["total_chat_num"] = 0
@@ -111,22 +125,34 @@ class VitalOrgStatsService:
         email_client.add_file_obj(csv_buffer, file_name)
         if debug:
             csv_buffer2 = io.BytesIO()
-            df_s.to_excel(csv_buffer2, index=False)
+            df_s.to_excel(csv_buffer2)
             file_name = f"HR活力组织提数报表{start_day.strftime('%Y-%m-%d')}至{end_day.strftime('%Y-%m-%d')}_debug.xlsx"
             email_client.add_file_obj(csv_buffer2, file_name)
             csv_buffer3 = io.BytesIO()
-            pd.DataFrame(group_root).to_excel(csv_buffer3, index=False)
+            child_group = {}
+            for k, v in group_root.items():
+                for one in v:
+                    if one not in child_group:
+                        child_group[one] = set()
+                    child_group[one].add(k)
+            child_group_debug = {k: {"子组织":str(list(v))} for k, v in child_group.items()}
+            pd.DataFrame(child_group_debug).T.to_excel(csv_buffer3)
             file_name = f"组织的子组织信息_debug.xlsx"
             email_client.add_file_obj(csv_buffer3, file_name)
             csv_buffer4 = io.BytesIO()
-            pd.DataFrame(user_chat_num).to_excel(csv_buffer4, index=False)
+            pd.DataFrame(user_chat_num).T.to_excel(csv_buffer4)
             file_name = f"用户的聊天次数信息_debug.xlsx"
             email_client.add_file_obj(csv_buffer4, file_name)
             csv_buffer5 = io.BytesIO()
-            group_includes_user = {k: "-".join(v) for k, v in group_includes_user.items()}
-            pd.DataFrame(group_includes_user).to_excel(csv_buffer5, index=False)
+            group_includes_user_debug = {k: {"成员":str(set(v)), "组织名称":group_name.get(k,"-")} for k, v in group_includes_user.items()}
+            pd.DataFrame(group_includes_user_debug).T.to_excel(csv_buffer5)
             file_name = f"组织(包含子组织)的成员_debug.xlsx"
             email_client.add_file_obj(csv_buffer5, file_name)
+            csv_buffer6 = io.BytesIO()
+            group_includes_user2_debug = {k: {"成员":str(set(v)), "组织名称":group_name.get(k,"-")} for k, v in group_includes_user2.items()}
+            pd.DataFrame(group_includes_user2_debug).T.to_excel(csv_buffer6)
+            file_name = f"组织(不包含子组织)的成员_debug.xlsx"
+            email_client.add_file_obj(csv_buffer6, file_name)
         success = email_client.send_mail()
         if not success:
             logger.warning(f"活力组织统计邮件发送失败，时间：{date}")
