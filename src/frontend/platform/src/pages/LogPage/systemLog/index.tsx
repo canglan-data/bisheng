@@ -253,7 +253,7 @@ export default function SystemLog() {
                 {keys.moduleId === 'system' && (
                 <div className="w-[200px] relative">
                 <MultiSelect 
-                    contentClassName="overflow-y-auto max-w-[180px]" 
+                    contentClassName="overflow-y-auto max-w-[200px]" 
                     multiple
                     options={[
                         { label: t('log.pass'), value: 'pass' },
