@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from bisheng.api.v1.schema.send_mail import VitalOrgStatsConfig
 from bisheng.database.models.config import ConfigDao, ConfigKeyEnum
+from bisheng.database.models.user import UserDao
 from bisheng.utils.email_client import EmailClient
 from bisheng.database.models.user_group import UserGroupDao
 from bisheng.database.models.group import GroupDao
@@ -48,6 +49,8 @@ class VitalOrgStatsService:
         id_to_obj = {item.user_id: item for item in group_user}
         group_user = id_to_obj.values()
         all_user_id = [one.user_id for one in group_user]
+        all_users_info,total = UserDao.filter_users(all_user_id, None, None, None)
+        all_user_id = [one.user_id for one in all_users_info]
         flow_ids = config.flow_ids
         messages = ChatMessageDao.get_msg_by_filter(user_ids=all_user_id, flow_ids=flow_ids, start_time=start_day,
                                                     end_time=date)
