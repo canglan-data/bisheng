@@ -535,13 +535,25 @@ async def delete_role(*,
     if not db_role:
         return resp_200()
 
-    if not login_user.is_admin():
-        role_ids = PermissionService.get_manage_role_ids(login_user.user_id)
-        if role_id not in role_ids:
-            return HTTPException(status_code=500, detail='无当前角色管理权限')
-
     if db_role.id == AdminRole or db_role.id == DefaultRole:
         raise HTTPException(status_code=500, detail='内置角色不能删除')
+
+    if not login_user.is_admin():
+        # 当前管理员管理的用户组
+        manage_group_ids = PermissionService.get_manage_user_group_ids(login_user.user_id)
+        if not manage_group_ids:
+            raise HTTPException(status_code=500, detail='无当前角色管理权限')
+
+        rp_list = RolePositionDao.select(role_ids=[role_id])
+        linked_group_ids = [rp.group_id for rp in rp_list]
+        if db_role.group_id:  # 存量带有所属部门的角色
+            linked_group_ids.append(db_role.group_id)
+
+        if linked_group_ids:
+            for group_id in linked_group_ids:
+                if group_id not in manage_group_ids:
+                    logger.debug(f"deleteRoleCheck group_id:{group_id} manage_group_ids:{manage_group_ids} ")
+                    raise HTTPException(status_code=500, detail='您管理权限外的其他组织架构还在使用本角色，不能删除')
 
     # 删除role相关的数据
     try:

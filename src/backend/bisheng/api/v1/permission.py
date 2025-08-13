@@ -26,12 +26,14 @@ async def set_group_admin_position(request: Request, data: dict, login_user: Use
 @router.get('/position_role_count')
 async def position_role_count(request: Request, login_user: UserPayload = Depends(get_login_user)):
     manage_role_ids = []
+    manage_group_ids = []
     if not login_user.is_admin():
-        manage_role_ids = PermissionService.get_manage_role_ids(login_user.user_id)
-        if not manage_role_ids:
+        manage_group_ids = PermissionService.get_manage_user_group_ids(login_user.user_id)
+        manage_role_ids = PermissionService.get_manage_role_ids(user_id=login_user.user_id, manage_group_ids=manage_group_ids)
+        if not manage_group_ids or not manage_role_ids:
             return resp_200(data={})
 
-    count_dict = PermissionService.get_position_role_count_dict(role_ids=manage_role_ids)
+    count_dict = PermissionService.get_position_role_count_dict(role_ids=manage_role_ids, group_ids=manage_group_ids)
 
     return resp_200(data=count_dict)
 

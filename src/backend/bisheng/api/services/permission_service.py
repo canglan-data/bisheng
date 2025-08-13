@@ -302,8 +302,8 @@ class PermissionService:
                                             LEFT JOIN role_position as rp on r.id = rp.role_id 
                                             where r.id in :role_ids"""
 
-            # if group_ids:
-            #     sql += " and (r.group_id in :group_ids or rp.group_id in :group_ids)"
+            if group_ids:
+                sql += " and (r.group_id in :group_ids or rp.group_id in :group_ids)"
 
             statement = text(sql)
             result = session.exec(statement, params={"role_ids": role_ids, "group_ids": group_ids})
@@ -385,17 +385,20 @@ class PermissionService:
         return count_dict
 
     @staticmethod
-    def get_position_role_count_dict(role_ids: list[int] = []):
+    def get_position_role_count_dict(role_ids: list[int] = [], group_ids: list[int] = []):
         count_dict = {}
         with session_getter() as session:
-            where = ""
+            where = "where 1=1 "
             if role_ids:
-                where = " where role_id in :role_ids"
+                where += " and role_id in :role_ids"
+
+            if group_ids:
+                where += " and group_id in :group_ids"
 
             sql = f"select position,count(distinct(role_id)) as num from role_position {where} group by position"
 
             statement = text(sql)
-            result = session.exec(statement, params={"role_ids": role_ids})
+            result = session.exec(statement, params={"role_ids": role_ids, "group_ids": group_ids})
 
             for d in result:
                 count_dict[d.position] = d.num

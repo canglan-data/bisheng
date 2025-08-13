@@ -832,8 +832,10 @@ class RoleGroupService():
             if not search_role_ids:
                 return [], 0
 
+        manage_group_ids = []
         if not login_user.is_admin():  # 不是管理员还要看可以管理哪些角色
-            manage_role_ids = PermissionService.get_manage_role_ids(login_user.user_id)
+            manage_group_ids = PermissionService.get_manage_user_group_ids(login_user.user_id)
+            manage_role_ids = PermissionService.get_manage_role_ids(login_user.user_id, manage_group_ids=manage_group_ids)
             if search_role_ids:
                 search_role_ids = list(set(search_role_ids) & set(manage_role_ids))
             else:
@@ -843,7 +845,7 @@ class RoleGroupService():
                 return [], 0
 
         if positions:
-            result = RolePositionDao.select(positions=positions)
+            result = RolePositionDao.select(positions=positions, group_ids=manage_group_ids)
             position_linked_role_ids = [rp.role_id for rp in result]
             if search_role_ids:
                 search_role_ids = list(set(search_role_ids) & set(position_linked_role_ids))
