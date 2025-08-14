@@ -116,7 +116,7 @@ class VitalOrgStatsService:
         file_name = f"HR活力组织提数报表{start_day.strftime('%Y-%m-%d')}至{end_day.strftime('%Y-%m-%d')}.xlsx"
         email_client = EmailClient(mail=str(config.sender_email), password=config.sender_password,
                                    msg_from=config.msg_from,
-                                   server_host=config.smtp_host, server_port=config.smtp_port)
+                                   server_host=config.smtp_host, server_port=config.smtp_port,debug=debug)
         email_client.set_title(f"HR活力组织提数报表{date.strftime('%Y-%m-%d')}")
         email_client.set_content(
             f"""各位领导好：\n    附件为{start_day.strftime('%Y-%m-%d')}至{end_day.strftime('%Y-%m-%d')}的“HR活力组织提数报表”，请注意查收。""")
