@@ -16,7 +16,7 @@ class EmailClient:
 
     def __init__(self, mail: str, password: str, msg_from: str,
                  server_host: str = 'smtp.qq.com', server_port: int = 465,
-                 use_ssl: bool = True, debug: bool = False):
+                 use_ssl: bool = False, debug: bool = False):
         self.sender_mail = mail
         self.sender_pass = password
         self.msg_from = formataddr((msg_from, mail))
@@ -133,8 +133,6 @@ class EmailClient:
             msg = self._construct_message()
             server = smtplib.SMTP_SSL(self.server_host, self.server_port) if self.use_ssl else smtplib.SMTP(
                 self.server_host, self.server_port)
-            if not self.use_ssl:
-                server.starttls()
 
             if self.debug:
                 server.set_debuglevel(1)
