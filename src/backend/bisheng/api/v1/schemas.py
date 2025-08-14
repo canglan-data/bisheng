@@ -126,6 +126,7 @@ class ChatList(BaseModel):
     update_time: datetime = None
     flow_type: int = None
     latest_message: Optional[ChatMessageRead] = None
+    first_message: Optional[ChatMessageRead] = None
     logo: Optional[str] = None
 
 

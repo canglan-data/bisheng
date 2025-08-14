@@ -483,6 +483,9 @@ def get_session_list(*,
     # latest_messages = ChatMessageDao.get_latest_message_by_chat_ids(chat_ids, category='user_input')
 #>>>>>>> feat/zyrs_0527
     latest_messages = {one.chat_id: one for one in latest_messages}
+
+    first_messages = ChatMessageDao.get_first_message_by_chat_ids(chat_ids, category='question')
+    first_messages = {one.chat_id: one for one in first_messages}
     return resp_200([
         ChatList(
             chat_id=one.chat_id,
@@ -496,6 +499,7 @@ def get_session_list(*,
             logo=logo_map.get(one.flow_id.replace("-",''), ''),
 #>>>>>>> feat/zyrs_0527
             latest_message=latest_messages.get(one.chat_id, None),
+            first_message=first_messages.get(one.chat_id, None),
             create_time=one.create_time,
             update_time=one.update_time) for one in res
     ])

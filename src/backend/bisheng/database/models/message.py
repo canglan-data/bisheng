@@ -238,6 +238,29 @@ class ChatMessageDao(MessageBase):
             return session.exec(statement).all()
 
     @classmethod
+    def get_first_message_by_chat_ids(cls,
+                                       chat_ids: list[str],
+                                       category: str = None,
+                                       exclude_category: str = None):
+        """
+        获取每个会话最早的一次消息内容
+        """
+        statement = select(ChatMessage.chat_id,
+                           func.min(ChatMessage.id)).where(ChatMessage.chat_id.in_(chat_ids))
+        if category:
+            statement = statement.where(ChatMessage.category == category)
+        if exclude_category:
+            statement = statement.where(ChatMessage.category != exclude_category)
+        statement = statement.group_by(ChatMessage.chat_id)
+        with session_getter() as session:
+            # 获取最新的id列表
+            res = session.exec(statement).all()
+            ids = [one[1] for one in res]
+            # 获取消息的具体内容
+            statement = select(ChatMessage).where(ChatMessage.id.in_(ids))
+            return session.exec(statement).all()
+
+    @classmethod
     def get_messages_by_chat_id(cls,
                                 chat_id: str,
                                 category_list: list = None,
