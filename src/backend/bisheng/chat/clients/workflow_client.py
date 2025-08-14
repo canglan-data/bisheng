@@ -248,7 +248,6 @@ class WorkflowClient(BaseClient):
             new_message = None
             # 目前只支持一个输入节点
             for node_id, node_info in data.items():
-                node_info['data']['msg_id'] = msg_id
                 user_input[node_id] = node_info['data']
                 message_id = node_info.get('message_id')
                 new_message = node_info.get('message')
