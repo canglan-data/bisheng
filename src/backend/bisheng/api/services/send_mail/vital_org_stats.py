@@ -55,6 +55,7 @@ class VitalOrgStatsService:
         all_user_id = [one.user_id for one in group_user]
         all_users_info,total = UserDao.filter_users(all_user_id, None, None, None)
         all_user_id = [one.user_id for one in all_users_info]
+        group_user = [one for one in group_user if one.user_id in all_user_id]
         flow_ids = config.flow_ids
         messages = ChatMessageDao.get_msg_by_filter(user_ids=all_user_id, flow_ids=flow_ids, start_time=start_day,
                                                     end_time=date)
@@ -75,6 +76,8 @@ class VitalOrgStatsService:
         group_includes_user = {}
         group_includes_user2 = {}
         for user in group_user:
+            if user.user_id not in all_user_id:
+                continue
             if user.group_id not in group_includes_user2:
                 group_includes_user2[user.group_id] = []
             group_includes_user2[user.group_id].append(user.user_id)
@@ -134,12 +137,13 @@ class VitalOrgStatsService:
                     if one not in child_group:
                         child_group[one] = set()
                     child_group[one].add(k)
-            child_group_debug = {k: {"子组织":str(list(v))} for k, v in child_group.items()}
+            child_group_debug = {k: {"子组织":str(list(v)),"组织名称":group_name.get(k,"-")} for k, v in child_group.items()}
             pd.DataFrame(child_group_debug).T.to_excel(csv_buffer3)
             file_name = f"组织的子组织信息_debug.xlsx"
             email_client.add_file_obj(csv_buffer3, file_name)
             csv_buffer4 = io.BytesIO()
-            pd.DataFrame(user_chat_num).T.to_excel(csv_buffer4)
+            user_chat_num_debug = {k: {"聊天次数":v} for k, v in user_chat_num.items()}
+            pd.DataFrame(user_chat_num_debug).T.to_excel(csv_buffer4)
             file_name = f"用户的聊天次数信息_debug.xlsx"
             email_client.add_file_obj(csv_buffer4, file_name)
             csv_buffer5 = io.BytesIO()
