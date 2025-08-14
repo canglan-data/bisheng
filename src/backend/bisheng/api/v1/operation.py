@@ -178,12 +178,13 @@ async def vital_org_status_config(*, request: Request,  login_user: UserPayload 
 @router.post("/session/vital_org_status_config_run")
 async def vital_org_status_config_run(*, request: Request,
                                       debug: bool = Query(default=False, description='是否发送调试信息'),
+                                      days: int = Query(default=0, description='发送日期偏移量'),
                                       login_user: UserPayload = Depends(get_login_user)):
     """ 配置用户组的状态 """
     if not login_user.is_admin():
         return UnAuthorizedError.return_resp()
     try:
-        log = VitalOrgStatsService.send(datetime.now().date() + timedelta(days=1),debug=debug)
+        log = VitalOrgStatsService.send(datetime.now().date() + timedelta(days=days),debug=debug)
     except Exception as e:
         traceback.print_exc()
         return resp_200(data=str(e))
