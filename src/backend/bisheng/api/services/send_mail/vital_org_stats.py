@@ -55,6 +55,7 @@ class VitalOrgStatsService:
         all_user_id = [one.user_id for one in group_user]
         all_users_info,total = UserDao.filter_users(all_user_id, None, None, None)
         all_user_id = [one.user_id for one in all_users_info]
+        group_user = [one for one in group_user if one.user_id in all_user_id]
         flow_ids = config.flow_ids
         messages = ChatMessageDao.get_msg_by_filter(user_ids=all_user_id, flow_ids=flow_ids, start_time=start_day,
                                                     end_time=date)
