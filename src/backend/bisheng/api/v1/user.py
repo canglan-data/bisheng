@@ -553,7 +553,7 @@ async def delete_role(*,
             for group_id in linked_group_ids:
                 if group_id not in manage_group_ids:
                     logger.debug(f"deleteRoleCheck group_id:{group_id} manage_group_ids:{manage_group_ids} ")
-                    raise HTTPException(status_code=500, detail='您管理权限外的其他组织架构还在使用本角色，不能删除')
+                    raise HTTPException(status_code=500, detail='对不起，当前账号权限不足，不可删除此角色')
 
     # 删除role相关的数据
     try:
