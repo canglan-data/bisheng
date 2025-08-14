@@ -136,7 +136,7 @@ class VitalOrgStatsService:
                     if one not in child_group:
                         child_group[one] = set()
                     child_group[one].add(k)
-            child_group_debug = {k: {"子组织":str(list(v))} for k, v in child_group.items()}
+            child_group_debug = {k: {"子组织":str(list(v)),"组织名称":group_name.get(k,"-")} for k, v in child_group.items()}
             pd.DataFrame(child_group_debug).T.to_excel(csv_buffer3)
             file_name = f"组织的子组织信息_debug.xlsx"
             email_client.add_file_obj(csv_buffer3, file_name)
