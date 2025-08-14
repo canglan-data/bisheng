@@ -82,6 +82,9 @@ def _continue_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: 
     redis_callback.workflow_exec_unique_id = exec_unique_id
     try:
         workflow = _global_workflow.get(redis_callback.unique_id, None)
+        # 每次问答修改msg_id
+        if workflow.graph_engine and workflow.graph_engine.callback and hasattr(workflow.graph_engine.callback, 'msg_id'):
+            workflow.graph_engine.callback.msg_id = msg_id
         if not workflow:
             raise Exception('workflow object not found maybe data is expired')
         if workflow.status() not in [WorkflowStatus.INPUT.value, WorkflowStatus.INPUT_OVER.value]:
