@@ -55,3 +55,23 @@ class RolePositionDao:
             session.commit()
             session.refresh(data)
             return data
+
+    @classmethod
+    def batch_insert(cls, data: list[RolePosition]) -> int:
+        lines = []
+        params = {}
+        for i, rp in enumerate(data):
+            lines.append(f"(:role_id_{i}, :group_id_{i}, :position_{i})")
+            params[f"role_id_{i}"] = rp.role_id
+            params[f"group_id_{i}"] = rp.group_id
+            params[f"position_{i}"] = rp.position
+
+        lines_str = ",".join(lines)
+        sql = f"INSERT INTO role_position (role_id, group_id, position) VALUES {lines_str};"
+
+        with session_getter() as session:
+            statement = text(sql)
+            result = session.exec(statement, params=params)
+            session.commit()
+
+        return result.rowcount

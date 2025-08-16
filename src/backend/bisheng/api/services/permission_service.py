@@ -286,8 +286,12 @@ class PermissionService:
             logger.debug(f"jjxx888 RolePositionDao.delete role_id:{role.id} manage_group_ids:{manage_group_ids}")
             RolePositionDao.delete([role.id], manage_group_ids)  # 先删再插入
 
-        for role_position in insert:
-            RolePositionDao.insert(role_position)
+        if insert:
+            # 极端情况下插入全部部门和职位3000+，耗时20s+，必须使用批量插入
+            insert_count = RolePositionDao.batch_insert(insert)
+            logger.debug(f"jjxx RolePositionDao.batch_insert insert_list_count:{len(insert)} success_count:{insert_count}")
+            # for role_position in insert:
+            #     RolePositionDao.insert(role_position)
 
     @staticmethod
     def get_role_group_positions(role_ids: list[int], group_ids: list[int] = []):
