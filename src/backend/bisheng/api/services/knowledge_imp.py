@@ -1073,7 +1073,6 @@ def QA_save_knowledge(db_knowledge: Knowledge, QA: QAKnowledge):
                 )
                 if matched:
                     success = True
-                    logger.debug(f'jjxx validation_query:{validation_query} success')
                     break  # 验证成功，跳出重试循环
             except Exception as e:
                 raise e
@@ -1086,7 +1085,6 @@ def QA_save_knowledge(db_knowledge: Knowledge, QA: QAKnowledge):
         QA.status = QAStatus.ENABLED.value
         KnowledgeFileDao.update(QA)
     except Exception as e:
-        logger.debug(f'jjxx validation_query:{e} error')
         logger.error(e)
         setattr(QA, "status", QAStatus.FAILED.value)
         setattr(QA, "remark", str(e)[:500])
