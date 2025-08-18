@@ -202,14 +202,14 @@ export default function Roles() {
                             <div className="flex items-center">
                                 {t('system.userPosition')}
                                 <UsersFilter
-                                        options={positions}
-                                        nameKey='position_name'
-                                        placeholder={t('system.searchUserPositions')}
-                                        onChecked={(values) => setPositions(values)}
-                                        onFilter={(ids) => {
-                                                setSelectedPositionIds(ids);
-                                            }}
-                                    ></UsersFilter>
+                                    options={positions}
+                                    nameKey='position_name'
+                                    placeholder={t('system.searchUserPositions')}
+                                    onChecked={(values) => setPositions(values)}
+                                    onFilter={(ids) => {
+                                            setSelectedPositionIds(ids);
+                                        }}
+                                ></UsersFilter>
                                 </div>
                             </TableHead>
                             <TableHead>
@@ -224,7 +224,7 @@ export default function Roles() {
                                                 console.log('ids', ids);
                                                 setSelectedOrgIds(ids);
                                             }}
-                                            byTree
+                                            byTree  
                                         ></UsersFilter>
                                 </div>
                             </TableHead>
@@ -236,8 +236,12 @@ export default function Roles() {
                         {state.roles.map(el => (
                             <TableRow key={el.id}>
                                 <TableCell className="font-medium">{el.role_name}</TableCell>
-                                <TableCell>{el.positions.join(',')}</TableCell>
-                                <TableCell className="break-all">{(el.groups || []).map(el => el.group_name).join(',')}</TableCell>
+                                <TableCell>
+                                    <div className="max-h-[200px] overflow-y-auto">{el.positions.join(',')}</div>
+                                </TableCell>
+                                <TableCell className="break-all">
+                                    <div className="max-h-[200px] overflow-y-auto">{(el.groups || []).map(el => el.group_name).join(',')}</div>
+                                </TableCell>
                                 <TableCell>{el.create_time.replace('T', ' ')}</TableCell>
                                 <TableCell className="text-right">
                                     <Button variant="link" onClick={() => dispatch({ type: 'SET_ROLE', payload: el })} className="px-0 pl-6">{t('edit')}</Button>

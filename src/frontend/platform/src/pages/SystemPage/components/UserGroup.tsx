@@ -152,8 +152,9 @@ export default function UserGroups() {
                     {userGroups.map((ug: any) => (
                         <TableRow key={ug.id}>
                             <TableCell className="font-medium">{ug.group_name}</TableCell>
-                            {/* TODO: admin_user是啥？ zzy */}
-                            <TableCell className="break-all">{(ug.admin_user || ug.group_admins).map(el => el.user_name).join(',')}</TableCell>
+                            <TableCell className="break-all">  
+                                <div className="max-h-[200px] overflow-y-auto">{(ug.admin_user || ug.group_admins).map(el => el.user_name).join(',')}</div>
+                            </TableCell>
                             {/* <TableCell className="break-all">{(ug.admin_user || ug.group_audits).map(el => el.user_name).join(',')}</TableCell>
                             <TableCell className="break-all">{(ug.admin_user || ug.group_operations).map(el => el.user_name).join(',')}</TableCell> */}
                             {appConfig.isPro && <TableCell>{ug.group_limit ? t('system.limit') : t('system.unlimited')}</TableCell>}

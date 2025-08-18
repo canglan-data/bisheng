@@ -223,9 +223,12 @@ export default function Users(params) {
                         <TableRow key={el.id}>
                             <TableCell className="font-medium max-w-md truncate">{el.user_name}</TableCell>
                             <TableCell>{el.position}</TableCell>
-                            {/* <TableCell>{el.role}</TableCell> */}
-                            <TableCell className="break-all">{(el.groups || []).map(el => el.name).join(',')}</TableCell>
-                            <TableCell className="break-all">{(el.roles || []).map(el => el.name).join(',')}</TableCell>
+                            <TableCell className="break-all">
+                                <div className="max-h-[200px] overflow-y-auto">{(el.groups || []).map(el => el.name).join(',')}</div>
+                            </TableCell>
+                            <TableCell className="break-all">
+                                <div className="max-h-[200px] overflow-y-auto">{(el.roles || []).map(el => el.name).join(',')}</div>
+                            </TableCell>
                             <TableCell>{el.update_time.replace('T', ' ')}</TableCell>
                             <TableCell className="text-right">{operations(el)}</TableCell>
                         </TableRow>
