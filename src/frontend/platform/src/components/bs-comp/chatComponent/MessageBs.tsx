@@ -2,7 +2,7 @@ import { AvatarIcon } from "@/components/bs-icons/avatar";
 import { LoadIcon, LoadingIcon } from "@/components/bs-icons/loading";
 import { CodeBlock } from "@/modals/formModal/chatMessage/codeBlock";
 import { ChatMessageType } from "@/types/chat";
-import { formatStrTime } from "@/util/utils";
+import { formatStrTime, processMarkdownImages } from "@/util/utils";
 import { copyText } from "@/utils";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -77,7 +77,12 @@ export default function MessageBs({ debug, operation = false, mark = false, audi
     ]
 
     const message = useMemo(() => {
-        const msg = data.message[data.chatKey] || data.message
+        let msg = data.message[data.chatKey] || data.message
+
+        if (data.source === SourceType.FILE) {
+            msg = processMarkdownImages(msg);
+        }
+
         return msg.replaceAll('$$', '$')
     }, [data.message])
 

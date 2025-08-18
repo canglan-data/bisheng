@@ -4,7 +4,7 @@ import { AvatarIcon } from "@/components/bs-icons/avatar";
 import { LoadIcon, LoadingIcon } from "@/components/bs-icons/loading";
 import { CodeBlock } from "@/modals/formModal/chatMessage/codeBlock";
 import { WorkflowMessage } from "@/types/flow";
-import { formatStrTime } from "@/util/utils";
+import { formatStrTime, processMarkdownImages } from "@/util/utils";
 import { copyText } from "@/utils";
 import { useContext, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -75,7 +75,11 @@ export default function MessageBs({ debug, operation, audit, mark = false, logo,
     const { appConfig } = useContext(locationContext)
     const isDisableCopy = !!appConfig?.disableCopyFlowIds?.includes(data?.flow_id);
     const message = useMemo(() => {
-        const msg = typeof data.message === 'string' ? data.message : data.message.msg
+        let msg = typeof data.message === 'string' ? data.message : data.message.msg
+
+        if (data.source === SourceType.FILE) {
+            msg = processMarkdownImages(msg);
+        }
 
         return msg
             .replaceAll('$$', '$') // latex
