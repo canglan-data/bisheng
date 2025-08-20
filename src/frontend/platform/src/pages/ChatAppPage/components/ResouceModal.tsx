@@ -155,7 +155,8 @@ const ResultPanne = ({ chatId, words, data, onClose, onAdd, children, fullScreen
                                     </Tip>
                                 }
                             </div> */}
-                            <span className="absolute right-1 bottom-1 text-blue-400 text-sm">{_file.score}</span>
+                            {/* 20250820 需求 参考来源不展示分数 */}
+                            {/* <span className="absolute right-1 bottom-1 text-blue-400 text-sm">{_file.score}</span> */}
                         </div> :
                             <div key={_file.id} className={`msk group rounded-xl bg-[#fff] hover-bg-gray-200 flex items-center px-4 mb-2 relative min-h-16 cursor-pointer ${file?.id === _file.id && 'bg-gray-200'}`}>
                                 <p className="text-sm blur-sm">是真的马赛克.msk</p>
@@ -199,12 +200,13 @@ export const ResouceContent = ({ data, setOpen, fullScreen = false }) => {
                 <LoadingIcon />
             </div>
         }
-        <Anwser
+        {/* 参考来源弹窗隐藏头部关键词 */}
+        {/* <Anwser
             id={data.messageId}
             fullScreen={fullScreen}
             msg={data.message}
             onInit={handleAnwserInit}
-            onAdd={handleAddWord}></Anwser>
+            onAdd={handleAddWord}></Anwser> */}
         <ResultPanne
             words={keywords}
             fullScreen={fullScreen}
