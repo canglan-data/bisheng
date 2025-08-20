@@ -6,17 +6,17 @@ from sqlmodel import Field, select, Column, DateTime, delete, text, update, or_
 from bisheng.database.base import session_getter
 from bisheng.database.models.base import SQLModelSerializable
 
-# 默认用户组的ID
+# 默认部门的ID
 DefaultGroup = 2
 
 
 class GroupBase(SQLModelSerializable):
     id: Optional[int] = Field(default=None, primary_key=True)
-    parent_id: int = Field(default=0, index=True, description='父级用户组ID')
+    parent_id: int = Field(default=0, index=True, description='父级部门ID')
     code: Optional[str] = Field(default=None, index=True, unique=True,
-                                description='用户组路径，从根节点到当前节点的code路径')
-    level: Optional[int] = Field(default=0, index=True, description='用户组层级')
-    third_id: Optional[str] = Field(default='', index=True, description='第三方用户组唯一标识。例如对应到企微里的部门ID')
+                                description='部门路径，从根节点到当前节点的code路径')
+    level: Optional[int] = Field(default=0, index=True, description='部门层级')
+    third_id: Optional[str] = Field(default='', index=True, description='第三方部门唯一标识。例如对应到企微里的部门ID')
     group_name: str = Field(index=False, description='前端展示名称', unique=True)
     remark: Optional[str] = Field(default=None, index=False)
     create_user: Optional[int] = Field(default=None, index=True, description="创建用户的ID")
@@ -31,7 +31,7 @@ class GroupBase(SQLModelSerializable):
 
 
 class Group(GroupBase, table=True):
-    # id = 2 表示默认用户组
+    # id = 2 表示默认部门
     pass
 
 
@@ -44,11 +44,11 @@ class GroupRead(GroupBase):
     # 记录从根节点到当前节点的name路径  a/b/c
     parent_group_path: Optional[str] = ''
 
-    # 当前用户组下职位的统计信息 {"职位名": 职位下的用户数}
+    # 当前部门下职位的统计信息 {"职位名": 职位下的用户数}
     position_count: Optional[dict] = {}
     role_count: Optional[int] = 0
 
-    # 子用户组
+    # 子部门
     children: Optional[List[Any]] = []
 
 
@@ -68,10 +68,10 @@ class GroupDao(GroupBase):
     @staticmethod
     def generate_group_code(parent_code: str, group_id: int) -> str:
         """
-        parent_code: 表示父用户组的code
-        current_level_code: 表示当前用户组所在层级的最新code
-         001: 代表第一层级的第一个用户组
-         001|001: 代表第二层级的第一个用户组，且父用户组属于编码为A1的用户组
+        parent_code: 表示父部门的code
+        current_level_code: 表示当前部门所在层级的最新code
+         001: 代表第一层级的第一个部门
+         001|001: 代表第二层级的第一个部门，且父部门属于编码为A1的部门
         """
         if parent_code:
             return f'{parent_code}|{group_id:0>3}'
@@ -80,7 +80,7 @@ class GroupDao(GroupBase):
 
     @staticmethod
     def parse_parent_code(group_code: str) -> List[str]:
-        """ 解析出父用户组的code """
+        """ 解析出父部门的code """
         code_list = group_code.split('|')
         if len(code_list) == 1:
             return []
@@ -99,27 +99,27 @@ class GroupDao(GroupBase):
 
     @classmethod
     def insert_group(cls, group: GroupCreate) -> Group:
-        """ 插入用户组，设置用户组的code和层级 """
+        """ 插入部门，设置部门的code和层级 """
         with session_getter() as session:
             group_add = Group.validate(group)
 
-            # 判断所属的父用户组
+            # 判断所属的父部门
             parent_group_code = ""
             if group.parent_id != 0:
                 parent_group = session.exec(select(Group).where(Group.id == group.parent_id)).first()
                 if not parent_group:
-                    raise ValueError('父级用户组不存在')
+                    raise ValueError('父级部门不存在')
                 group_add.level = parent_group.level + 1
                 parent_group_code = parent_group.code
             else:
                 group_add.level = 0
 
-            # 先插入获取用户组ID
+            # 先插入获取部门ID
             session.add(group_add)
             session.commit()
             session.refresh(group_add)
 
-            # 设置用户组的code
+            # 设置部门的code
             group_add.code = cls.generate_group_code(parent_group_code, group_add.id)
             session.add(group_add)
             session.commit()
@@ -171,7 +171,7 @@ class GroupDao(GroupBase):
 
     @classmethod
     def update_parent_group(cls, group: Group, parent_group: Group):
-        """ 切换父用户组 """
+        """ 切换父部门 """
         group.parent_id = parent_group.id
         group.level = parent_group.level + 1
         group.code = cls.generate_group_code(parent_group.code, group.id)
@@ -179,7 +179,7 @@ class GroupDao(GroupBase):
             session.add(group)
             session.commit()
             session.refresh(group)
-        # 递归更新子用户组的code
+        # 递归更新子部门的code
         child_groups = cls.get_child_groups_by_id(group.id)
         for one in child_groups:
             cls.update_parent_group(one, group)
@@ -203,7 +203,7 @@ class GroupDao(GroupBase):
 
     @classmethod
     def get_child_groups(cls, group_code: str, level: int = None) -> list[Group]:
-        """ 获取指定用户组的子用户组 """
+        """ 获取指定部门的子部门 """
         statement = select(Group).where(Group.code.like(f'{group_code}|%'))
         if level:
             statement = statement.where(Group.level == level)
@@ -213,7 +213,7 @@ class GroupDao(GroupBase):
 
     @classmethod
     def get_all_child_groups_by_id(cls, group_ids: list[int]) -> List[Group]:
-        """ 根据用户组ID列表 获取指定用户组的所有子用户组 """
+        """ 根据部门ID列表 获取指定部门的所有子部门 """
         groups_info = cls.get_group_by_ids(group_ids)
         statement = select(Group)
         or_list = []
@@ -227,14 +227,14 @@ class GroupDao(GroupBase):
 
     @classmethod
     def get_child_groups_by_id(cls, group_id: int) -> list[Group]:
-        """ 获取指定用户组的直接子用户组 """
+        """ 获取指定部门的直接子部门 """
         with session_getter() as session:
             statement = select(Group).where(Group.parent_id == group_id)
             return session.exec(statement).all()
 
     @classmethod
     def get_parent_groups(cls, group_code: str, level: int = None) -> List[Group]:
-        """ 获取指定用户组的父用户组 """
+        """ 获取指定部门的父部门 """
         parent_group_code = cls.parse_parent_code(group_code)
         if not parent_group_code:
             return []
@@ -247,7 +247,7 @@ class GroupDao(GroupBase):
 
     @classmethod
     def get_parent_groups_by_ids(cls, group_ids: list[int], level: int = None) -> List[Group]:
-        """ 获取指定用户组的父用户组 """
+        """ 获取指定部门的父部门 """
         if not group_ids:
             return []
         statement = select(Group).where(Group.id.in_(group_ids))
@@ -258,14 +258,14 @@ class GroupDao(GroupBase):
             all_groups = session.exec(statement).all()
             if not all_groups:
                 return []
-            # 获取所有的父用户组的code
+            # 获取所有的父部门的code
             parent_group_code = []
             for one in all_groups:
                 parent_group_code.extend(cls.parse_parent_code(one.code))
             parent_group_code = list(set(parent_group_code))
             if not parent_group_code:
                 return []
-            # 获取所有的父用户组
+            # 获取所有的父部门
             return session.exec(select(Group).where(Group.code.in_(parent_group_code))).all()
 
     @classmethod

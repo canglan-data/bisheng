@@ -14,7 +14,7 @@ from bisheng.utils.constants import GROUP_USER_TYPE_ADMIN, GROUP_USER_TYPE_AUDIT
 class UserGroupBase(SQLModelSerializable):
     user_id: int = Field(index=True, description='用户id')
     group_id: int = Field(index=True, description='组id')
-    is_group_admin: bool = Field(default=False, index=False, description='是否是组管理员')  # 管理员不属于此用户组
+    is_group_admin: bool = Field(default=False, index=False, description='是否是组管理员')  # 管理员不属于此部门
     remark: Optional[str] = Field(default=None, index=False)
     user_type: int = Field(default=0, description='用户类型，0：未知，1：admin，2：运营，3：审计')
     create_time: Optional[datetime] = Field(default=None, sa_column=Column(
@@ -47,7 +47,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def get_user_group(cls, user_id: int) -> List[UserGroup]:
         """
-        获取用户所在的用户组
+        获取用户所在的部门
         """
         with session_getter() as session:
             statement = select(UserGroup).where(UserGroup.user_id == user_id).where(UserGroup.is_group_admin == 0)
@@ -56,7 +56,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def get_users_group(cls, user_id: List[int]) -> List[UserGroup]:
         """
-        批量获取用户所在的用户组
+        批量获取用户所在的部门
         """
         with session_getter() as session:
             statement = select(UserGroup).where(UserGroup.user_id.in_(user_id)).where(UserGroup.is_group_admin == 0)
@@ -65,7 +65,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def get_user_admin_group_old(cls, user_id: int) -> List[UserGroup]:
         """
-        获取用户是管理员的用户组
+        获取用户是管理员的部门
         """
         with session_getter() as session:
             statement = select(UserGroup).where(UserGroup.user_id == user_id).where(UserGroup.is_group_admin == 1)
@@ -74,7 +74,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def get_user_admin_group(cls, user_id: int) -> List[UserGroup]:
         """
-        获取用户是管理员的用户组
+        获取用户是管理员的部门
         原方法备份为get_user_admin_group_old，上层调用较多，暂时在model统一改，后续视情况按最佳实践优化
         """
         from bisheng.api.services.permission_service import PermissionService
@@ -84,7 +84,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def get_user_audit_group(cls, user_id: int) -> List[UserGroup]:
         """
-        获取用户是审计的用户组
+        获取用户是审计的部门
         """
         with session_getter() as session:
             statement = select(UserGroup).where(UserGroup.user_id == user_id).where(UserGroup.is_group_admin == 0,UserGroup.user_type==GROUP_USER_TYPE_AUDIT)
@@ -93,7 +93,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def get_user_operation_group(cls, user_id: int) -> List[UserGroup]:
         """
-        获取用户是审计的用户组
+        获取用户是审计的部门
         """
         with session_getter() as session:
             statement = select(UserGroup).where(UserGroup.user_id == user_id).where(UserGroup.is_group_admin == 0,UserGroup.user_type==GROUP_USER_TYPE_OPERATION)
@@ -175,7 +175,7 @@ class UserGroupDao(UserGroupBase):
         if group_roles:
             UserRoleDao.delete_user_roles(user_id, [one.id for one in group_roles])
         with session_getter() as session:
-            # 先把旧的用户组全部清空
+            # 先把旧的部门全部清空
             statement = delete(UserGroup).where(
                 UserGroup.user_id == user_id).where(
                 UserGroup.is_group_admin == 0).where(
@@ -240,7 +240,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def count_groups_user(cls, group_ids: List[int]) -> int:
         """
-        统计用户组下的用户数量
+        统计部门下的用户数量
         """
         with session_getter() as session:
             statement = select(func.count(func.distinct(UserGroup.user_id))).where(UserGroup.group_id.in_(group_ids)).where(
@@ -294,7 +294,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def get_user_admin_groups(cls, user_id: int) -> List[UserGroup]:
         """
-        获取用户是管理员的用户组
+        获取用户是管理员的部门
         """
         with session_getter() as session:
             statement = select(UserGroup).where(UserGroup.user_id == user_id).where(UserGroup.is_group_admin == 1)
@@ -310,7 +310,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def add_default_user_group(cls, user_id: int) -> None:
         """
-        给默认用户组内添加用户
+        给默认部门内添加用户
         """
         with session_getter() as session:
             user_group = UserGroup(user_id=user_id, group_id=DefaultGroup, is_group_admin=False)
@@ -320,7 +320,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def delete_group_admins(cls, group_id: int, admin_ids: List[int]) -> None:
         """
-        批量删除用户组的admin
+        批量删除部门的admin
         """
         with session_getter() as session:
             statement = delete(UserGroup).where(
@@ -333,7 +333,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def delete_group_operations(cls, group_id: int, operation_ids: List[int]) -> None:
         """
-        批量删除用户组的operations
+        批量删除部门的operations
         """
         with session_getter() as session:
             statement = delete(UserGroup).where(
@@ -347,7 +347,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def delete_group_audits(cls, group_id: int, audit_ids: List[int]) -> None:
         """
-        批量删除用户组的audits
+        批量删除部门的audits
         """
         with session_getter() as session:
             statement = delete(UserGroup).where(
@@ -361,7 +361,7 @@ class UserGroupDao(UserGroupBase):
     @classmethod
     def delete_group_all_admin(cls, group_id: int) -> None:
         """
-        删除用户组下所有的管理员
+        删除部门下所有的管理员
         """
         with session_getter() as session:
             statement = delete(UserGroup).where(

@@ -82,12 +82,12 @@ async def get_all_group(*,login_user: UserPayload = Depends(get_login_user),
     if login_user.is_admin():
         groups = []
     else:
-        # 查询下是否是其他用户组的管理员
+        # 查询下是否是其他部门的管理员
         user_groups = UserGroupDao.get_user_operation_or_admin_group(login_user.user_id)
         groups = []
         for one in user_groups:
             groups.append(one.group_id)
-        # 不是任何用户组的管理员无查看权限
+        # 不是任何部门的管理员无查看权限
         if not groups:
             raise HTTPException(status_code=500, detail='无查看权限')
     logger.debug(f'get_all_group groups: {groups},user_id: {login_user.user_id}')
@@ -108,12 +108,12 @@ async def get_all_group(*,login_user: UserPayload = Depends(get_login_user),
     if login_user.is_admin():
         groups = []
     else:
-        # 查询下是否是其他用户组的管理员
+        # 查询下是否是其他部门的管理员
         user_groups = UserGroupDao.get_user_audit_or_admin_group(login_user.user_id)
         groups = []
         for one in user_groups:
             groups.append(one.group_id)
-        # 不是任何用户组的管理员无查看权限
+        # 不是任何部门的管理员无查看权限
         if not groups:
             raise HTTPException(status_code=500, detail='无查看权限')
     groups_res = RoleGroupService().get_group_list(groups)
@@ -137,13 +137,13 @@ async def get_all_group_tree(login_user: UserPayload = Depends(get_login_user),
     if login_user.is_admin():
         groups = [group_id] if group_id else []
     else:
-        # 查询下是否是其他用户组的管理员
+        # 查询下是否是其他部门的管理员
         user_groups = UserGroupDao.get_user_admin_group(login_user.user_id)
         groups = []
         for one in user_groups:
             if one.is_group_admin:
                 groups.append(one.group_id)
-        # 不是任何用户组的管理员无查看权限
+        # 不是任何部门的管理员无查看权限
         if not groups:
             raise UnAuthorizedError.http_exception()
         if group_id:
@@ -160,7 +160,7 @@ async def get_all_group_tree(login_user: UserPayload = Depends(get_login_user),
 async def create_group(request: Request, login_user: UserPayload = Depends(get_admin_user),
                        group: GroupCreate = Body(...)):
     """
-    新建用户组
+    新建部门
     """
     return resp_200(RoleGroupService().create_group(request, login_user, group))
 
@@ -170,7 +170,7 @@ async def update_group(request: Request,
                        group: Group,
                        login_user: UserPayload = Depends(get_login_user)):
     """
-    编辑用户组
+    编辑部门
     """
     if not login_user.is_admin():
         return UnAuthorizedError.return_resp()
@@ -182,7 +182,7 @@ async def delete_group(request: Request,
                        group_id: int,
                        login_user: UserPayload = Depends(get_login_user)):
     """
-    删除用户组
+    删除部门
     """
 
     if not login_user.is_admin():
@@ -196,11 +196,11 @@ async def set_user_group(request: Request,
                          group_id: Annotated[List[int], Body(embed=True)],
                          login_user: UserPayload = Depends(get_login_user)):
     """
-    设置用户分组, 批量替换, 根据操作人权限不同，替换不同的用户组
-    用户组管理就只替换他拥有权限的用户组。超级管理员全量替换
+    设置用户分组, 批量替换, 根据操作人权限不同，替换不同的部门
+    部门管理就只替换他拥有权限的部门。超级管理员全量替换
     """
     if not group_id:
-        raise HTTPException(status_code=500, detail='用户组不能为空')
+        raise HTTPException(status_code=500, detail='部门不能为空')
     return resp_200(RoleGroupService().replace_user_groups(request, login_user, user_id, group_id))
 
 
@@ -219,7 +219,7 @@ async def get_app_list(
                          page_num: int = None,
         login_user: UserPayload = Depends(get_login_user)):
     """
-    获取用户管理的用户组下所有的应用
+    获取用户管理的部门下所有的应用
     """
 
     groups = UserGroupDao.get_user_admin_group(login_user.user_id)
@@ -255,7 +255,7 @@ async def get_group_user(group_id: int,
                          limit: int = None,
                          login_user: UserPayload = Depends(get_login_user)):
     """
-    获取分组下的用户，包含子用户组
+    获取分组下的用户，包含子部门
     """
     if not login_user.check_group_admin(group_id):
         return UnAuthorizedError.return_resp()
@@ -316,7 +316,7 @@ async def set_group_audit(
 async def set_update_user(group_id: Annotated[int, Body(embed=True)],
                           Authorize: AuthJWT = Depends()):
     """
-    更新用户组的最近修改人
+    更新部门的最近修改人
     """
     # await check_permissions(Authorize, ['admin'])
     payload = json.loads(Authorize.get_jwt_subject())
@@ -333,9 +333,9 @@ async def get_group_resources(*,
                               page_num: Optional[int] = 1,
                               user: UserPayload = Depends(get_login_user)):
     """
-    获取用户组下的资源列表
+    获取部门下的资源列表
     """
-    # 判断是否是用户组的管理员
+    # 判断是否是部门的管理员
     # if not user.check_group_admin(group_id):
     #     return UnAuthorizedError.return_resp()
     res, total = RoleGroupService().get_group_resources_v2(
@@ -354,7 +354,7 @@ async def get_manage_resources(*, request: Request, login_user: UserPayload = De
                                keyword: str = Query(None, description="搜索关键字"),
                                page: int = 1,
                                page_size: int = 10):
-    """ 获取管理的用户组下的应用列表 """
+    """ 获取管理的部门下的应用列表 """
     res, total = RoleGroupService().get_manage_resources(request=request, login_user=login_user, keyword=keyword, page=page, page_size=page_size)
     return resp_200(data={
         "data": res,
@@ -366,7 +366,7 @@ async def get_operation_resources(*, request: Request, login_user: UserPayload =
                                keyword: str = Query(None, description="搜索关键字"),
                                page: int = 1,
                                page_size: int = 10):
-    """ 获取管理的用户组下的应用列表 """
+    """ 获取管理的部门下的应用列表 """
     res, total = RoleGroupService().get_operation_resources(request, login_user, keyword, page, page_size)
     return resp_200(data={
         "data": res,
@@ -377,7 +377,7 @@ async def get_audit_resources(*, request: Request, login_user: UserPayload = Dep
                                keyword: str = Query(None, description="搜索关键字"),
                                page: int = 1,
                                page_size: int = 10):
-    """ 获取管理的用户组下的应用列表 """
+    """ 获取管理的部门下的应用列表 """
     res, total = RoleGroupService().get_audit_resources(request, login_user, keyword, page, page_size)
     return resp_200(data={
         "data": res,
@@ -385,7 +385,7 @@ async def get_audit_resources(*, request: Request, login_user: UserPayload = Dep
     })
 
 async def process_group_ids(
-    group_id: Optional[List[str]] = Query(None, description="用户组ID列表，不传则查询所有有权限的角色列表")
+    group_id: Optional[List[str]] = Query(None, description="部门ID列表，不传则查询所有有权限的角色列表")
 ) -> List[int] | None:
     if group_id is None:
         return None
@@ -401,18 +401,18 @@ async def process_group_ids(
 
 @router.get("/roles")
 async def get_group_roles(*,
-                          group_id: Optional[List[int]] = Depends(process_group_ids),  # 用户组筛选项
+                          group_id: Optional[List[int]] = Depends(process_group_ids),  # 部门筛选项
                           position: Optional[list[str]] = Query(None, description="职位筛选项"),
                           expand: Optional[list[str]] = Query([], description="展开项"),
                           keyword: str = Query(None, description="搜索关键字"),
-                          include_parent: bool = Query(False, description="是否包含父用户组绑定的角色"),
+                          include_parent: bool = Query(False, description="是否包含父部门绑定的角色"),
                           page: int = 0,
                           limit: int = 0,
                           user: UserPayload = Depends(get_login_user)):
     res, total = RoleGroupService().get_group_roles(user, group_id, keyword, page, limit, include_parent, positions=position)
 
     if 'groups' in expand or 'positions' in expand:
-        # 填充用户组和职位
+        # 填充部门和职位
         role_ids = [r.id for r in res]
         if role_ids:
             new_result = []
@@ -439,7 +439,7 @@ async def get_group_roles(*,
 #                                keyword: str = Query(None, description="搜索关键字"),
 #                                page: int = 1,
 #                                page_size: int = 10):
-#     """ 获取管理的用户组下的应用列表 """
+#     """ 获取管理的部门下的应用列表 """
 #     res, total = RoleGroupService().get_manage_resources(login_user=login_user, keyword=keyword, page=page, page_size=page_size)
 #     return resp_200(data={
 #         "data": res,
@@ -449,9 +449,9 @@ async def get_group_roles(*,
 @router.get("/user/roles", response_model=UnifiedResponseModel)
 async def get_user_group_roles(login_user: UserPayload = Depends(get_login_user),
                                user_id: int = Query(None, description="用户ID"),
-                               group_id: int = Query(None, description="用户组ID")):
+                               group_id: int = Query(None, description="部门ID")):
     """
-    获取用户 在指定用户组内的角色列表
+    获取用户 在指定部门内的角色列表
     """
     res = RoleGroupService().get_user_group_roles(login_user, user_id, group_id)
     return resp_200(data={

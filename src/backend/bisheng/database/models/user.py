@@ -46,7 +46,7 @@ class UserRead(UserBase):
     role: Optional[str] = None
     access_token: Optional[str] = None
     web_menu: Optional[List[str]] = None
-    admin_groups: Optional[List[int]] = None  # 所管理的用户组ID列表
+    admin_groups: Optional[List[int]] = None  # 所管理的部门ID列表
 
 
 class UserQuery(UserBase):

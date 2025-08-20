@@ -37,9 +37,9 @@ class EventType(Enum):
     UPDATE_USER = "update_user"  # 用户编辑
     FORBID_USER = "forbid_user"  # 停用用户
     RECOVER_USER = "recover_user"  # 启用用户
-    CREATE_USER_GROUP = "create_user_group"  # 新建用户组
-    DELETE_USER_GROUP = "delete_user_group"  # 删除用户组
-    UPDATE_USER_GROUP = "update_user_group"  # 编辑用户组
+    CREATE_USER_GROUP = "create_user_group"  # 新建部门
+    DELETE_USER_GROUP = "delete_user_group"  # 删除部门
+    UPDATE_USER_GROUP = "update_user_group"  # 编辑部门
     CREATE_ROLE = "create_role"  # 新建角色
     DELETE_ROLE = "delete_role"  # 删除角色
     UPDATE_ROLE = "update_role"  # 编辑角色
@@ -56,7 +56,7 @@ class ObjectType(Enum):
     KNOWLEDGE = "knowledge"  # 知识库
     FILE = "file"  # 文件
     USER_CONF = "user_conf"  # 用户配置
-    USER_GROUP_CONF = "user_group_conf"  # 用户组配置
+    USER_GROUP_CONF = "user_group_conf"  # 部门配置
     ROLE_CONF = "role_conf"  # 角色配置
 
 
@@ -66,7 +66,7 @@ class AuditLogBase(SQLModelSerializable):
     """
     operator_id: int = Field(index=True, description="操作用户的ID")
     operator_name: Optional[str] = Field(description="用户名")
-    group_ids: Optional[List[int]] = Field(sa_column=Column(JSON), description="所属用户组的ID列表")
+    group_ids: Optional[List[int]] = Field(sa_column=Column(JSON), description="所属部门的ID列表")
     system_id: Optional[str] = Field(index=True, description="系统模块")
     event_type: Optional[str] = Field(index=True, description="操作行为")
     object_type: Optional[str] = Field(index=True, description="操作对象类型")
@@ -85,7 +85,7 @@ class AuditLogBase(SQLModelSerializable):
 
 
 class AuditLog(AuditLogBase, table=True):
-    # id = 2 表示默认用户组
+    # id = 2 表示默认部门
     id: str = Field(default_factory=generate_uuid, primary_key=True, index=True, description="主键，uuid格式")
 
 
@@ -96,7 +96,7 @@ class AuditLogDao(AuditLogBase):
                        end_time: datetime = None, system_id: str = None, event_type: str = None,
                        page: int = 0, limit: int = 0, monitor_result: list[str] = None) -> (List[AuditLog], int):
         """
-        通过用户组来筛选日志
+        通过部门来筛选日志
         """
         statement = select(AuditLog)
         count_statement = select(func.count(AuditLog.id))

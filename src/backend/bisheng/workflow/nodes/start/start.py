@@ -79,7 +79,7 @@ class StartNode(BaseNode):
 
             group_str = ";".join(all_groups)
 
-            return f"<user_info>\n用户名：{user.user_name}\n用户职位：{user.position}\n用户组织架构：{group_str}\n</user_info>"
+            return f"<user_info>\n用户名：{user.user_name}\n用户职位：{user.position}\n用户部门：{group_str}\n</user_info>"
         else:
             return f"<user_info></user_info>"
 

@@ -141,7 +141,7 @@ class AuditLogService:
                 "审计ID",
                 "用户名",
                 "用户角色",
-                "用户组织架构",
+                "部门",
                 "用户职位",
                 "操作时间",
                 "系统模块",
@@ -155,7 +155,7 @@ class AuditLogService:
         ]
 
         monitor_result_dict = {
-            "set_group_admin": "添加非组织架构管理员",
+            "set_group_admin": "添加非部门管理员",
             "not_work_time": "非工作时间",
             "pass": "通过"
         }
@@ -180,9 +180,9 @@ class AuditLogService:
             "update_user": "用户编辑",
             "forbid_user": "停用用户",
             "recover_user": "启用用户",
-            "create_user_group": "新建用户组织架构",
-            "delete_user_group": "删除用户组织架构",
-            "update_user_group": "编辑用户组织架构",
+            "create_user_group": "新建部门",
+            "delete_user_group": "删除部门",
+            "update_user_group": "编辑部门",
             "create_role": "新建角色",
             "delete_role": "删除角色",
             "update_role": "编辑角色",
@@ -197,7 +197,7 @@ class AuditLogService:
             "knowledge": "知识库",
             "file": "文件",
             "user_conf": "用户配置",
-            "user_group_conf": "用户组配置",
+            "user_group_conf": "部门配置",
             "role_conf": "角色配置"
         }
 
@@ -362,7 +362,7 @@ class AuditLogService:
         """
         构建模块的审计日志
         """
-        # 获取资源属于哪些用户组
+        # 获取资源属于哪些部门
         groups = GroupResourceDao.get_resource_group(resource_type, object_id)
         group_ids = [one.group_id for one in groups]
 
@@ -462,7 +462,7 @@ class AuditLogService:
         """
         知识库模块的日志
         """
-        # 获取资源属于哪些用户组
+        # 获取资源属于哪些部门
         groups = GroupResourceDao.get_resource_group(resource_type, resource_id)
         group_ids = [one.group_id for one in groups]
 
@@ -554,7 +554,7 @@ class AuditLogService:
 
         is_not_work_time = AuditLogService.is_not_work_time()
         if is_not_work_time:
-            # 用户编辑、停用用户、启用用户、编辑用户组织架构、新建角色、编辑角色、删除角色和用户登录
+            # 用户编辑、停用用户、启用用户、编辑用户部门、新建角色、编辑角色、删除角色和用户登录
             type_list = [
                 EventType.UPDATE_USER.value,
                 EventType.FORBID_USER.value,
@@ -584,7 +584,7 @@ class AuditLogService:
     @classmethod
     def update_user(cls, user: UserPayload, ip_address: str, user_id: int, group_ids: List[int], note: str):
         """
-        修改用户的用户组和角色
+        修改用户的部门和角色
         """
         logger.info(f"act=update_system_user user={user.user_name} ip={ip_address} user_id={user_id} note={note}")
         user_info = UserDao.get_user(user_id)
@@ -622,14 +622,14 @@ class AuditLogService:
     @classmethod
     def update_user_group(cls, user: UserPayload, ip_address: str, group_info: Group, note: str = ''):
         logger.info(f"act=update_user_group user={user.user_name} ip={ip_address} group_id={group_info.id}")
-        # 获取用户组信息
+        # 获取部门信息
         cls._system_log(user, ip_address, [group_info.id], EventType.UPDATE_USER_GROUP,
                         ObjectType.USER_GROUP_CONF, str(group_info.id), group_info.group_name, note=note)
 
     @classmethod
     def delete_user_group(cls, user: UserPayload, ip_address: str, group_info: Group):
         logger.info(f"act=delete_user_group user={user.user_name} ip={ip_address} group_id={group_info.id}")
-        # 获取用户组信息
+        # 获取部门信息
         cls._system_log(user, ip_address, [group_info.id], EventType.DELETE_USER_GROUP,
                         ObjectType.USER_GROUP_CONF, str(group_info.id), group_info.group_name)
 
@@ -700,14 +700,14 @@ class AuditLogService:
         logger.info(f"flow_ids {flow_ids} | group_ids {group_ids}")
         if not user.is_admin():
             user_groups = UserGroupDao.get_user_power_group(user.user_id)
-            # 不是用户组管理员，没有权限
+            # 不是部门管理员，没有权限
             if not user_groups:
                 raise UnAuthorizedError.http_exception()
             group_admins = [one.group_id for one in user_groups]
         # 分组id做交集
         if group_ids:
             if group_admins:
-                # 查询了不属于用户管理的用户组，返回为空
+                # 查询了不属于用户管理的部门，返回为空
                 group_admins = list(set(group_admins) & set(group_ids))
                 if len(group_admins) == 0:
                     return False, []
@@ -721,7 +721,7 @@ class AuditLogService:
                                                                resource_types=[ResourceTypeEnum.FLOW,
                                                                                ResourceTypeEnum.WORK_FLOW,
                                                                                ResourceTypeEnum.ASSISTANT])
-            # 用户管理下的用户组没有资源
+            # 用户管理下的部门没有资源
             if not group_flows:
                 return False, []
             group_flows = [one.third_id for one in group_flows]
@@ -902,7 +902,7 @@ class AuditLogService:
 
     @classmethod
     def session_export(cls, all_session: list[AppChatList], export_type: str = "", start_date: datetime=None, end_date: datetime=None):
-        excel_data = [["会话ID","应用名称","应用版本","版本更新时间","会话创建时间","用户名称","消息角色","组织架构",
+        excel_data = [["会话ID","应用名称","应用版本","版本更新时间","会话创建时间","用户名称","消息角色","部门",
                     "消息发送时间","用户消息文本内容","消息角色", "是否命中安全审查",  # 移除了第一次出现的点赞等列
                     "消息发送时间","用户消息文本内容","消息角色","点赞","点踩","点踩反馈","复制","是否命中安全审查"]]
         for session in all_session:
@@ -1256,7 +1256,7 @@ class AuditLogService:
                              end_date: datetime) -> str:
         """ 导出用户选择的统计数据 """
         result, *_ = cls.get_session_chart(user, flow_ids, group_ids, start_date, end_date, 0, 0)
-        excel_data = [['用户组', '应用名称', '会话数', '用户输入消息数', '应用输出消息数', '违规消息数', "好评数1", "好评数2", "差评数"]]
+        excel_data = [['部门', '应用名称', '会话数', '用户输入消息数', '应用输出消息数', '违规消息数', "好评数1", "好评数2", "差评数"]]
         for one in result:
             excel_data.append([
                 ','.join([tmp['group_name'] for tmp in one['group_info']]),
@@ -1311,7 +1311,7 @@ class AuditLogService:
         """ 导出用户选择的统计数据 """
         result, *_ = cls.get_session_chart(user, flow_ids, group_ids, start_date, end_date, 0, 0)
         excel_data = [
-            ['用户组(用户所在部门名称)', '应用名称(用户所使用的应用名称)', '会话数(应用在给定时间区间内产生的会话数)',
+            ['部门(用户所在部门名称)', '应用名称(用户所使用的应用名称)', '会话数(应用在给定时间区间内产生的会话数)',
              '用户输入消息数(给定时间区间内，某应用所有会话累计的用户输入消息数)', '应用输出消息数(给定时间区间内，某应用所有会话累计的应用输出消息数)',
              '违规消息数(给定时间区间内，某应用所有会话累计的违规消息数)']]
         for one in result:
@@ -1349,7 +1349,7 @@ class AuditLogService:
         """ 导出用户选择的统计数据 """
         result, *_ = cls.get_session_chart(user, flow_ids, group_ids, start_date, end_date, 0, 0)
         excel_data = [
-            ['用户组(用户所在部门名称)', '应用名称(用户所使用的应用名称)', "好评数(用户给予好评的消息数量)","差评数(用户给予差评的消息数量)",
+            ['部门(用户所在部门名称)', '应用名称(用户所使用的应用名称)', "好评数(用户给予好评的消息数量)","差评数(用户给予差评的消息数量)",
              "应用满意度(好评数/(好评数+差评数) × 100%)","会话数(应用在给定时间区间内产生的会话数)"]]
         for one in result:
             if like_type == 1:

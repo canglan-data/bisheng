@@ -50,7 +50,7 @@ class RoleGroupService():
 
     @staticmethod
     def get_all_group_tree():
-        # 先查出所有的用户组
+        # 先查出所有的部门
         groups = GroupDao.get_all_group()
         # 转化为字典 id: group
         groups_dict = {}
@@ -67,7 +67,7 @@ class RoleGroupService():
         """获取全量的group列表"""
         groups_dict, group_tree = self.get_all_group_tree()
 
-        # 非超管过滤只属于他管理的group和其子用户组
+        # 非超管过滤只属于他管理的group和其子部门
         if group_ids:
             tmp_group_dict = {}
             for group_id in group_ids:
@@ -85,10 +85,10 @@ class RoleGroupService():
         users = UserDao.get_user_by_ids(user_ids)
         users_dict = {user.user_id: user for user in users}
 
-        # 用户组下的职位信息
+        # 部门下的职位信息
         # position_count_dict = PositionService.get_group_position_count_dict(group_ids=list(groups_dict.keys()))
 
-        # 有职位管理员的全部用户组
+        # 有职位管理员的全部部门
         position_admin_group_dict = PermissionService.get_position_linked_group_admin_dict()
 
         for group in groups_dict.values():
@@ -105,7 +105,7 @@ class RoleGroupService():
                     group_admin_dict[user.user_id] = users_dict.get(user.user_id).model_dump()
                     group_admin_dict[user.user_id]['is_from_position'] = False
 
-            # 靠职位赋予的管理员，找当前用户组及上级全部用户组的职位管理员
+            # 靠职位赋予的管理员，找当前部门及上级全部部门的职位管理员
             cur_group = group
             while cur_group:
                 if cur_group.id in position_admin_group_dict:
@@ -135,7 +135,7 @@ class RoleGroupService():
         return list(groups_dict.values())
 
     def get_all_children(self, group: GroupRead, group_tree: dict, max_level: int = None):
-        # 获取直系子用户组
+        # 获取直系子部门
         children = list(self.get_child_groups(group, group_tree, group.level + 1).values())
         if not children:
             return []
@@ -156,7 +156,7 @@ class RoleGroupService():
                 res.append(one)
                 continue
 
-            # 非超管过滤只属于他管理的group和其子用户组
+            # 非超管过滤只属于他管理的group和其子部门
             res.extend(self.filter_groups_tree(one, group_ids))
 
         if 'position_count' in expand:
@@ -193,7 +193,7 @@ class RoleGroupService():
         if not one.children:
             return []
 
-        # 遍历子用户组是否在group_ids中
+        # 遍历子部门是否在group_ids中
         res = []
         for child in one.children:
             child_res = self.filter_groups_tree(child, group_ids)
@@ -202,7 +202,7 @@ class RoleGroupService():
 
     @staticmethod
     def get_parent_group_path(group: GroupRead, group_tree: dict):
-        """ 获取用户组的父级路径 """
+        """ 获取部门的父级路径 """
         level = group.level
         parent_groups = []
         while level > 0:
@@ -214,7 +214,7 @@ class RoleGroupService():
         return '/'.join(parent_groups)
 
     def get_child_groups(self, group: GroupRead, group_tree: dict, max_level: int = None):
-        """ 获取所有的子用户组 """
+        """ 获取所有的子部门 """
         child_group = {}
         level = group.level + 1
         if max_level and level > max_level:
@@ -228,7 +228,7 @@ class RoleGroupService():
         return child_group
 
     def create_group(self, request: Request, login_user: UserPayload, group: GroupCreate) -> Group:
-        """新建用户组"""
+        """新建部门"""
         group_admin = group.group_admins
         group_operations = group.group_operations
         group_audit = group.group_audits
@@ -248,17 +248,17 @@ class RoleGroupService():
         return group
 
     def create_group_hook(self, request: Request, login_user: UserPayload, group: Group) -> bool:
-        """ 新建用户组后置操作 """
+        """ 新建部门后置操作 """
         logger.info(f'act=create_group_hook user={login_user.user_name} group_id={group.id}')
         # 记录审计日志
         AuditLogService.create_user_group(login_user, get_request_ip(request), group)
         return True
 
     def update_group(self, request: Request, login_user: UserPayload, group: Group) -> Group:
-        """更新用户组"""
+        """更新部门"""
         exist_group = GroupDao.get_user_group(group.id)
         if not exist_group:
-            raise ValueError('用户组不存在')
+            raise ValueError('部门不存在')
         exist_group.group_name = group.group_name
         exist_group.remark = group.group_name
         exist_group.update_user = login_user.user_id
@@ -274,7 +274,7 @@ class RoleGroupService():
         AuditLogService.update_user_group(login_user, get_request_ip(request), group, note=note)
 
     def delete_group(self, request: Request, login_user: UserPayload, group_id: int):
-        """删除用户组"""
+        """删除部门"""
         if group_id == DefaultGroup:
             raise HTTPException(status_code=500, detail='默认组不能删除')
         group_info = GroupDao.get_user_group(group_id)
@@ -283,7 +283,7 @@ class RoleGroupService():
         groups = [group_id]
         child_group = GroupDao.get_child_groups(group_info.code)
         groups.extend([one.id for one in child_group])
-        # 判断组下以及子用户组下是否还有用户
+        # 判断组下以及子部门下是否还有用户
         user_group_list = UserGroupDao.get_groups_user(groups)
         if user_group_list:
             return UserGroupNotDeleteError.return_resp()
@@ -298,12 +298,12 @@ class RoleGroupService():
         logger.info(f'act=delete_group_hook user={login_user.user_name} group_id={group_info.id}')
         # 记录审计日志
         AuditLogService.delete_user_group(login_user, get_request_ip(request), group_info)
-        # 将组下资源移到默认用户组
+        # 将组下资源移到默认部门
         # 获取组下所有的资源
         all_resource = GroupResourceDao.get_group_all_resource(group_info.id)
         need_move_resource = []
         for one in all_resource:
-            # 获取资源属于几个组,属于多个组则不用处理, 否则将资源转移到默认用户组
+            # 获取资源属于几个组,属于多个组则不用处理, 否则将资源转移到默认部门
             resource_groups = GroupResourceDao.get_resource_group(ResourceTypeEnum(one.type), one.third_id)
             if len(resource_groups) > 1:
                 continue
@@ -314,9 +314,9 @@ class RoleGroupService():
             GroupResourceDao.update_group_resource(need_move_resource)
         GroupResourceDao.delete_group_resource_by_group_id(group_info.id)
 
-        # 删除用户组下的角色列表
+        # 删除部门下的角色列表
         RoleDao.delete_role_by_group_id(group_info.id)
-        # 删除用户组的管理员
+        # 删除部门的管理员
         UserGroupDao.delete_group_all_admin(group_info.id)
         # 将删除事件发到redis队列中
         delete_message = json.dumps({"id": group_info.id})
@@ -329,7 +329,7 @@ class RoleGroupService():
         group_info = GroupDao.get_user_group(group_id)
         if not group_info:
             raise NotFoundError.http_exception()
-        # 获取所有的子用户组
+        # 获取所有的子部门
         child_group = GroupDao.get_child_groups(group_info.code)
         group_ids = [group.id for group in child_group]
         group_ids.append(group_id)
@@ -357,16 +357,16 @@ class RoleGroupService():
 
 
     def insert_user_group(self, user_group: UserGroupCreate) -> UserGroupRead:
-        """插入用户组"""
+        """插入部门"""
 
         user_groups = UserGroupDao.get_user_group(user_group.user_id)
         if user_groups and user_group.group_id in [ug.group_id for ug in user_groups]:
-            raise ValueError('重复设置用户组')
+            raise ValueError('重复设置部门')
 
         return UserGroupDao.insert_user_group(user_group)
 
     def replace_user_groups(self, request: Request, login_user: UserPayload, user_id: int, group_ids: List[int]):
-        """ 覆盖用户的所在的用户组 """
+        """ 覆盖用户的所在的部门 """
         # 判断下被操作用户是否是超级管理员
         user_role_list = UserRoleDao.get_user_roles(user_id)
         if any(one.role_id == AdminRole for one in user_role_list):
@@ -381,17 +381,17 @@ class RoleGroupService():
             admin_group = [one.group_id for one in admin_group]
             # 过滤被操作人所在的组，只处理有权限管理的组
             old_group = [one for one in old_group if one in admin_group]
-            # 说明此用户 不在此用户组管理员所管辖的用户组内
+            # 说明此用户 不在此部门管理员所管辖的部门内
             if not old_group:
-                raise ValueError('没有权限设置用户组')
+                raise ValueError('没有权限设置部门')
         need_delete_group = old_group.copy()
         need_add_group = []
         for one in group_ids:
             if one not in old_group:
-                # 需要加入的用户组
+                # 需要加入的部门
                 need_add_group.append(one)
             else:
-                # 旧的用户组里剩余的就是要移出的用户组
+                # 旧的部门里剩余的就是要移出的部门
                 need_delete_group.remove(one)
         if need_delete_group:
             UserGroupDao.delete_user_groups(user_id, need_delete_group)
@@ -403,11 +403,11 @@ class RoleGroupService():
         group_dict: Dict[int, str] = {}
         for one in group_infos:
             group_dict[one.id] = one.group_name
-        note = "编辑前用户组："
+        note = "编辑前部门："
         for one in old_group:
             note += f'{group_dict.get(one, one)}、'
         note = note.rstrip('、')
-        note += "编辑后用户组："
+        note += "编辑后部门："
         for one in group_ids:
             note += f'{group_dict.get(one, one)}、'
         note = note.rstrip('、')
@@ -415,7 +415,7 @@ class RoleGroupService():
         return None
 
     def get_user_groups_list(self, user_id: int) -> List[GroupRead]:
-        """获取用户组列表"""
+        """获取部门列表"""
         user_groups = UserGroupDao.get_user_group(user_id)
         if not user_groups:
             return []
@@ -432,7 +432,7 @@ class RoleGroupService():
 
 
     def set_group_admin(self, request: Request, login_user: UserPayload, user_ids: List[int], group_id: int):
-        """设置用户组管理员"""
+        """设置部门管理员"""
 
         # 过滤职位赋予的管理员 start
         parent_groups_dict = RoleGroupService.get_parent_groups_dict(group_id=group_id)
@@ -459,7 +459,7 @@ class RoleGroupService():
         user_ids = new_user_ids
         # 过滤职位赋予的管理员 send
 
-        # 获取目前用户组的管理员列表
+        # 获取目前部门的管理员列表
         user_group_admins = UserGroupDao.get_groups_admins([group_id])
         res = []
         need_delete_admin = []
@@ -477,7 +477,7 @@ class RoleGroupService():
                 res.append(UserGroupDao.insert_user_group_admin(user_id, group_id))
         if need_delete_admin:
             UserGroupDao.delete_group_admins(group_id, need_delete_admin)
-        # 修改用户组的最近修改人
+        # 修改部门的最近修改人
         GroupDao.update_group_update_user(group_id, login_user.user_id)
 
         note = ''
@@ -492,8 +492,8 @@ class RoleGroupService():
         return res
 
     def set_group_operation(self, request: Request, login_user: UserPayload, user_ids: List[int], group_id: int):
-        """设置用户组运营人员"""
-        # 获取目前用户组的运营人员列表
+        """设置部门运营人员"""
+        # 获取目前部门的运营人员列表
         user_group_operations = UserGroupDao.get_groups_operations([group_id])
         res = []
         need_delete_operation = []
@@ -511,7 +511,7 @@ class RoleGroupService():
                 res.append(UserGroupDao.insert_user_group_operation(user_id, group_id))
         if need_delete_operation:
             UserGroupDao.delete_group_operations(group_id, need_delete_operation)
-        # 修改用户组的最近修改人
+        # 修改部门的最近修改人
         GroupDao.update_group_update_user(group_id, login_user.user_id)
 
         group_info = GroupDao.get_user_group(group_id)
@@ -519,8 +519,8 @@ class RoleGroupService():
         return res
 
     def set_group_audit(self, request: Request, login_user: UserPayload, user_ids: List[int], group_id: int):
-        """设置用户组审计人员"""
-        # 获取目前用户组的审计人员列表
+        """设置部门审计人员"""
+        # 获取目前部门的审计人员列表
         user_group_audits = UserGroupDao.get_groups_audits([group_id])
         res = []
         need_delete_audit = []
@@ -538,7 +538,7 @@ class RoleGroupService():
                 res.append(UserGroupDao.insert_user_group_audit(user_id, group_id))
         if need_delete_audit:
             UserGroupDao.delete_group_audits(group_id, need_delete_audit)
-        # 修改用户组的最近修改人
+        # 修改部门的最近修改人
         GroupDao.update_group_update_user(group_id, login_user.user_id)
 
         group_info = GroupDao.get_user_group(group_id)
@@ -546,7 +546,7 @@ class RoleGroupService():
         return res
 
     def set_group_update_user(self, login_user: UserPayload, group_id: int):
-        """设置用户组管理员"""
+        """设置部门管理员"""
         GroupDao.update_group_update_user(group_id, login_user.user_id)
 
     def get_group_resources(self, group_id: int, resource_type: ResourceTypeEnum, name: str,
@@ -588,8 +588,8 @@ class RoleGroupService():
 
     def get_group_flow_v2(self, group_ids: list[int], keyword: str, page_size: int, page_num: int,
                        flow_type: Optional[FlowType] = None) -> (List[Any], int):
-        """ 获取用户组下的知识库列表 """
-        # 查询用户组下的技能ID列表
+        """ 获取部门下的知识库列表 """
+        # 查询部门下的技能ID列表
         rs_type = ResourceTypeEnum.FLOW
         if flow_type == FlowType.WORKFLOW:
             rs_type = ResourceTypeEnum.WORK_FLOW
@@ -610,8 +610,8 @@ class RoleGroupService():
         return res, total
 
     def get_group_knowledge_v2(self, group_ids: list[int], keyword: str, page_size: int, page_num: int) -> (List[Any], int):
-        """ 获取用户组下的知识库列表 """
-        # 查询用户组下的知识库ID列表
+        """ 获取部门下的知识库列表 """
+        # 查询部门下的知识库ID列表
         resource_list = GroupResourceDao.get_groups_resource(group_ids, [ResourceTypeEnum.KNOWLEDGE])
         if not resource_list:
             return [], 0
@@ -628,8 +628,8 @@ class RoleGroupService():
         return res, total
 
     def get_group_assistant_v2(self, group_ids: list[int], keyword: str, page_size: int, page_num: int) -> (List[Any], int):
-        """ 获取用户组下的助手列表 """
-        # 查询用户组下的助手ID列表
+        """ 获取部门下的助手列表 """
+        # 查询部门下的助手ID列表
         resource_list = GroupResourceDao.get_groups_resource(group_ids, [ResourceTypeEnum.ASSISTANT])
         if not resource_list:
             return [], 0
@@ -642,8 +642,8 @@ class RoleGroupService():
         return res, total
 
     def get_group_tool_v2(self, group_ids: list[int], keyword: str, page_size: int, page_num: int) -> (List[Any], int):
-        """ 获取用户组下的工具列表 """
-        # 查询用户组下的工具ID列表
+        """ 获取部门下的工具列表 """
+        # 查询部门下的工具ID列表
         resource_list = GroupResourceDao.get_groups_resource(group_ids, [ResourceTypeEnum.GPTS_TOOL])
         if not resource_list:
             return [], 0
@@ -666,8 +666,8 @@ class RoleGroupService():
 
     def get_group_flow(self, group_id: int, keyword: str, page_size: int, page_num: int,
                        flow_type: Optional[FlowType] = None) -> (List[Any], int):
-        """ 获取用户组下的知识库列表 """
-        # 查询用户组下的技能ID列表
+        """ 获取部门下的知识库列表 """
+        # 查询部门下的技能ID列表
         rs_type = ResourceTypeEnum.FLOW
         if flow_type == FlowType.WORKFLOW:
             rs_type = ResourceTypeEnum.WORK_FLOW
@@ -691,8 +691,8 @@ class RoleGroupService():
         return res, total
 
     def get_group_knowledge(self, group_id: int, keyword: str, page_size: int, page_num: int) -> (List[Any], int):
-        """ 获取用户组下的知识库列表 """
-        # 查询用户组下的知识库ID列表
+        """ 获取部门下的知识库列表 """
+        # 查询部门下的知识库ID列表
         # resource_list = GroupResourceDao.get_group_resource(group_id, ResourceTypeEnum.KNOWLEDGE)
         # if not resource_list:
         #     return [], 0
@@ -712,8 +712,8 @@ class RoleGroupService():
         return res, total
 
     def get_group_assistant(self, group_id: int, keyword: str, page_size: int, page_num: int) -> (List[Any], int):
-        """ 获取用户组下的助手列表 """
-        # 查询用户组下的助手ID列表
+        """ 获取部门下的助手列表 """
+        # 查询部门下的助手ID列表
         # resource_list = GroupResourceDao.get_group_resource(group_id, ResourceTypeEnum.ASSISTANT)
         # if not resource_list:
         #     return [], 0
@@ -729,8 +729,8 @@ class RoleGroupService():
         return res, total
 
     def get_group_tool(self, group_id: int, keyword: str, page_size: int, page_num: int) -> (List[Any], int):
-        """ 获取用户组下的工具列表 """
-        # 查询用户组下的工具ID列表
+        """ 获取部门下的工具列表 """
+        # 查询部门下的工具ID列表
         # resource_list = GroupResourceDao.get_group_resource(group_id, ResourceTypeEnum.GPTS_TOOL)
         # if not resource_list:
         #     return [], 0
@@ -751,7 +751,7 @@ class RoleGroupService():
 
     def get_manage_resources(self, request: Request, login_user: UserPayload, keyword: str, page: int,
                              page_size: int) -> (list, int):
-        """ 获取用户所管理的用户组下的应用列表 包含技能、助手、工作流"""
+        """ 获取用户所管理的部门下的应用列表 包含技能、助手、工作流"""
         # groups = []
         # if not login_user.is_admin():
         #     groups = [str(one.group_id) for one in UserGroupDao.get_user_admin_group(login_user.user_id)]
@@ -762,7 +762,7 @@ class RoleGroupService():
             return [], 0
 
         resource_ids = []
-        # 说明是用户组管理员，需要过滤获取到对应组下的资源
+        # 说明是部门管理员，需要过滤获取到对应组下的资源
         if groups:
             group_resources = GroupResourceDao.get_groups_resource(groups, resource_types=[ResourceTypeEnum.FLOW,
                                                                                            ResourceTypeEnum.ASSISTANT,
@@ -775,7 +775,7 @@ class RoleGroupService():
 
     def get_audit_resources(self, request: Request, login_user: UserPayload, keyword: str, page: int,
                              page_size: int) -> (list, int):
-        """ 获取用户所管理的用户组下的应用列表 包含技能、助手、工作流"""
+        """ 获取用户所管理的部门下的应用列表 包含技能、助手、工作流"""
         groups = []
         if not login_user.is_admin():
             groups = [str(one.group_id) for one in UserGroupDao.get_user_audit_or_admin_group(login_user.user_id)]
@@ -788,7 +788,7 @@ class RoleGroupService():
         if len(all_user) == 0:
             return [], 0
         resource_ids = []
-        # 说明是用户组管理员，需要过滤获取到对应组下的资源
+        # 说明是部门管理员，需要过滤获取到对应组下的资源
         if groups:
             group_resources = GroupResourceDao.get_groups_resource(groups, resource_types=[ResourceTypeEnum.FLOW,
                                                                                            ResourceTypeEnum.ASSISTANT,
@@ -801,7 +801,7 @@ class RoleGroupService():
 
     def get_operation_resources(self, request: Request, login_user: UserPayload, keyword: str, page: int,
                              page_size: int) -> (list, int):
-        """ 获取用户所管理的用户组下的应用列表 包含技能、助手、工作流"""
+        """ 获取用户所管理的部门下的应用列表 包含技能、助手、工作流"""
         groups = []
         if not login_user.is_admin():
             groups = [str(one.group_id) for one in UserGroupDao.get_user_operation_or_admin_group(login_user.user_id)]
@@ -811,7 +811,7 @@ class RoleGroupService():
             groups = [str(one.id) for one in GroupDao.get_all_group()]
 
         resource_ids = []
-        # 说明是用户组管理员，需要过滤获取到对应组下的资源
+        # 说明是部门管理员，需要过滤获取到对应组下的资源
         if groups:
             group_resources = GroupResourceDao.get_groups_resource(groups, resource_types=[ResourceTypeEnum.FLOW,
                                                                                            ResourceTypeEnum.ASSISTANT,
@@ -825,7 +825,7 @@ class RoleGroupService():
     def get_group_roles(self, login_user: UserPayload, group_ids: List[int], keyword: str, page: int, page_size: int,
                         include_parent: bool, positions: list[str] = []) -> (list, int):
 
-        """获取用户组下的角色列表"""
+        """获取部门下的角色列表"""
         search_role_ids = None  # 最终要筛选的role_ids
         if group_ids:  # 指定筛选group_ids下的
             search_role_ids = PermissionService.get_role_ids_by_group(group_ids=group_ids)
@@ -860,14 +860,14 @@ class RoleGroupService():
         return role_list, total
 
     def get_user_group_roles(self, login_user: UserPayload, user_id: int, group_id: int):
-        """ 获取用户在用户组下的角色列表 """
+        """ 获取用户在部门下的角色列表 """
         group_info = GroupDao.get_user_group(group_id)
         if not group_info:
             raise NotFoundError.http_exception()
 
-        # 获取查询用户组下的所有角色
+        # 获取查询部门下的所有角色
         role_list = RoleDao.get_role_by_groups([group_id])
-        # 获取查询用户组的所有父用户组下的角色列表
+        # 获取查询部门的所有父部门下的角色列表
         parent_groups = GroupDao.get_parent_groups(group_info.code)
         if parent_groups:
             parent_role_list = RoleDao.get_role_by_groups([one.id for one in parent_groups])
@@ -877,7 +877,7 @@ class RoleGroupService():
         user_roles = UserRoleDao.get_user_roles(user_id)
         roles_info = RoleDao.get_role_by_ids([one.role_id for one in user_roles])
         roles_map = {one.id: one for one in roles_info}
-        # 用户可能拥有父部门指定的角色，这个角色信息不在他所在的用户组内
+        # 用户可能拥有父部门指定的角色，这个角色信息不在他所在的部门内
         for one in role_list:
             tmp = one.model_dump()
             tmp['is_belong_user'] = one.id in roles_map or one.is_bind_all
@@ -899,7 +899,7 @@ class RoleGroupService():
             raise Exception("empty data")
 
         root_department = data[0]
-        # 更新根用户组的信息
+        # 更新根部门的信息
         root_group = GroupDao.get_user_group(target_group_id)
         if not root_group:
             raise Exception(f"根节点在数据库中不存在，sync_target_group_id:{target_group_id}")
@@ -919,10 +919,10 @@ class RoleGroupService():
         user_groups = self.sync_one_group(root_department, None)
         logger.debug("start sync user group change")
         for user_id, new_group_ids in user_groups.items():
-            # 获取用户所属的用户组
+            # 获取用户所属的部门
             old_group_ids = {one.group_id for one in UserGroupDao.get_user_group(user_id)}
 
-            # 将用户放到这些用户组内
+            # 将用户放到这些部门内
             need_add_groups = new_group_ids - old_group_ids
             if need_add_groups:
                 logger.debug(f'add_user_groups user_id: {user_id} groups: {need_add_groups}')
@@ -934,9 +934,9 @@ class RoleGroupService():
         logger.debug('sync_third_groups over')
 
     def sync_one_group(self, department: Dict, parent_group: Group = None):
-        """ 同步一个用户组数据
+        """ 同步一个部门数据
         department: 第三方的部门数据， 目前指企微
-        group: 对应的毕昇里的用户组
+        group: 对应的毕昇里的部门
          """
         # 更新当前部门的信息，移除不属于新直系部门的用户角色授权）
         group = self.update_group_data(department, parent_group)
@@ -1024,7 +1024,7 @@ class RoleGroupService():
             remove_parent_groups = list(set(old_parent_groups) - set(new_parent_groups))
             if remove_parent_groups:
                 need_remove_roles = [one.id for one in RoleDao.get_role_by_groups(remove_parent_groups)]
-                # 获取用户组下所有的用户
+                # 获取部门下所有的用户
                 sub_groups = [one.id for one in GroupDao.get_child_groups(group.code)]
                 sub_groups.append(group.id)
                 group_all_user = UserGroupDao.get_groups_user(sub_groups)
@@ -1034,7 +1034,7 @@ class RoleGroupService():
 
     def refresh_all_group_code(self):
         """
-        刷新全部用户组code
+        刷新全部部门code
         """
         count = 0
         root_groups = GroupDao.get_child_groups_by_id(0)

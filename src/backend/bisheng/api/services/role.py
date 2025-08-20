@@ -21,7 +21,7 @@ class RoleService(BaseModel):
 
     def check_role_data(self, data: RoleCreate | RoleUpdate):
         if not data.group_positions:
-            raise ValueError('请指定用户组')
+            raise ValueError('请指定部门')
 
         for positions in data.group_positions.values():
             if not positions:
@@ -32,7 +32,7 @@ class RoleService(BaseModel):
             for group_id, positions in data.group_positions.items():
                 if int(group_id) not in manage_group_ids:
                     loguru.logger.info(f"check_role_data group_id:{group_id} not in manage_group_ids:{manage_group_ids}")
-                    raise ValueError('不具备当前用户组的管理权限')
+                    raise ValueError('不具备当前部门的管理权限')
 
 
     def add_role(self, data: RoleCreate):
@@ -42,7 +42,7 @@ class RoleService(BaseModel):
         self.check_role_data(data)
 
         # if not data.group_id or not data.role_name:
-        #     raise NotFoundError.http_exception('用户组ID或角色名不能为空')
+        #     raise NotFoundError.http_exception('部门ID或角色名不能为空')
         # if not self.login_user.check_group_admin(data.group_id):
         #     raise UnAuthorizedError.http_exception()
 

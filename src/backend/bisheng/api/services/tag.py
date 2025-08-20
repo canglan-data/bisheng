@@ -88,10 +88,10 @@ class TagService:
         if resource_info.user_id == login_user.user_id:
             return True
 
-        # 获取资源所属的用户组
+        # 获取资源所属的部门
         resource_groups = GroupResourceDao.get_resource_group(resource_type, resource_id)
         resource_groups = [int(one.group_id) for one in resource_groups]
-        # 判断下操作人是否是用户组的管理员
+        # 判断下操作人是否是部门的管理员
         if not login_user.check_groups_admin(resource_groups):
             raise UnAuthorizedError.http_exception()
 

@@ -364,7 +364,7 @@ class GroupAndRoles(BaseModel):
 class CreateUserReq(BaseModel):
     user_name: str = Field(max_length=30, description='用户名')
     password: str = Field(description='密码')
-    group_roles: List[GroupAndRoles] = Field(description='要加入的用户组和角色列表')
+    group_roles: List[GroupAndRoles] = Field(description='要加入的部门和角色列表')
 
 
 class OpenAIChatCompletionReq(BaseModel):

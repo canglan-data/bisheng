@@ -71,7 +71,7 @@ def get_session_config(*, request: Request, login_user: UserPayload = Depends(ge
 def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_login_user),
                      flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
                      user_ids: Optional[List[int]] = Query(default=[], description='用户id列表'),
-                     group_ids: Optional[List[str]] = Query(default=[], description='用户组id列表'),
+                     group_ids: Optional[List[str]] = Query(default=[], description='部门id列表'),
                      start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                      end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                      feedback: Optional[str] = Query(default=None, description='like：点赞；dislike：点踩；copied：复制'),
@@ -110,7 +110,7 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
 def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_login_user),
                      flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
                      user_ids: Optional[List[int]] = Query(default=[], description='用户id列表'),
-                     group_ids: Optional[List[str]] = Query(default=[], description='用户组id列表'),
+                     group_ids: Optional[List[str]] = Query(default=[], description='部门id列表'),
                      start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                      end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                      feedback: Optional[str] = Query(default=None, description='like：点赞；dislike：点踩；copied：复制'),
@@ -148,7 +148,7 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
 async def review_session_list(request: Request, login_user: UserPayload = Depends(get_login_user),
                               flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
                               user_ids: Optional[List[str]] = Query(default=[], description='用户id列表'),
-                              group_ids: Optional[List[str]] = Query(default=[], description='用户组id列表'),
+                              group_ids: Optional[List[str]] = Query(default=[], description='部门id列表'),
                               start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                               end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                               feedback: Optional[str] = Query(default=None,
@@ -177,7 +177,7 @@ async def review_session_list(request: Request, login_user: UserPayload = Depend
 def export_session_messages(login_user: UserPayload = Depends(get_login_user),
                             flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
                             user_ids: Optional[List[int]] = Query(default=[], description='用户id列表'),
-                            group_ids: Optional[List[int]] = Query(default=[], description='用户组id列表'),
+                            group_ids: Optional[List[int]] = Query(default=[], description='部门id列表'),
                             start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                             end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                             feedback: Optional[str] = Query(default=None,
@@ -202,14 +202,14 @@ def export_session_messages(login_user: UserPayload = Depends(get_login_user),
 @router.get('/session/chart', response_model=UnifiedResponseModel)
 async def get_session_chart(request: Request, login_user: UserPayload = Depends(get_login_user),
                             flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
-                            group_ids: Optional[List[str]] = Query(default=[], description='用户组id列表'),
+                            group_ids: Optional[List[str]] = Query(default=[], description='部门id列表'),
                             start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                             end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                             order_field: Optional[str] = Query(default=None, description='排序字段'),
                             order_type: Optional[str] = Query(default=None, description='排序类型'),
                             page: Optional[int] = Query(default=1, description='页码'),
                             page_size: Optional[int] = Query(default=10, description='每页条数')):
-    """ 按照用户组聚合统计会话数据 """
+    """ 按照部门聚合统计会话数据 """
     if not login_user.is_admin():
         all_group = UserGroupDao.get_user_audit_or_admin_group(login_user.user_id)
         all_group = [str(one.group_id) for one in all_group]
@@ -235,7 +235,7 @@ async def get_session_chart(request: Request, login_user: UserPayload = Depends(
 @router.get('/session/chart/export')
 async def export_session_chart(request: Request, login_user: UserPayload = Depends(get_login_user),
                                flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
-                               group_ids: Optional[List[str]] = Query(default=[], description='用户组id列表'),
+                               group_ids: Optional[List[str]] = Query(default=[], description='部门id列表'),
                                start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                                end_date: Optional[datetime] = Query(default=None, description='结束时间')):
     """ 根据筛选条件导出最终的结果 """
@@ -261,7 +261,7 @@ async def export_session_chart(request: Request, login_user: UserPayload = Depen
 def get_session_messages(login_user: UserPayload = Depends(get_login_user),
                          flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
                          user_ids: Optional[List[int]] = Query(default=[], description='用户id列表'),
-                         group_ids: Optional[List[int]] = Query(default=[], description='用户组id列表'),
+                         group_ids: Optional[List[int]] = Query(default=[], description='部门id列表'),
                          start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                          end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                          feedback: Optional[str] = Query(default=None,

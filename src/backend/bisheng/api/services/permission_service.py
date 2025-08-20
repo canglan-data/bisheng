@@ -123,7 +123,7 @@ class PermissionService:
     @staticmethod
     def get_manage_user_group(user_id: int) -> List[UserGroup]:
         """
-        获取管理的用户组
+        获取管理的部门
         """
         # 手动指定的管理员
         added_group_id_dict = {}
@@ -159,7 +159,7 @@ class PermissionService:
     @staticmethod
     def get_manage_user_group_ids(user_id: int) -> list[int]:
         """
-        获取管理的用户组ID列表
+        获取管理的部门ID列表
         """
         result = []
         user_group_list = PermissionService.get_manage_user_group(user_id=user_id)
@@ -194,7 +194,7 @@ class PermissionService:
     @staticmethod
     def get_group_position_count_dict(group_ids: list[int]):
         """
-        获取用户组下职位信息统计字典
+        获取部门下职位信息统计字典
         """
         group_dict = {}
         with session_getter() as session:
@@ -245,7 +245,7 @@ class PermissionService:
                     root_codes.add(g.code.split('|')[0])
 
                 new_group_ids = []
-                # 根目录下的所有用户组
+                # 根目录下的所有部门
                 all_group = GroupDao.get_all_group()
                 for g in all_group:
                     code = g.code.split('|')[0]

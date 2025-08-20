@@ -453,7 +453,7 @@ class FlowService(BaseService):
                 logger.error(f'flow_id={flow_info.id} extract file_node fail')
         except Exception:
             pass
-        # 将技能关联到对应的用户组下
+        # 将技能关联到对应的部门下
         user_group = UserGroupDao.get_user_group(login_user.user_id)
         if user_group:
             batch_resource = []
@@ -491,6 +491,6 @@ class FlowService(BaseService):
         # 写入审计日志
         AuditLogService.delete_build_flow(login_user, get_request_ip(request), flow_info, flow_type=flow_info.flow_type)
 
-        # 将用户组下关联的技能删除
+        # 将部门下关联的技能删除
         GroupResourceDao.delete_group_resource_by_third_id(flow_info.id, ResourceTypeEnum.FLOW)
         return True

@@ -98,7 +98,7 @@ class UserPayload:
         """
             检查用户是否是某个组的管理员
         """
-        # 判断是否是用户组的管理员
+        # 判断是否是部门的管理员
         user_group = UserGroupDao.get_user_admin_group(self.user_id)
         if not user_group:
             return False
@@ -110,7 +110,7 @@ class UserPayload:
     @wrapper_access_check
     def check_groups_admin(self, group_ids: List[int]) -> bool:
         """
-        检查用户是否是用户组列表中的管理员，有一个就是true
+        检查用户是否是部门列表中的管理员，有一个就是true
         """
         user_groups = UserGroupDao.get_user_admin_group(self.user_id)
         for one in user_groups:
@@ -228,7 +228,7 @@ def gen_user_role(db_user: User):
         if user_groups:
             groups_roles = RoleDao.get_role_by_groups([one.group_id for one in user_groups], include_parent=True, only_bind=True)
             role_ids.extend([one.id for one in groups_roles])
-        # 判断是否是用户组管理员
+        # 判断是否是部门管理员
         gr = []
 
         db_user_admin_groups = UserGroupDao.get_user_admin_group(db_user.user_id)

@@ -29,7 +29,7 @@ router = APIRouter(prefix='/operation', tags=['Operation'])
 def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_login_user),
                      flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
                      user_ids: Optional[List[int]] = Query(default=[], description='用户id列表'),
-                     group_ids: Optional[List[str]] = Query(default=[], description='用户组id列表'),
+                     group_ids: Optional[List[str]] = Query(default=[], description='部门id列表'),
                      start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                      end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                      feedback: Optional[str] = Query(default=None, description='like：点赞；dislike：点踩；copied：复制'),
@@ -68,7 +68,7 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
 def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_login_user),
                      flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
                      user_ids: Optional[List[int]] = Query(default=[], description='用户id列表'),
-                     group_ids: Optional[List[str]] = Query(default=[], description='用户组id列表'),
+                     group_ids: Optional[List[str]] = Query(default=[], description='部门id列表'),
                      start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                      end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                      feedback: Optional[str] = Query(default=None, description='like：点赞；dislike：点踩；copied：复制'),
@@ -102,14 +102,14 @@ def get_session_list(*, request: Request, login_user: UserPayload = Depends(get_
 @router.get('/session/chart', response_model=UnifiedResponseModel)
 async def get_session_chart(request: Request, login_user: UserPayload = Depends(get_login_user),
                             flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
-                            group_ids: Optional[List[str]] = Query(default=[], description='用户组id列表'),
+                            group_ids: Optional[List[str]] = Query(default=[], description='部门id列表'),
                             start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                             end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                             order_field: Optional[str] = Query(default=None, description='排序字段'),
                             order_type: Optional[str] = Query(default=None, description='排序类型'),
                             page: Optional[int] = Query(default=1, description='页码'),
                             page_size: Optional[int] = Query(default=10, description='每页条数')):
-    """ 按照用户组聚合统计会话数据 """
+    """ 按照部门聚合统计会话数据 """
     if not login_user.is_admin():
         all_group = UserGroupDao.get_user_operation_or_admin_group(login_user.user_id)
         all_group = [str(one.group_id) for one in all_group]
@@ -134,7 +134,7 @@ async def get_session_chart(request: Request, login_user: UserPayload = Depends(
 @router.get('/session/chart/export')
 async def export_session_chart(request: Request, login_user: UserPayload = Depends(get_login_user),
                                flow_ids: Optional[List[str]] = Query(default=[], description='应用id列表'),
-                               group_ids: Optional[List[str]] = Query(default=[], description='用户组id列表'),
+                               group_ids: Optional[List[str]] = Query(default=[], description='部门id列表'),
                                start_date: Optional[datetime] = Query(default=None, description='开始时间'),
                                end_date: Optional[datetime] = Query(default=None, description='结束时间'),
                                like_type: Optional[int] = Query(default=1, description='好评类型')):
@@ -160,7 +160,7 @@ async def export_session_chart(request: Request, login_user: UserPayload = Depen
 @router.post("/session/vital_org_status_config")
 async def vital_org_status_config(*, request: Request, login_user: UserPayload = Depends(get_login_user),
                                   data: VitalOrgStatsConfig = Body(description='会话配置项')):
-    """ 配置用户组的状态 """
+    """ 配置部门的状态 """
     if not login_user.is_admin():
         return UnAuthorizedError.return_resp()
     OperationService.update_vital_org_stats_config(login_user, data)
@@ -168,7 +168,7 @@ async def vital_org_status_config(*, request: Request, login_user: UserPayload =
 
 @router.get("/session/vital_org_status_config")
 async def vital_org_status_config(*, request: Request,  login_user: UserPayload = Depends(get_login_user)):
-    """ 获取用户组的状态配置 """
+    """ 获取部门的状态配置 """
     if not login_user.is_admin():
         return UnAuthorizedError.return_resp()
     config = OperationService.get_vital_org_stats_config()
@@ -180,7 +180,7 @@ async def vital_org_status_config_run(*, request: Request,
                                       debug: bool = Query(default=False, description='是否发送调试信息'),
                                       days: int = Query(default=0, description='发送日期偏移量'),
                                       login_user: UserPayload = Depends(get_login_user)):
-    """ 配置用户组的状态 """
+    """ 配置部门的状态 """
     if not login_user.is_admin():
         return UnAuthorizedError.return_resp()
     try:
@@ -200,13 +200,13 @@ async def get_all_group(login_user: UserPayload = Depends(get_login_user),
     if login_user.is_admin():
         groups = []
     else:
-        # 查询下是否是其他用户组的管理员
+        # 查询下是否是其他部门的管理员
         user_groups = UserGroupDao.get_user_admin_group(login_user.user_id)
         groups = []
         for one in user_groups:
             if one.is_group_admin:
                 groups.append(one.group_id)
-        # 不是任何用户组的管理员无查看权限
+        # 不是任何部门的管理员无查看权限
         if not groups:
             raise HTTPException(status_code=500, detail='无查看权限')
 

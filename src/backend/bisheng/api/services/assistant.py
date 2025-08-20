@@ -196,7 +196,7 @@ class AssistantService(BaseService, AssistantUtils):
         """
         创建助手成功后的hook，执行一些其他业务逻辑
         """
-        # 查询下用户所在的用户组
+        # 查询下用户所在的部门
         user_group = UserGroupDao.get_user_group(user_payload.user_id)
         if user_group:
             # 批量将助手资源插入到关联表里
@@ -237,7 +237,7 @@ class AssistantService(BaseService, AssistantUtils):
         # 写入审计日志
         AuditLogService.delete_build_assistant(login_user, get_request_ip(request), assistant.id)
 
-        # 清理和用户组的关联
+        # 清理和部门的关联
         GroupResourceDao.delete_group_resource_by_third_id(assistant.id, ResourceTypeEnum.ASSISTANT)
         return True
 
@@ -493,7 +493,7 @@ class AssistantService(BaseService, AssistantUtils):
     @classmethod
     def add_gpts_tools_hook(cls, user: UserPayload, gpts_tool_type: GptsToolsTypeRead) -> bool:
         """ 添加自定义工具后的hook函数 """
-        # 查询下用户所在的用户组
+        # 查询下用户所在的部门
         user_group = UserGroupDao.get_user_group(user.user_id)
         if user_group:
             # 批量将自定义工具插入到关联表里

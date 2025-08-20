@@ -105,14 +105,14 @@ class VitalOrgStatsService:
                 if user_chat_num.get(user.user_id, 0) >= config.min_qa_count:
                     ginfo_index[ugid]["ok_user_num"] += 1
         df = pd.DataFrame.from_dict(ginfo_index, orient="index").reset_index(drop=True)
-        df["用户组织架构"] = df["name"]
+        df["部门"] = df["name"]
         df["使用覆盖率%"] = df["ok_user_num"] / df["total_user_num"].where(df["total_user_num"] != 0, 1) * 100
         df["人均AI次数"] = df["total_chat_num"] / df["total_user_num"].where(df["total_user_num"] != 0, 1)
         df.fillna(0, inplace=True)
         df["使用覆盖率%"] = df["使用覆盖率%"].apply(lambda x: f"{round(x, 2):.2f}%")
         df["人均AI次数"] = df["人均AI次数"].apply(lambda x: f"{round(x, 2):.2f}")
         df_s = df
-        df = df[["用户组织架构", "使用覆盖率%", "人均AI次数"]]
+        df = df[["部门", "使用覆盖率%", "人均AI次数"]]
         file_name = f"HR活力组织提数报表{start_day.strftime('%Y-%m-%d')}至{end_day.strftime('%Y-%m-%d')}.xlsx"
         email_client = EmailClient(mail=str(config.sender_email), password=config.sender_password,
                                    msg_from=config.msg_from,

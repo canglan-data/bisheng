@@ -230,7 +230,7 @@ class KnowledgeService(KnowledgeUtils):
     def create_knowledge_hook(
             cls, request: Request, login_user: UserPayload, knowledge: Knowledge
     ):
-        # 查询下用户所在的用户组
+        # 查询下用户所在的部门
         user_group = UserGroupDao.get_user_group(login_user.user_id)
         if user_group:
             # 批量将知识库资源插入到关联表里
@@ -352,7 +352,7 @@ class KnowledgeService(KnowledgeUtils):
         # 删除知识库的审计日志
         AuditLogService.delete_knowledge(login_user, get_request_ip(request), knowledge)
 
-        # 清理用户组下的资源
+        # 清理部门下的资源
         GroupResourceDao.delete_group_resource_by_third_id(
             str(knowledge.id), ResourceTypeEnum.KNOWLEDGE
         )

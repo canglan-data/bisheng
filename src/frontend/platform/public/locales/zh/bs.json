@@ -49,7 +49,7 @@
   "system": {
     "saveSuccess": "保存成功",
     "userManagement": "用户管理",
-    "userGroupsM": "部门",
+    "userGroupsM": "部门管理",
     "roleManagement": "角色管理",
     "systemConfiguration": "系统配置",
     "username": "用户名",

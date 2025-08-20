@@ -78,7 +78,7 @@ async def regist(*, user: UserCreate):
         else:
             db_user.user_id = 1
             db_user = UserDao.add_user_and_admin_role(db_user)
-        # 将用户写入到默认用户组下
+        # 将用户写入到默认部门下
         UserGroupDao.add_default_user_group(db_user.user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'数据库写入错误， {str(e)}') from e
@@ -313,7 +313,7 @@ async def list_user(*,
     roles = role_id
     user_admin_groups = []
     if not login_user.is_admin():
-        # 查询下是否是其他用户组的管理员
+        # 查询下是否是其他部门的管理员
         if group_role_type == 'audit':
             user_audit_groups = UserGroupDao.get_user_audit_or_admin_group(login_user.user_id)
             user_audit_groups = [one.group_id for one in user_audit_groups]
@@ -326,7 +326,7 @@ async def list_user(*,
             user_admin_groups = UserGroupDao.get_user_admin_group(login_user.user_id)
             user_admin_groups = [one.group_id for one in user_admin_groups]
             groups = user_admin_groups
-        # 不是任何用户组的管理员无查看权限
+        # 不是任何部门的管理员无查看权限
         if not groups:
             raise HTTPException(status_code=500, detail='无查看权限')
         # 将筛选条件的group_id和管理员有权限的groups做交集
@@ -334,15 +334,15 @@ async def list_user(*,
             groups = list(set(groups) & set(group_id))
             if not groups:
                 raise HTTPException(status_code=500, detail='无查看权限')
-        # 查询用户组下的角色, 和角色筛选条件做交集，得到真正去查询的角色ID
+        # 查询部门下的角色, 和角色筛选条件做交集，得到真正去查询的角色ID
         group_roles = RoleDao.get_role_by_groups(groups, None, 0, 0, include_parent=True)
         if role_id:
             roles = list(set(role_id) & set([one.id for one in group_roles]))
 
-    # 通过用户组和角色过滤出来的用户id
+    # 通过部门和角色过滤出来的用户id
     user_ids = []
     if roles:
-        # 获取绑定角色, 有绑定角色则查询对应用户组内的所有用户
+        # 获取绑定角色, 有绑定角色则查询对应部门内的所有用户
         bind_roles = RoleDao.get_role_by_ids(roles, is_bind_all=True)
         role_groups = [one.group_id for one in bind_roles]
         if role_groups:
@@ -357,12 +357,12 @@ async def list_user(*,
         user_ids.extend([one.user_id for one in roles_user_ids])
 
     if groups:
-        # 查询用户组下的用户ID
+        # 查询部门下的用户ID
         groups_user_ids = UserGroupDao.get_groups_user(groups)
         if not groups_user_ids:
             return resp_200({'data': [], 'total': 0})
         group_user_ids = list(set(groups_user_ids))
-        # 如果user_ids不为空，说明是roles一起做交集筛选，否则是只做用户组筛选
+        # 如果user_ids不为空，说明是roles一起做交集筛选，否则是只做部门筛选
         if user_ids:
             user_ids = list(set(user_ids) & set(group_user_ids))
             if not user_ids:
@@ -376,7 +376,7 @@ async def list_user(*,
         one_data = one.model_dump()
         user_roles = login_user.get_user_roles(one.user_id)
         user_groups = login_user.get_user_groups(one.user_id)
-        # 如果不是超级管理，则需要将数据过滤, 不能看到非他管理的用户组内的角色和用户组列表
+        # 如果不是超级管理，则需要将数据过滤, 不能看到非他管理的部门内的角色和部门列表
         if user_admin_groups:
             for i in range(len(user_roles) - 1, -1, -1):
                 if user_roles[i]["group_id"] not in user_admin_groups:
@@ -387,7 +387,7 @@ async def list_user(*,
         one_data["roles"] = user_roles
         one_data["groups"] = user_groups
 
-        # 获取用户组里所有的绑定角色
+        # 获取部门里所有的绑定角色
         one_data["roles"].extend(login_user.get_group_bind_role([one['id'] for one in user_groups]))
         res.append(one_data)
 
@@ -404,7 +404,7 @@ async def update(*,
         raise HTTPException(status_code=500, detail='用户不存在')
 
     if not login_user.is_admin():
-        # 检查下是否是用户组的管理员
+        # 检查下是否是部门的管理员
         user_group = UserGroupDao.get_user_group(db_user.user_id)
         user_group = [one.group_id for one in user_group]
         if not login_user.check_groups_admin(user_group):
@@ -515,7 +515,7 @@ async def get_role(*,
         # 是超级管理员获取全部
         group_ids = []
     else:
-        # 查询下是否是其他用户组的管理员
+        # 查询下是否是其他部门的管理员
         user_groups = UserGroupDao.get_user_admin_group(login_user.user_id)
         group_ids = [one.group_id for one in user_groups if one.is_group_admin]
         if not group_ids:
@@ -539,7 +539,7 @@ async def delete_role(*,
         raise HTTPException(status_code=500, detail='内置角色不能删除')
 
     if not login_user.is_admin():
-        # 当前管理员管理的用户组
+        # 当前管理员管理的部门
         manage_group_ids = PermissionService.get_manage_user_group_ids(login_user.user_id)
         if not manage_group_ids:
             raise HTTPException(status_code=500, detail='无当前角色管理权限')
@@ -590,7 +590,7 @@ async def user_addrole(*,
         raise HTTPException(status_code=500, detail='不允许设置为系统管理员')
 
     if not login_user.is_admin():
-        # 判断拥有哪些用户组的管理权限
+        # 判断拥有哪些部门的管理权限
         admin_group = UserGroupDao.get_user_admin_group(login_user.user_id)
         admin_group = [one.group_id for one in admin_group]
         if not admin_group:
@@ -598,11 +598,11 @@ async def user_addrole(*,
         # 获取管理组下的所有角色列表
         admin_roles = RoleDao.get_role_by_groups(admin_group, '', 0, 0)
         admin_roles = [one.id for one in admin_roles]
-        # 做交集，获取用户组管理员可见的角色列表
+        # 做交集，获取部门管理员可见的角色列表
         for i in range(len(old_roles) - 1, -1, -1):
             if old_roles[i] not in admin_roles:
                 del old_roles[i]
-        # 判断下重新设置的角色列表是否都在 用户组管理员的名下
+        # 判断下重新设置的角色列表是否都在 部门管理员的名下
         for i in range(len(user_role.role_id) - 1, -1, -1):
             if user_role.role_id[i] not in admin_roles:
                 raise HTTPException(status_code=500, detail=f'无权限添加角色{user_role.role_id[i]}')
@@ -771,7 +771,7 @@ async def reset_password(
     if user_payload.is_admin() and login_user.user_id != user_id:
         raise HTTPException(status_code=500, detail='系统管理员只能本人重置密码')
 
-    # 查询用户所在的用户组
+    # 查询用户所在的部门
     user_groups = UserGroupDao.get_user_group(user_info.user_id)
     user_group_ids = [one.group_id for one in user_groups]
 
@@ -839,7 +839,7 @@ async def change_password_public(*,
 @router.get('/user/mark', status_code=200)
 async def has_mark_access(*,request: Request, login_user: UserPayload = Depends(get_login_user)):
     """
-    获取当前用户是否有标注权限,判断当前用户是否为admin 或者是用户组管理员
+    获取当前用户是否有标注权限,判断当前用户是否为admin 或者是部门管理员
     """
     user_groups = UserGroupDao.get_user_group(login_user.user_id)
     user_group_ids = [one.group_id for one in user_groups]

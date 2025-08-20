@@ -21,9 +21,9 @@ export default function index() {
 
         <Tabs defaultValue="user" className="w-full">
             <TabsList className="">
-                <TabsTrigger value="user" className="roundedrounded-xl">{t('system.userManagement')}</TabsTrigger>
                 {user.role === 'admin' && <TabsTrigger value="userGroup">{t('system.userGroupsM')}</TabsTrigger>}
                 <TabsTrigger value="role">{t('system.roleManagement')}</TabsTrigger>
+                <TabsTrigger value="user" className="roundedrounded-xl">{t('system.userManagement')}</TabsTrigger>
                 {user.role === 'admin' && <TabsTrigger value="system">{t('system.systemConfiguration')}</TabsTrigger>}
                 {user.role === 'admin' && <TabsTrigger value="theme">{t('system.themeColor')}</TabsTrigger>}
             </TabsList>

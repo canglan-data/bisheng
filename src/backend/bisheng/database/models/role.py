@@ -23,7 +23,7 @@ class RoleBase(SQLModelSerializable):
     role_name: str = Field(index=False, description='前端展示名称')
     group_id: Optional[int] = Field(default=0, index=True)
     remark: Optional[str] = Field(default=None, index=False)
-    is_bind_all: bool = Field(default=False, description='此角色是否绑定所有的子用户组')
+    is_bind_all: bool = Field(default=False, description='此角色是否绑定所有的子部门')
     extra: Optional[str] = Field(default='', sa_column=Column(Text), description='额外信息')
     create_time: Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, index=True, server_default=text('CURRENT_TIMESTAMP')))
@@ -84,13 +84,13 @@ class RoleDao(RoleBase):
     def get_role_by_groups(cls, group: List[int] = None, keyword: str = None, page: int = 0, limit: int = 0,
                            include_parent: bool = False, only_bind: bool = False, role_ids: List[int] = None) -> List[Role]:
         """
-        获取用户组内的角色列表, 不包含系统管理员角色
+        获取部门内的角色列表, 不包含系统管理员角色
         params:
-            group: 用户组ID列表
+            group: 部门ID列表
             page: 页数
             limit: 每页条数
-            include_parent: 是否包含父级用户组的bind角色
-            only_bind: 是否只获取属于查询用户组的绑定角色
+            include_parent: 是否包含父级部门的bind角色
+            only_bind: 是否只获取属于查询部门的绑定角色
         return: 角色列表
         """
         statement = select(Role)
@@ -105,7 +105,7 @@ class RoleDao(RoleBase):
     def count_role_by_groups(cls, group: List[int] = None, keyword: str = None, include_parent: bool = False,
                              only_bind: bool = False, role_ids: List[int] = None) -> int:
         """
-        统计用户组内的角色数量，参数如上
+        统计部门内的角色数量，参数如上
         """
         statement = select(func.count(Role.id))
         statement = cls.generate_role_group_statement(statement, group, keyword, include_parent, only_bind, role_ids=role_ids)
