@@ -9,7 +9,7 @@ import { X, ChevronRight } from "lucide-react";
 import { cname } from "@/components/bs-ui/utils";
 import { generateUUID } from "@/utils";
 
-// 多选层级用户组组件
+// 多选层级部门组件
 export default function FilterByMultiUserGroup({ value = [], onChange }) {
     const { groups, loadData, flatGroups, searchData } = useGroups();
 
@@ -22,7 +22,7 @@ export default function FilterByMultiUserGroup({ value = [], onChange }) {
                 onChange={onChange}
                 onSearch={searchData}
                 onLoad={loadData}
-                placeholder="用户组织架构"
+                placeholder="部门"
             />
         </div>
     );
@@ -257,7 +257,7 @@ const MultiLevelSelect = ({
                         <SearchInput 
                             ref={inputRef} 
                             inputClassName="h-8 dark:border-gray-700" 
-                            placeholder="搜索用户组织架构" 
+                            placeholder="搜索部门" 
                             onChange={handleSearch} 
                             iconClassName="w-4 h-4" 
                         />
@@ -278,7 +278,7 @@ const useGroups = () => {
     const loadLock = useRef(false);
     const keyWordRef = useRef("");
 
-    // 加载用户组数据
+    // 加载部门数据
     const loadData = async (name = '') => {
         try {
             if (loadLock.current) return;

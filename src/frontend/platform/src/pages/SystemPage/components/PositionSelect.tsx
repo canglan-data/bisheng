@@ -112,7 +112,7 @@ const PositionSelect: React.FC<PositionSelectProps> = ({
       const department = findDepartment(departments);
       const groupName = department?.group_name || `部门${groupId}`;
       if (positions.length === 0) {
-        // 组织架构下面没有职位 什么都不做
+        // 部门下面没有职位 什么都不做
         // labels.push(`${groupName}`);
       } else {
         positions.forEach(pos => {

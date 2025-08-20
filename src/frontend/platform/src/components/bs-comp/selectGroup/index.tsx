@@ -152,7 +152,7 @@ const SelectGroup = ({
         <SelectTrigger className={cname(`group min-h-9 py-1 ${scroll ? 'h-9 overflow-y-auto items-start pt-1.5' : 'h-auto'}`, className)} disabled={disabled}>
             <div className="text-foreground inline-flex flex-1 flex-row justify-between items-center overflow-hidden">
                 <div className={`${value?.group_name} text-gray-600`}>
-                    {showFullPath && computedFullPath ? computedFullPath : value?.group_name || '用户组'}
+                    {showFullPath && computedFullPath ? computedFullPath : value?.group_name || '部门'}
                 </div>
                 {value && <X
                     className="

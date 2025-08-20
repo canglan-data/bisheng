@@ -128,7 +128,7 @@ export default function UserGroups() {
                     setShowManage(true);
                 }} variant="secondary">
                     <SettingIcon className="text-red-500" />
-                    {'组织架构默认管理员'}
+                    {'部门默认管理员'}
                 </Button>}
                 {/* <Button className="flex justify-around" onClick={() => setUserGroup({})}>
                     <PlusIcon className="text-primary" />
@@ -143,7 +143,7 @@ export default function UserGroups() {
                         {/* <TableHead>{t('system.auditor')}</TableHead>
                         <TableHead>{t('system.operator')}</TableHead> */}
                         {appConfig.isPro && <TableHead className="w-[150px]">{t('system.flowControl')}</TableHead>}
-                        <TableHead className="w-[160px]">上级组织架构</TableHead>
+                        <TableHead className="w-[160px]">上级部门</TableHead>
                         <TableHead className="w-[160px]">{t('system.changeTime')}</TableHead>
                         <TableHead className="text-right w-[130px]">{t('operations')}</TableHead>
                     </TableRow>

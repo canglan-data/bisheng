@@ -10,7 +10,7 @@ export default function UserRoleItem({ showDel, groupId, selectedRoles, onDelete
     { showDel: boolean, groupId: null | string, selectedRoles: any[], onDelete: any, onChange: any }) {
     const { t } = useTranslation()
 
-    // 用户组
+    // 部门
     const [groups, setGroups] = useState([])
     const groupsRef = useRef([])
     const [userGroupSelected, setUserGroupSelected] = useState(groupId ? [groupId] : [])
@@ -27,7 +27,7 @@ export default function UserRoleItem({ showDel, groupId, selectedRoles, onDelete
         })
     }
     useEffect(() => {
-        // 用户组option列表
+        // 部门option列表
         loadGroups()
     }, [])
 
@@ -48,7 +48,7 @@ export default function UserRoleItem({ showDel, groupId, selectedRoles, onDelete
     const [selected, setSelected] = useState(selectedRoles)
     useEffect(() => {
         // setSelected([])
-        // 用户组option列表
+        // 部门option列表
         getRolesByGroupApi('', userGroupSelected).then((res: any) => {
             const roleOptions = res.map(role => {
                 return {

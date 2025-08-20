@@ -120,7 +120,7 @@ export default function StatFormReport({ onBack, onJump }) {
         if (!form.selectedDepartments || form.selectedDepartments.length === 0) {
             return message({
                 variant: 'warning',
-                description: '用户组织架构不可为空',
+                description: '部门不可为空',
             });
         }
         
@@ -241,7 +241,7 @@ export default function StatFormReport({ onBack, onJump }) {
                             <label className="text-right font-medium"><span className="text-red-500">*</span>应用名称</label>
                             <FilterByApp isAudit={false} value={form.appName} onChange={(value) => setForm({...form, appName: value})} style="w-auto" selectStyle="max-w-auto"/>
 
-                            <label className="text-right font-medium"><span className="text-red-500">*</span>用户组织架构</label>
+                            <label className="text-right font-medium"><span className="text-red-500">*</span>部门</label>
 
                             <FilterByMultiUsergroup
                                 value={form.selectedDepartments}

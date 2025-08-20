@@ -6,12 +6,12 @@ export async function getOperatorsApi(): Promise<[]> {
     return await axios.get('/api/v1/audit/operators')
 }
 
-// 审计视角 获取用户所管理的用户组内的应用
+// 审计视角 获取用户所管理的部门内的应用
 export async function getAuditGroupsApi(params: { keyword, page, page_size }): Promise<[]> {
     return await axios.get('/api/v1/group/audit/resources', { params })
 }
 
-// 运营视角 获取用户所管理的用户组内的应用
+// 运营视角 获取用户所管理的部门内的应用
 export async function getOperationGroupsApi(params: { keyword, page, page_size }): Promise<[]> {
     return await axios.get('/api/v1/group/operation/resources', { params })
 }
@@ -432,7 +432,7 @@ export async function configVitalOrgStatusApi(params: {
     return await axios.post('/api/v1/operation/session/vital_org_status_config', backendData)
 }
 
-// 获取用户组织架构相关应用
+// 获取部门相关应用
 export async function getSendEmailGroupsApi(params: { keyword, page, page_size }) {
     return await axios.get('/api/v1/operation/send_mail/group/list', { params })
 }

@@ -139,7 +139,7 @@ export default function StatisticsReport({ onBack, onJump }) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>用户组</TableHead>
+                            <TableHead>部门</TableHead>
                             <TableHead>应用名称</TableHead>
                             <TableHead onClick={() => handleSort(goodValue === '1' ? 'likes' : 'not_dislikes')}>
                                 <div className="flex items-center gap-x-1">

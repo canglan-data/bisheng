@@ -96,7 +96,7 @@ export async function getRolesCountApi(){
 export async function getRoleDetailApi(roleId: number) {
   return await axios.get(`/api/v1/role/${roleId}`)
 }
-// 用户组下角色列表
+// 部门下角色列表
 export async function getRolesByGroupApi(
   searchkey = "", 
   groupIds: any[], 
@@ -110,7 +110,7 @@ export async function getRolesByGroupApi(
     .then(res => res.data);
 }
 
-// 用户的用户组下的所有角色
+// 用户的部门下的所有角色
 export async function getUserRolesApi(groupId: string, userId: number | undefined) {
   if (!userId) return getRolesByGroupApi("", [groupId], true)
   return await axios.get(`/api/v1/group/user/roles`, {
@@ -158,7 +158,7 @@ export async function getRoleLibsApi(
   return await axios.get(`/api/v1/role_access/knowledge`, { params });
 }
 /**
- * 根据用户组获取资源列表
+ * 根据部门获取资源列表
  */
 export async function getGroupResourcesApi(
   params: {
@@ -231,19 +231,19 @@ export async function delRoleApi(roleId) {
   return axios.delete(`/api/v1/role/${roleId}`);
 }
 
-// 用户组列表
+// 部门列表
 export function getUserGroupsApi(config) {
   return axios.get(`/api/v1/group/list`, {
     signal: config?.signal, // 绑定 AbortSignal
   });
 }
 
-// 用户组带数字列表
+// 部门带数字列表
 export function getUserGroupsCountApi() {
   return axios.get(`/api/v1/group/tree?expand=role_count`);
 }
 
-// 组织架构+职位列表筛选项
+// 部门+职位列表筛选项
 export function getUserGroupPositionCountApi() {
   return axios.get(`/api/v1/group/tree?expand=position_count`);
 }
@@ -270,7 +270,7 @@ export function saveUserPositionApi(positionObj) {
   return axios.post(`/api/v1/permission/set_group_admin_position`, positionObj);
 }
 
-// 用户组列表 用于列表页
+// 部门列表 用于列表页
 export function getUserGroupsProApiV2({ name = '', page, pageSize, groupId, roleId }: {
   name: string,
   page: number,
@@ -281,7 +281,7 @@ export function getUserGroupsProApiV2({ name = '', page, pageSize, groupId, role
     return axios.get(`/api/v1/group/list_v2?page=${page}&page_size=${pageSize}&keyword=${name}`);
 }
 
-// 审计视角获取用户组列表
+// 审计视角获取部门列表
 export function getAuditGroupsApi(params: { keyword, page, page_size }) {
   return axios.get(`/api/v1/group/list_audit`, {params});
 }
@@ -291,18 +291,18 @@ export function exportLogApi(params: { keyword, page, page_size }) {
   return axios.get(`/api/v1/group/list_audit`, {params});
 }
 
-// 运营视角获取用户组列表
+// 运营视角获取部门列表
 export function getOperationGroupsApi(params: { keyword, page, page_size }) {
   return axios.get(`/api/v1/group/list_operation?export=1`, {params});
 }
 
-// 删除用户组post
+// 删除部门post
 export function delUserGroupApi(group_id) {
   return axios.delete(`/api/v1/group/create`, { params: { group_id } });
   // return axios.post(`/api/v1/group/del/${userGroupId}`);
 }
 
-// 保存用户组
+// 保存部门
 export function saveUserGroup(form, admins) {
   console.log('form :>> ', form);
   const { groupName: group_name } = form
@@ -313,7 +313,7 @@ export function saveUserGroup(form, admins) {
   });
 }
 
-// 修改用户组
+// 修改部门
 export function updateUserGroup(id, form, admins) {
   const { groupName: group_name } = form
   const a = axios.put(`/api/v1/group/create`, {
@@ -344,7 +344,7 @@ export async function updateUserRoles(userId, roles) {
     role_id: roles,
   });
 }
-// 更新用户组
+// 更新部门
 export async function updateUserGroups(userId, groupIds) {
   return await axios.post(`/api/v1/group/set_user_group`, {
     user_id: userId,
@@ -353,7 +353,7 @@ export async function updateUserGroups(userId, groupIds) {
   });
 }
 
-// 超管创建用户组
+// 超管创建部门
 export async function createUserApi(user_name: string, password: string, group_roles: any[]) {
   return await axios.post('/api/v1/user/create', {
     user_name,
@@ -399,12 +399,12 @@ export async function loggedChangePasswordApi(password, new_password): Promise<a
   })
 }
 
-// 用户组树数据
+// 部门树数据
 export async function getUserGroupTreeApi(groupId?: string): Promise<any> {
   return axios.get(`/api/v1/group/tree`, { params: { group_id: groupId } });
 }
 
-// 获取用户组下所有用户
+// 获取部门下所有用户
 export async function getUserGroupUsersApi(groupId): Promise<any> {
   return axios.get(`/api/v1/group/get_group_user`, { params: { group_id: groupId, page: 1, page_size: 10000, include_child: true } });
 }

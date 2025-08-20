@@ -72,7 +72,7 @@ export const saveGroupApi = async (data: any): Promise<any> => {
     });
 };
 
-// 用户组列表
+// 部门列表
 export function getUserGroupsProApi({ name = '', page, pageSize, groupId, roleId }: {
     name: string,
     page: number,

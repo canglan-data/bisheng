@@ -1,4 +1,4 @@
-// 业务组件 用于审计运营页的用户组选择
+// 业务组件 用于审计运营页的部门选择
 import MultiSelect from "@/components/bs-ui/select/multi";
 import { getAuditGroupsApi, getOperationGroupsApi } from "@/controllers/API/user";
 import { useEffect, useRef, useState } from "react";
@@ -33,7 +33,7 @@ export default function FilterByUsergroup({ value, onChange, isAudit }) {
             handleSearch={(e) => {
                 loadData(e?.target?.value || '')
             }}
-            searchPlaceholder={'用户组'}
+            searchPlaceholder={'部门'}
         />
     </div>;
     return (
@@ -42,7 +42,7 @@ export default function FilterByUsergroup({ value, onChange, isAudit }) {
                 contentClassName="overflow-y-auto max-w-[200px]"
                 options={apps}
                 value={value}
-                placeholder="用户组"
+                placeholder="部门"
                 onLoad={loadData}
                 onSearch={searchData}
                 onScrollLoad={loadMoreGroups}

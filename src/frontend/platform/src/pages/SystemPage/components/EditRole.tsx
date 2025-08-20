@@ -215,12 +215,12 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             <p className="text-xl mb-4">人员范围</p>
             <div className="mb-4">
                 <Switch checked={form.bingAll} onCheckedChange={(b) => setForm({ ...form, bingAll: b })} />
-                <span className="ml-2 bisheng-label">对本组以及所有子用户组中的用户赋予角色</span>
+                <span className="ml-2 bisheng-label">对本组以及所有子部门中的用户赋予角色</span>
             </div>
             {!form.bingAll && <SelectUserByGroup value={form.users} groupId={groupId} onChange={(users) => setForm({ ...form, users })} />}
         </div> */}
          <div className="font-bold mt-4">
-            <p className="text-xl mb-4"><span className="text-red-500">*</span>适用组织架构范围</p>
+            <p className="text-xl mb-4"><span className="text-red-500">*</span>适用部门范围</p>
             <PositionSelect value={form.selectGroupKey} onChange={(selectGroupKey) => {
                 setForm({ ...form, selectGroupKey })
             }} />

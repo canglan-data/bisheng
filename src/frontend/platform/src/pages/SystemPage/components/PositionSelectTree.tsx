@@ -50,7 +50,7 @@ const PositionSelectTree: React.FC<PositionSelectTreeProps> = ({
   useEffect(() => {
     if (departments.length === 0) return;
 
-    // 递归构建部门树并添加职位节点，过滤掉没有职位的组织架构
+    // 递归构建部门树并添加职位节点，过滤掉没有职位的部门
     const buildTree = (depts: Department[]): TreeNode[] => {
       return depts.map(dept => {
         // 存储部门原始数据到Map

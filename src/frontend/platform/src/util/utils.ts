@@ -504,7 +504,7 @@ export function formatTTSText(text) {
     return optimizeForTTS(contentToPlainText(text));
 }
 
-// 用户组转树形结构
+// 部门转树形结构
 export function buildUserGroupTreeOptimized(
   flatList
 ) {

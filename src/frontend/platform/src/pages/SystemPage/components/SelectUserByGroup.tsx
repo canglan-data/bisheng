@@ -63,28 +63,28 @@ const useGroupUsers = (checkedUsers, setCheckedUsers) => {
                 // 选中所有用户
                 setCheckedUsers(new Set(depAllUsers.map(user => user.user_id)));
             } else {
-                // 取消选中所有用户，但保留其他用户组的选中状态
+                // 取消选中所有用户，但保留其他部门的选中状态
                 const remainingCheckedUsers = Array.from(checkedUsers).filter(userId =>
                     // 保留已经选中的属于其他部门的用户
                     !depAllUsers.some(user => user.user_id === userId)
                 );
-                setCheckedUsers(new Set(remainingCheckedUsers)); // 更新为只保留当前用户组之外的选中用户
+                setCheckedUsers(new Set(remainingCheckedUsers)); // 更新为只保留当前部门之外的选中用户
             }
             return;
         }
-        // 获取当前用户组的用户数据
+        // 获取当前部门的用户数据
         const res = await getUserGroupUsersApi(groupId);
         updateUsers(res.data, groupId)
 
         if (checked) {
-            // 选中当前用户组的所有用户
+            // 选中当前部门的所有用户
             setCheckedUsers(new Set(res.data.map(user => user.user_id)));
         } else {
-            // 取消选中当前用户组的所有用户，但保留其他选中状态的用户
+            // 取消选中当前部门的所有用户，但保留其他选中状态的用户
             const remainingCheckedUsers = Array.from(checkedUsers).filter(userId =>
                 !res.data.some(user => user.user_id === userId) // 保留选中的不在当前组中的用户
             );
-            setCheckedUsers(new Set(remainingCheckedUsers)); // 更新为只保留当前用户组之外的选中用户
+            setCheckedUsers(new Set(remainingCheckedUsers)); // 更新为只保留当前部门之外的选中用户
         }
     };
 
@@ -106,7 +106,7 @@ const useGroupUsers = (checkedUsers, setCheckedUsers) => {
 const SelectUserByGroup = ({ groupId, value, onChange }) => {
     const [open, setOpen] = useState(false);
     const [expandedNodes, setExpandedNodes] = useState(new Set());
-    const [checkedGroups, setCheckedGroups] = useState(new Set()); // 存储选中的用户组
+    const [checkedGroups, setCheckedGroups] = useState(new Set()); // 存储选中的部门
     const [checkedUsers, setCheckedUsers] = useState(new Set()); // 存储选中的用户
     const initChangeRef = useRef(false);
 
@@ -130,14 +130,14 @@ const SelectUserByGroup = ({ groupId, value, onChange }) => {
     const renderTree = (nodes, level = 0) => {
         return nodes.map((node) => {
             const isExpanded = expandedNodes.has(node.id);
-            const isSelected = checkedGroups.has(node.id); // 用户组选中状态
+            const isSelected = checkedGroups.has(node.id); // 部门选中状态
             const isIndeterminate = !isSelected && node.children?.some(child => checkedUsers.has(child.id)); // 半选状态
 
             return (
                 <div key={node.id} className="pl-2">
                     <div
                         className={`relative flex items-center gap-2 cursor-pointer ${isSelected ? 'bg-blue-200' : ''} hover:bg-blue-100 rounded-md p-1 py-2`}
-                        onClick={() => getGroupUsers(node.id)} // 点击用户组加载用户
+                        onClick={() => getGroupUsers(node.id)} // 点击部门加载用户
                     >
                         {node.children?.length > 0 && (
                             <ChevronRight
@@ -154,7 +154,7 @@ const SelectUserByGroup = ({ groupId, value, onChange }) => {
                         <Checkbox
                             checked={isIndeterminate ? 'indeterminate' : isSelected}
                             onClick={(e) => e.stopPropagation()}
-                            onCheckedChange={(checked) => handleGroupCheckboxChange(node, checked)} // 用户组checkbox的级联逻辑
+                            onCheckedChange={(checked) => handleGroupCheckboxChange(node, checked)} // 部门checkbox的级联逻辑
                         />
                         <Label>{node.group_name}</Label>
                     </div>
@@ -166,7 +166,7 @@ const SelectUserByGroup = ({ groupId, value, onChange }) => {
         });
     };
 
-    // 递归更新所有子用户组的选中状态
+    // 递归更新所有子部门的选中状态
     const updateCheckedGroups = (node, checked) => {
         setCheckedGroups(prev => {
             const updated = new Set(prev);
@@ -185,7 +185,7 @@ const SelectUserByGroup = ({ groupId, value, onChange }) => {
         }
     };
 
-    // 处理用户组checkbox的级联逻辑
+    // 处理部门checkbox的级联逻辑
     const handleGroupCheckboxChange = (node, checked) => {
         updateCheckedGroups(node, checked);
         checkUsers(checked, node.id);

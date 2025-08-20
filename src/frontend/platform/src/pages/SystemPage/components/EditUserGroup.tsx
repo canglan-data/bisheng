@@ -21,7 +21,7 @@ import { bsConfirm } from "@/components/bs-ui/alertDialog/useConfirm";
 
 /**
  * 
- * 用户组编辑&创建接口逻辑
+ * 部门编辑&创建接口逻辑
  * 创建 
  * 1.用名字和管理员作为参数 调开源接口创建
  * 2.再调闭源接口设置 流控
@@ -199,7 +199,7 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
             return toast({ title: t('prompt'), description: t('system.groupNamePrompt'), variant: 'error' });
         }
         if (!form.department && !data.group_name) {
-            return toast({ title: t('prompt'), description: '上级用户组不可为空', variant: 'error' });
+            return toast({ title: t('prompt'), description: '上级部门不可为空', variant: 'error' });
         }
         const flag = onBeforeChange(form.groupName)
         if (flag) {
@@ -220,7 +220,7 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
                 title: t('prompt'),
                 desc: (
                     <div>
-                        <span className="text-primary">{newAdminNames}</span> 无组织架构管理权限，添加组织管理权限，会记录"<strong>权限异常</strong>"操作，请确认是否添加。
+                        <span className="text-primary">{newAdminNames}</span> 无部门管理权限，添加组织管理权限，会记录"<strong>权限异常</strong>"操作，请确认是否添加。
                     </div>
                 ),
                 onOk: async (next) => {
@@ -296,7 +296,7 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
         init()
     }, [])
 
-    // 用户组数据
+    // 部门数据
     const { data: options = [], refetch: refetchGroupTree } = useQuery({
         queryKey: "QueryGroupTreeKey",
         queryFn: () => getUserGroupTreeApi()
@@ -307,9 +307,9 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
             <p className="text-xl mb-4">{t('system.groupName')}</p>
             <Input disabled placeholder={t('system.userGroupName')} required value={form.groupName} onChange={(e) => setForm({ ...form, groupName: e.target.value })}></Input>
         </div>
-        {/* 有group_name表示是修改页面 同时有上级用户组 才展示上级用户组 */}
+        {/* 有group_name表示是修改页面 同时有上级部门 才展示上级部门 */}
         {(data.group_name && form.department) && <div className="font-bold mt-4">
-            <p className="text-xl mb-4">上级用户组</p>
+            <p className="text-xl mb-4">上级部门</p>
             <SelectGroup
                 showFullPath
                 disabled={data.group_name}

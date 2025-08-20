@@ -80,7 +80,7 @@ export default function Users(params) {
         reload()
     }
 
-    // 获取用户组类型数据
+    // 获取部门类型数据
     const [userGroups, setUserGroups] = useState([])
     const getUserGoups = async () => {
         const res: any = await getUserGroupsCountApi()

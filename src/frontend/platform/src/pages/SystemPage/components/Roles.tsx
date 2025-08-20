@@ -88,7 +88,7 @@ export default function Roles() {
     useEffect(() => {
         getUserGroupsApi().then((res:any) => {
             const groups = res.records.map(ug => ({ label: ug.group_name, value: ug.id }))
-            // 获取最近修改用户组
+            // 获取最近修改部门
             dispatch({ type: 'SET_GROUP', payload: groups[0].value });
             dispatch({ type: 'SET_GROUPS', payload: groups });
         })
@@ -130,7 +130,7 @@ export default function Roles() {
         return state.groups.filter(group => group.label.toUpperCase().includes(keyWord.toUpperCase()) || group.value === state.group)
     }, [keyWord, state.group])
 
-    // 获取用户组类型数据
+    // 获取部门类型数据
     const [userGroups, setUserGroups] = useState([])
     const getUserGoups = async () => {
         const res: any = await getUserGroupsCountApi()

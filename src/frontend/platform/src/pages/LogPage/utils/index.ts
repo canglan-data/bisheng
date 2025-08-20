@@ -22,9 +22,9 @@ export function transformEvent(event: string): string {
         case 'update_user': return '用户编辑';
         case 'forbid_user': return '停用用户';
         case 'recover_user': return '启用用户';
-        case 'create_user_group': return '新建用户组';
-        case 'delete_user_group': return '删除用户组';
-        case 'update_user_group': return '编辑用户组';
+        case 'create_user_group': return '新建部门';
+        case 'delete_user_group': return '删除部门';
+        case 'update_user_group': return '编辑部门';
         case 'create_role': return '新建角色';
         case 'delete_role': return '删除角色';
         case 'update_role': return '编辑角色';
@@ -42,7 +42,7 @@ export function transformObjectType(object: string): string {
         case 'knowledge': return '知识库'
         case 'file': return '文件'
         case 'user_conf': return '用户配置'
-        case 'user_group_conf': return '用户组配置'
+        case 'user_group_conf': return '部门配置'
         case 'role_conf': return '角色配置'
         default: return '转换失败'
     }
