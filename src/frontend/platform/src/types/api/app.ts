@@ -17,4 +17,8 @@ export type AppConfig = {
     uploaded_files_maximum_size: number;
     /** 是否部署 ETL4LM  */
     enable_etl4lm: boolean;
+    /** 是否只展示微信登录 */
+    only_show_weixin_login: boolean;
+    /** 不允许复制消息的flowid */
+    disable_copy_flow_ids: string[];
 };

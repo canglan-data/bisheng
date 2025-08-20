@@ -56,13 +56,14 @@ from bisheng.database.models.knowledge_file import (
     KnowledgeFileStatus, ParseType,
 )
 from bisheng.database.models.llm_server import LLMDao, LLMModelType
+from bisheng.database.models.parse_strategy import ParseStrategyDao
 from bisheng.database.models.role_access import AccessType, RoleAccessDao
 from bisheng.database.models.user import UserDao
 from bisheng.database.models.user_group import UserGroupDao
 from bisheng.database.models.user_role import UserRoleDao
 from bisheng.interface.embeddings.custom import FakeEmbedding
 from bisheng.settings import settings
-from bisheng.utils import generate_uuid
+from bisheng.utils import generate_uuid, json2dict
 from bisheng.utils.embedding import decide_embeddings
 from bisheng.utils.minio_client import minio_client
 from bisheng.worker.knowledge import file_worker
@@ -168,6 +169,11 @@ class KnowledgeService(KnowledgeUtils):
             if knowledge.is_partition is not None
             else settings.get_vectors_conf().milvus.is_partition
         )
+
+        if knowledge.parse_strategy_id is not None:
+            parse_strategy = ParseStrategyDao.query_by_id(knowledge.parse_strategy_id)
+            if parse_strategy and parse_strategy.content is not None:
+                knowledge.parse_strategy_content = parse_strategy.content
 
         # 判断知识库是否重名
         repeat_knowledge = KnowledgeDao.get_knowledge_by_name(
@@ -445,7 +451,8 @@ class KnowledgeService(KnowledgeUtils):
             enable_formula=req_data.enable_formula,
             filter_page_header_footer=req_data.filter_page_header_footer,
             retain_images=req_data.retain_images,
-            excel_rule=excel_rule
+            excel_rule=excel_rule,
+            split_rule=req_data
         )
         if len(texts) == 0:
             raise ValueError("文件解析为空")
@@ -488,6 +495,13 @@ class KnowledgeService(KnowledgeUtils):
             raise NotFoundError.http_exception()
         chunk_info["text"] = req_data.text
         chunk_info["metadata"]["bbox"] = req_data.bbox
+
+        extra = json2dict(chunk_info["metadata"].get("extra", {}))
+        if 'chunk_chapter' in extra:
+            # 有字段说明开启了标题追加，才可以编辑
+            extra['chunk_chapter'] = str(req_data.chunk_chapter).strip()
+            chunk_info["metadata"]["extra"] = json.dumps(extra, ensure_ascii=False)
+
         cls.save_preview_cache(
             cache_key, chunk_index=req_data.chunk_index, value=chunk_info
         )
@@ -940,6 +954,7 @@ class KnowledgeService(KnowledgeUtils):
             chunk_index: int,
             text: str,
             bbox: str,
+            chunk_chapter: str
     ):
         db_knowledge = KnowledgeDao.query_by_id(knowledge_id)
         if not db_knowledge:
@@ -979,10 +994,21 @@ class KnowledgeService(KnowledgeUtils):
             one["knowledge_id"] = str(knowledge_id)
             metadata.append(one)
         # insert data
+        extra = "{}"
         if metadata:
             logger.info(f"act=add_vector {knowledge_id}")
             new_metadata = metadata[0]
             new_metadata["bbox"] = bbox
+
+            extra = json2dict(new_metadata.get("extra", {}))
+
+            # 有字段说明开启了标题追加，才可以编辑
+            if 'chunk_chapter' in extra:
+                extra["chunk_chapter"] = str(chunk_chapter).strip()
+
+            extra = json.dumps(extra, ensure_ascii=False)
+            new_metadata["extra"] = extra
+
             text = KnowledgeUtils.aggregate_chunk_metadata(text, new_metadata)
             res = vector_client.add_texts([text], [new_metadata], timeout=10)
         # delete data
@@ -1004,8 +1030,8 @@ class KnowledgeService(KnowledgeUtils):
                     }
                 },
                 "script": {
-                    "source": "ctx._source.text=params.text;ctx._source.metadata.bbox=params.bbox;",
-                    "params": {"text": text, "bbox": bbox},
+                    "source": "ctx._source.text=params.text;ctx._source.metadata.bbox=params.bbox;ctx._source.metadata.extra=params.extra;",
+                    "params": {"text": text, "bbox": bbox, "extra": extra},
                 },
             },
         )

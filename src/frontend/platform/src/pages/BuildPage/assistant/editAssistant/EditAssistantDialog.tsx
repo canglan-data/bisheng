@@ -10,6 +10,9 @@ import { locationContext } from "@/contexts/locationContext";
 import { getCommitmentApi, setCommitmentApi } from "@/controllers/API";
 import { uploadFileWithProgress } from "@/modals/UploadModal/upload";
 import { SelectCommitment } from "@/pages/ChatAppPage/components/CommitmentDialog";
+import { downloadFile } from "@/util/utils";
+import { Download } from "lucide-react";
+import { checkSassUrl } from "@/components/bs-comp/FileView";
 
 // TODO 合并到createapp组件
 export default function EditAssistantDialog({ id, logo, online, name, desc, onSave }) {
@@ -94,7 +97,7 @@ export default function EditAssistantDialog({ id, logo, online, name, desc, onSa
 
     const uploadAvator = (file) => {
         uploadFileWithProgress(file, (progress) => { }, 'icon').then(res => {
-            setFormData(prev => ({ ...prev, logo: res.file_path }));
+            setFormData(prev => ({ ...prev, logo: `${__APP_ENV__.BUCKET_URL}/` + res.relative_path }));
         })
     }
 
@@ -105,11 +108,23 @@ export default function EditAssistantDialog({ id, logo, online, name, desc, onSa
         <div className="flex flex-col gap-8 py-6">
             <div className="">
                 <label htmlFor="name" className="bisheng-label">{t('build.assistantAvatar')}<span className="bisheng-tip">*</span></label>
-                <Avator
-                    value={formData.logo}
-                    className="mt-2"
-                    onChange={uploadAvator}
-                ><AssistantIcon className="bg-primary w-9 h-9 rounded-sm" /></Avator>
+                <div className="flex gap-2">
+                    <div>
+                        <Avator
+                            value={formData.logo && __APP_ENV__.BASE_URL + formData.logo}
+                            className="mt-2"
+                            onChange={uploadAvator}
+                        ><AssistantIcon className="bg-primary w-9 h-9 rounded-sm" /></Avator>
+                    </div>
+                     {/* 下载按钮 */}
+                     {formData.logo && <button 
+                        onClick={() => downloadFile(__APP_ENV__.BASE_URL + formData.logo, formData.logo?.split('/').pop())}
+                        className="p-2 mt-3 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded-full transition-colors"
+                        title="Download avatar"
+                    >
+                        <Download className="w-4 h-4" />
+                    </button>}
+                </div>
                 {errors.name && <p className="bisheng-tip mt-1">{errors.name}</p>}
             </div>
             <div className="">

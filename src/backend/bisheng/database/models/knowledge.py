@@ -1,9 +1,9 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, Dict
 
 from pydantic import BaseModel, field_validator
-from sqlmodel import Column, DateTime, Field, delete, func, or_, select, text, update
+from sqlmodel import Column, DateTime, Field, delete, func, or_, select, text, update, JSON
 from sqlmodel.sql.expression import Select, SelectOfScalar
 
 from bisheng.database.base import session_getter
@@ -36,6 +36,8 @@ class KnowledgeBase(SQLModelSerializable):
     index_name: Optional[str] = Field(default=None, index=False)
     state: Optional[int] = Field(index=False, default=KnowledgeState.PUBLISHED.value,
                                  description='0 为未发布，1 为已发布, 2 为复制中')
+    parse_strategy_id: Optional[int] = Field(default=0)
+    parse_strategy_content: Optional[Dict] = Field(default=None, sa_column=Column(JSON), description='解析策略内容')
     create_time: Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP')))
     update_time: Optional[datetime] = Field(default=None, sa_column=Column(
@@ -227,7 +229,7 @@ class KnowledgeDao(KnowledgeBase):
                                 keyword: str = None,
                                 page: int = 0,
                                 limit: int = 0,
-                                user_ids:List[int]=None) -> (List[Knowledge], int):
+                                user_ids:List[int] = None) -> (List[Knowledge], int):
         """
         根据关键字和知识库id过滤出对应的知识库
 

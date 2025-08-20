@@ -24,7 +24,7 @@ export const getWorkflowReportTemplate = async (key: string): Promise<any> => {
 export const createWorkflowApi = async (name, desc, url, flow): Promise<any> => {
     if (url) {
         // logo保存相对路径
-        url = url.replace('/bisheng', '')
+        url = url.replace(__APP_ENV__.BUCKET_URL, '')
     }
     const data = flow || {}
     return await axios.post("/api/v1/workflow/create", {
@@ -41,17 +41,75 @@ export const createWorkflowApi = async (name, desc, url, flow): Promise<any> => 
 export const saveWorkflow = async (versionId: number, data: WorkFlow): Promise<any> => {
     if (data.logo) {
         // logo保存相对路径
-        data.logo = data.logo.replace('/bisheng', '')
+        data.logo = data.logo.replace(__APP_ENV__.BUCKET_URL, '')
     }
     return await axios.put(`/api/v1/workflow/versions/${versionId}`, data);
 }
+
+/**
+ * 删除版本.
+ *
+ * @param {string} versionId - 要删除的版本ID.
+ * @returns {Promise<any>}.
+ * @throws .
+ */
+export async function deleteVersion(versionId: string) {
+    return await axios.delete(`/api/v1/workflow/versions/${versionId}`);
+}
+
+/**
+ * 创建新的工作流版本.
+ *
+ * @param {object} versionData - 新版本的数据.
+ * @returns {Promise<any>}.
+ * @throws .
+ */
+export async function createWorkFlowVersion(flow_id, versionData: { name: string, description: string, original_version_id: number, data: any }) {
+    return await axios.post(`/api/v1/workflow/versions?flow_id=${flow_id}`, versionData);
+}
+
+/**
+ * 获取单个版本的信息.
+ *
+ * @param {string} versionId - 版本的ID.
+ * @returns {Promise<any>}.
+ * @throws .
+ */
+export async function getVersionDetails(versionId: string) {
+    return await axios.get(`/api/v1/workflow/versions/${versionId}`);
+}
+
+/**
+ * 更新版本信息.
+ *
+ * @param {string} versionId - 要更新的版本ID.
+ * @param {object} versionData - 更新的版本数据.
+ * @returns {Promise<any>}.
+ * @throws .
+ */
+export async function updateVersion(versionId: string, versionData: { name: string, description: string, data: any }) {
+    return await axios.put(`/api/v1/workflow/versions/${versionId}`, versionData);
+}
+
+/**
+ * 获取工作流对应的版本列表.
+ *
+ * @returns {Promise<any>}.
+ * @throws .
+ */
+export async function getWorkFlowVersions(flow_id): Promise<{ data: any[], total: number }> {
+    return await axios.get(`/api/v1/workflow/versions`, {
+        params: { flow_id }
+    });
+}
+
 
 /** 上线工作流 & 修改信息 
  * status: 2 上线 1 下线
 */
 export const onlineWorkflow = async (flow, status = ''): Promise<any> => {
     const { name, description, logo } = flow
-    const data = { name, description, logo: logo && logo.match(/(icon.*)\?/)?.[1] }
+    const data = { name, description, logo: logo && logo.replace(__APP_ENV__.BUCKET_URL, '')}
     if (status) {
         data['status'] = status
     }
@@ -107,7 +165,7 @@ const workflowTemplate = [
         "name": "开始",
         "description": "工作流运行的起始节点。",
         "type": "start",
-        "v": "1",
+        "v": "2",
         "group_params": [
             {
                 "name": "开场引导",
@@ -496,7 +554,7 @@ const workflowTemplate = [
                     {
                         "key": "show_reason",
                         "label": "将模型思考过程展示在会话中",
-                        "type": "switch",
+                        "type": "show_reason_switch",
                         "value": true,
                     },
                     {
@@ -679,7 +737,7 @@ const workflowTemplate = [
                     {
                         "key": "show_reason",
                         "label": "将模型思考过程展示在会话中",
-                        "type": "switch",
+                        "type": "show_reason_switch",
                         "value": true,
                     },
                     {
@@ -871,7 +929,7 @@ const workflowTemplate = [
                     {
                         "key": "show_reason",
                         "label": "将模型思考过程展示在会话中",
-                        "type": "switch",
+                        "type": "show_reason_switch",
                         "value": true,
                     },
                     {
@@ -888,6 +946,63 @@ const workflowTemplate = [
                         "help": "模型输出内容将会存储在该变量中。",
                         "global": "code:value.map(el => ({ label: el.label, value: el.key }))",
                         "value": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "knowledge_retriever_xxx",
+        "name": "文档知识库检索",
+        "description": "根据用户问题从知识库中检索相关内容，并生成检索结果。",
+        "type": "knowledge_retriever",
+        "v": "1",
+        "group_params": [
+            {
+                "name": "知识库检索设置",
+                "params": [
+                    {
+                        "key": "user_question",
+                        "label": "用户问题",
+                        "global": "self=user_prompt",
+                        "type": "user_question",
+                        "test": "var",
+                        "help": "当选择多个问题时，将会多次运行本节点，每次运行时从批量问题中取一项进行处理。",
+                        "linkage": "output_user_input",
+                        "value": [],
+                        "placeholder": "请选择用户问题",
+                        "required": true
+                    },
+                    {
+                        "key": "knowledge",
+                        "label": "检索范围",
+                        "type": "knowledge_select_multi",
+                        "placeholder": "请选择知识库",
+                        "value": {
+                            "type": "knowledge",
+                            "value": []
+                        },
+                        "required": true
+                    },
+                    {
+                        "key": "user_auth",
+                        "label": "用户知识库权限校验",
+                        "type": "switch",
+                        "value": false,
+                        "help": "开启后，只会对用户有使用权限的知识库进行检索。"
+                    },
+                    {
+                        "key": "max_chunk_size",
+                        "label": "检索结果长度",
+                        "type": "number",
+                        "value": 15000,
+                        "help": "通过此参数控制最终传给模型的知识库检索结果文本长度，超过模型支持的最大上下文长度可能会导致报错。"
+                    },
+                    {
+                        "key": "retrieved_result",
+                        "label": "检索结果",
+                        "type": "var",
+                        "global": "key",
                     }
                 ]
             }

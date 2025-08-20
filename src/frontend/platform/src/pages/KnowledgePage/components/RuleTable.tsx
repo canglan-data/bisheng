@@ -99,13 +99,14 @@ export default function RuleTable({
   applyEachCell,
   setApplyEachCell,
   cellGeneralConfig,
-  setCellGeneralConfig
+  setCellGeneralConfig,
+  forTemplate = false
 }) {
   const { t } = useTranslation('knowledge')
 
   console.log('rules.fileList :>> ', rules.fileList);
   const tableFils = useMemo(() => {
-    return rules.fileList.filter(item => item.fileType === 'table')
+    return rules.fileList?.filter(item => item.fileType === 'table')
   }, [rules.fileList])
 
   return (
@@ -114,10 +115,10 @@ export default function RuleTable({
         className="flex flex-col gap-4"
         style={{ gridTemplateColumns: '114px 1fr' }}
       >
-        <div className="flex justify-end items-center gap-2">
+        {!forTemplate && <div className="flex justify-end items-center gap-2">
           <Checkbox checked={applyEachCell} onCheckedChange={setApplyEachCell} />
           <Label htmlFor="setSeparately" className="text-sm text-gray-700"> {t('setSeparately')} </Label>
-        </div>
+        </div>}
 
         {applyEachCell ? (
           <div>

@@ -359,7 +359,7 @@ def _is_valid_url(url: str) -> bool:
     return bool(parsed.netloc) and bool(parsed.scheme)
 
 
-def replace_domain(url: str, new_domain: str) -> str:
+def replace_domain(url: str, new_domain: str,new_scheme=None) -> str:
     """
     替换URL中的域名（包括子域名和端口）
 
@@ -374,7 +374,7 @@ def replace_domain(url: str, new_domain: str) -> str:
     parsed = urlparse(url)
 
     # 提取协议和路径等其他部分
-    scheme = parsed.scheme
+    scheme = new_scheme if new_scheme else parsed.scheme
     path = parsed.path
     params = parsed.params
     query = parsed.query

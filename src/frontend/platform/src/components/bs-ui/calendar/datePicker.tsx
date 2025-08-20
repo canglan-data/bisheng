@@ -15,13 +15,14 @@ import { cname } from "../utils"
 export function DatePicker({
     value,
     placeholder = '',
+    displayFormat = 'yyyy-MM-dd',
     onChange
 }) {
     const [date, setDate] = React.useState<Date>(value)
 
     const dateStr = useMemo(() => {
-        return date ? formatDate(date, 'yyyy-MM-dd') : ''
-    }, [date])
+        return date ? formatDate(date, displayFormat) : ''
+    }, [date, displayFormat])
 
     React.useEffect(() => {
         setDate(value)

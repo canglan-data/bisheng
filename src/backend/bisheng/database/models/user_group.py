@@ -63,13 +63,23 @@ class UserGroupDao(UserGroupBase):
             return session.exec(statement).all()
 
     @classmethod
-    def get_user_admin_group(cls, user_id: int) -> List[UserGroup]:
+    def get_user_admin_group_old(cls, user_id: int) -> List[UserGroup]:
         """
         获取用户是管理员的用户组
         """
         with session_getter() as session:
             statement = select(UserGroup).where(UserGroup.user_id == user_id).where(UserGroup.is_group_admin == 1)
             return session.exec(statement).all()
+
+    @classmethod
+    def get_user_admin_group(cls, user_id: int) -> List[UserGroup]:
+        """
+        获取用户是管理员的用户组
+        原方法备份为get_user_admin_group_old，上层调用较多，暂时在model统一改，后续视情况按最佳实践优化
+        """
+        from bisheng.api.services.permission_service import PermissionService
+        return PermissionService.get_manage_user_group(user_id=user_id)
+
 
     @classmethod
     def get_user_audit_group(cls, user_id: int) -> List[UserGroup]:
@@ -175,13 +185,13 @@ class UserGroupDao(UserGroupBase):
             session.commit()
 
     @classmethod
-    def add_user_groups(cls, user_id: int, group_ids: List[int]):
+    def add_user_groups(cls, user_id: int, group_ids: List[int], position: str = ''):
         """
         将用户添加到某些组
         """
         with session_getter() as session:
             for group_id in group_ids:
-                user_group = UserGroup(user_id=user_id, group_id=group_id, is_group_admin=0)
+                user_group = UserGroup(user_id=user_id, group_id=group_id, is_group_admin=0, position=position)
                 session.add(user_group)
             session.commit()
 

@@ -18,7 +18,8 @@ import { alertContext } from "../../../contexts/alertContext";
 import { createRole, getGroupResourcesApi, getRoleDetailApi, getRolePermissionsApi, updateRoleNameApi, updateRolePermissionsApi } from "../../../controllers/API/user";
 import { captureAndAlertRequestErrorHoc } from "../../../controllers/request";
 import { useTable } from "../../../util/hook";
-import SelectUserByGroup from "./SelectUserByGroup";
+import PositionSelect from "./PositionSelect";
+import { message } from "@/components/bs-ui/toast/use-toast";
 
 const SearchPanne = ({ groupId, placeholder = '', title, type, children }) => {
     const { page, pageSize, data, total, loading, setPage, search } = useTable({ pageSize: 10 }, (params) => {
@@ -113,7 +114,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             })
             // 详情
             getRoleDetailApi(id).then(res => {
-                setForm(form => ({ ...form, users: res.user_ids || [], bingAll: res.is_bind_all, selectGroupKey: res.extra || {} }))
+                setForm(form => ({ ...form, users: res.user_ids || [], bingAll: res.is_bind_all, selectGroupKey: res.group_positions }))
             })
         }
     }, [id])
@@ -158,11 +159,22 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
         }
         // 没有id时需要走创建流程，否则修改
         let roleId = id
+        // 过滤掉 selectGroupKey 中值为空数组的 key
+        const filteredSelectGroupKey = Object.fromEntries(
+            Object.entries(form.selectGroupKey).filter(([_, value]) => Array.isArray(value) ? value.length > 0 : true)
+        );
+
+        if (Object.keys(filteredSelectGroupKey).length === 0) {
+            return message({title: t('prompt'), variant: 'warning', description: t('system.roleGroupRequired')});
+        }
+
+
         if (id === -1) {
             const res = await captureAndAlertRequestErrorHoc(createRole({
                 role_name: form.name,
                 group_id: groupId,
                 is_bind_all: form.bingAll,
+                group_positions: filteredSelectGroupKey,
                 user_ids: form.users.map(el => el.user_id)
             }))
             roleId = res.id
@@ -171,6 +183,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
             captureAndAlertRequestErrorHoc(updateRoleNameApi(roleId, {
                 role_name: form.name,
                 extra: "",
+                group_positions: filteredSelectGroupKey,
                 is_bind_all: form.bingAll,
                 user_ids: form.users.map(el => el.user_id)
             }))
@@ -195,16 +208,23 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
 
     return <div className="max-w-[600px] mx-auto pt-4 h-[calc(100vh-128px)] overflow-y-auto pb-40 scrollbar-hide">
         <div className="font-bold mt-4">
-            <p className="text-xl mb-4">{t('system.roleName')}</p>
-            <Input placeholder={t('system.roleName')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={60} showCount></Input>
+            <p className="text-xl mb-4"><span className="text-red-500">*</span>{t('system.roleName')}</p>
+            <Input placeholder={t('system.roleName')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={50} showCount></Input>
         </div>
-        <div className="font-bold mt-4">
+        {/* <div className="font-bold mt-4">
             <p className="text-xl mb-4">人员范围</p>
             <div className="mb-4">
                 <Switch checked={form.bingAll} onCheckedChange={(b) => setForm({ ...form, bingAll: b })} />
                 <span className="ml-2 bisheng-label">对本组以及所有子用户组中的用户赋予角色</span>
             </div>
             {!form.bingAll && <SelectUserByGroup value={form.users} groupId={groupId} onChange={(users) => setForm({ ...form, users })} />}
+        </div> */}
+         <div className="font-bold mt-4">
+            <p className="text-xl mb-4"><span className="text-red-500">*</span>适用组织架构范围</p>
+            <PositionSelect value={form.selectGroupKey} onChange={(selectGroupKey) => {
+                setForm({ ...form, selectGroupKey })
+            }} />
+            {/* {<SelectUserByGroup value={form.users} groupId={groupId} onChange={(users) => setForm({ ...form, users })} />} */}
         </div>
         <div>
             <div className="mt-20 flex justify-between items-center relative">
@@ -277,7 +297,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
                             <TableRow>
                                 <TableHead>{t('system.assistantName')}</TableHead>
                                 <TableHead>{t('system.creator')}</TableHead>
-                                <TableHead className="text-right w-[75px]">{t('system.usePermission')}</TableHead>
+                                <TableHead className="text-right w-[75px]">{t('system.useNoPermission')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -309,7 +329,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
                             <TableRow>
                                 <TableHead>{t('system.skillName')}</TableHead>
                                 <TableHead>{t('system.creator')}</TableHead>
-                                <TableHead className="text-right w-[75px]">{t('system.usePermission')}</TableHead>
+                                <TableHead className="text-right w-[75px]">{t('system.useNoPermission')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -341,7 +361,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
                             <TableRow>
                                 <TableHead>工作流名称</TableHead>
                                 <TableHead>{t('system.creator')}</TableHead>
-                                <TableHead className="text-right w-[75px]">{t('system.usePermission')}</TableHead>
+                                <TableHead className="text-right w-[75px]">{t('system.useNoPermission')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -408,7 +428,7 @@ export default function EditRole({ id, name, groupId, onChange, onBeforeChange }
                             <TableRow>
                                 <TableHead>{t('tools.toolName')}</TableHead>
                                 <TableHead>{t('system.creator')}</TableHead>
-                                <TableHead className="text-right w-[75px]">{t('system.usePermission')}</TableHead>
+                                <TableHead className="text-right w-[75px]">{t('system.useNoPermission')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

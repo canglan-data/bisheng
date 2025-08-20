@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react"
 import { useMessageStore } from "./messageStore"
 import { useTranslation } from "react-i18next"
+import { ChevronDown, ChevronUp } from "lucide-react";
+
 
 // 引导词推荐
 export default function GuideQuestions({ locked, chatId, questions, onClick, bottom }) {
     const [showGuideQuestion, setShowGuideQuestion] = useMessageStore(state => [state.showGuideQuestion, state.setShowGuideQuestion])
+    const [hiddenGuideQuestion, setHiddenGuideQuestion] = useMessageStore(state => [state.hiddenGuideQuestion, state.setHiddenGuideQuestion])
 
     const { t } = useTranslation()
 
@@ -29,17 +32,34 @@ export default function GuideQuestions({ locked, chatId, questions, onClick, bot
     if (showGuideQuestion) return <div className="relative">
         <div
             className="absolute left-0"
-            style={{ bottom: `${(bottom || 0) + 28}px` }}
+            style={{ bottom: `${(bottom || 0)}px` }}
         >
-            <p className="text-gray-950 text-sm mb-2 bg-[rgba(255,255,255,0.8)] rounded-md w-fit px-2 py-1">{t('chat.recommendationQuestions')}</p>
+            <div className="flex items-center mb-2">
+                <p
+                    className="text-gray-950 text-sm bg-[rgba(255,255,255,0.8)] rounded-md w-fit px-2 py-1 cursor-pointer"
+                    onClick={() => setHiddenGuideQuestion(!hiddenGuideQuestion)}
+                >{t('chat.recommendationQuestions')}</p>
+                <button 
+                    className="ml-1 p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                    onClick={() => setHiddenGuideQuestion(!hiddenGuideQuestion)}
+                    aria-label={hiddenGuideQuestion ? t('chat.expand') : t('chat.collapse')}
+                >
+                    {hiddenGuideQuestion ? (
+                        <ChevronUp size={16} />
+                    ) : (
+                        <ChevronDown size={16} />
+                    )}
+                </button>
+            </div>
             {
-                words.map((question, index) => (
+                !hiddenGuideQuestion && words.map((question, index) => (
                     <div
                         key={index}
-                        className="w-fit bg-[#d4dffa] border-2 border-gray-50 shadow-md text-gray-600 rounded-md mb-1 px-4 py-1 text-sm cursor-pointer"
+                        className="w-fit max-w-[300px] md:max-w-[700px] break-words bg-[#d4dffa] border-2 border-gray-50 shadow-md text-gray-600 rounded-md mb-1 px-4 py-1 text-sm cursor-pointer"
                         onClick={() => {
-                            setShowGuideQuestion(false)
+                            // setShowGuideQuestion(false)
                             onClick(question)
+                            setHiddenGuideQuestion(true);
                         }}
                     >{question}</div>
                 ))

@@ -8,6 +8,7 @@ from bisheng.database.models.flow import FlowType
 from pydantic import validator
 from sqlalchemy.dialects import mysql
 from sqlmodel import Field, Column, DateTime, text, select, update, func
+from sqlalchemy import text as sql_text
 
 from bisheng.database.base import session_getter
 from bisheng.database.models.base import SQLModelSerializable
@@ -265,7 +266,13 @@ class MessageSessionDao(MessageSessionBase):
 
     @classmethod
     def update_flow_name_by_flow_id(cls, flow_id: str, flow_name: str):
-        statement = update(MessageSession).where(MessageSession.flow_id == flow_id).values(flow_name=flow_name)
         with session_getter() as session:
-            session.exec(statement)
+            session.execute(
+                sql_text("""
+                    UPDATE message_session 
+                    SET flow_name = :flow_name 
+                    WHERE flow_id = :flow_id
+                """),
+                {"flow_name": flow_name, "flow_id": flow_id}
+            )
             session.commit()

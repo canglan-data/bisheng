@@ -38,6 +38,7 @@ from bisheng.database.models.message import ChatMessage, ChatMessageDao, ChatMes
 from bisheng.database.models.session import MessageSessionDao, MessageSession
 from bisheng.database.models.user import UserDao
 from bisheng.database.models.user_group import UserGroupDao
+from bisheng.database.models.workflow_node_logs import WorkflowNodeLogDao
 from bisheng.graph.graph.base import Graph
 from bisheng.utils import generate_uuid
 from bisheng.utils.logger import logger
@@ -456,11 +457,13 @@ def get_session_list(*,
                      page: Optional[int] = 1,
                      limit: Optional[int] = 10,
                      flow_type: Optional[int] = None,
+                     flow_ids: Optional[List[str]] = Query(None),
                      login_user: UserPayload = Depends(get_login_user)):
     res = MessageSessionDao.filter_session(user_ids=[login_user.user_id],
                                            flow_type=flow_type,
                                            page=page,
                                            limit=limit,
+                                           flow_ids = flow_ids,
                                            include_delete=False)
     chat_ids = []
     flow_ids = []
@@ -482,6 +485,9 @@ def get_session_list(*,
     # latest_messages = ChatMessageDao.get_latest_message_by_chat_ids(chat_ids, category='user_input')
 #>>>>>>> feat/zyrs_0527
     latest_messages = {one.chat_id: one for one in latest_messages}
+
+    first_messages = ChatMessageDao.get_first_message_by_chat_ids(chat_ids, category='question')
+    first_messages = {one.chat_id: one for one in first_messages}
     return resp_200([
         ChatList(
             chat_id=one.chat_id,
@@ -495,6 +501,7 @@ def get_session_list(*,
             logo=logo_map.get(one.flow_id.replace("-",''), ''),
 #>>>>>>> feat/zyrs_0527
             latest_message=latest_messages.get(one.chat_id, None),
+            first_message=first_messages.get(one.chat_id, None),
             create_time=one.create_time,
             update_time=one.update_time) for one in res
     ])
@@ -728,3 +735,14 @@ async def stream_build(flow_id: str,
     except Exception as exc:
         logger.error(exc)
         raise HTTPException(status_code=500, detail=str(exc))
+
+@router.get('/chat/log/{chat_message_id}')
+async def stream_build(chat_message_id: int,
+                       login_user: UserPayload = Depends(get_login_user)):
+    message = ChatMessageDao.get_message_by_id(chat_message_id)
+    result = []
+    if not message:
+        raise NotFoundError.http_exception()
+    if  message.msg_id:
+        result = WorkflowNodeLogDao.get_by_msg_id(message.msg_id)
+    return resp_200(data=result)

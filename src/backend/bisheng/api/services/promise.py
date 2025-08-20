@@ -43,7 +43,7 @@ class PromiseService:
             res.append(BusinessUserPromise(
                 business_id=one.business_id,
                 promise_id=one.promise_id,
-                user_id=login_user.user_id,
+                user_id=str(login_user.user_id),
                 user_name=user_name,
                 write=write,
                 create_time=create_time

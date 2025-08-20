@@ -39,8 +39,9 @@ def _judge_workflow_status(redis_callback: RedisCallback, workflow: Workflow):
     _clear_workflow_obj(redis_callback.unique_id)
 
 
-def _execute_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str):
+def _execute_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str, exec_unique_id: str):
     redis_callback = RedisCallback(unique_id, workflow_id, chat_id, user_id)
+    redis_callback.workflow_exec_unique_id = exec_unique_id
     try:
         # update workflow status
         redis_callback.set_workflow_status(WorkflowStatus.RUNNING.value)
@@ -69,17 +70,21 @@ def _execute_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: s
 
 
 @bisheng_celery.task
-def execute_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str):
+def execute_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str, exec_unique_id: str = None):
     """ 执行workflow """
     with logger.contextualize(trace_id=unique_id):
-        _execute_workflow(unique_id, workflow_id, chat_id, user_id)
+        _execute_workflow(unique_id, workflow_id, chat_id, user_id, exec_unique_id)
 
 
-def _continue_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str):
+def _continue_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str, msg_id: str, exec_unique_id: str):
     """ 继续执行workflow """
-    redis_callback = RedisCallback(unique_id, workflow_id, chat_id, user_id)
+    redis_callback = RedisCallback(unique_id, workflow_id, chat_id, user_id, msg_id)
+    redis_callback.workflow_exec_unique_id = exec_unique_id
     try:
         workflow = _global_workflow.get(redis_callback.unique_id, None)
+        # 每次问答修改msg_id
+        if workflow.graph_engine and workflow.graph_engine.callback and hasattr(workflow.graph_engine.callback, 'msg_id'):
+            workflow.graph_engine.callback.msg_id = msg_id
         if not workflow:
             raise Exception('workflow object not found maybe data is expired')
         if workflow.status() not in [WorkflowStatus.INPUT.value, WorkflowStatus.INPUT_OVER.value]:
@@ -101,10 +106,10 @@ def _continue_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: 
 
 
 @bisheng_celery.task
-def continue_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str):
+def continue_workflow(unique_id: str, workflow_id: str, chat_id: str, user_id: str, msg_id: str=None, exec_unique_id: str=None):
     """ 继续执行workflow """
     with logger.contextualize(trace_id=unique_id):
-        _continue_workflow(unique_id, workflow_id, chat_id, user_id)
+        _continue_workflow(unique_id, workflow_id, chat_id, user_id, msg_id, exec_unique_id)
 
 
 @bisheng_celery.task

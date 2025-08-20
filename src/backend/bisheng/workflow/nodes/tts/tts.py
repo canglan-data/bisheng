@@ -59,5 +59,5 @@ class TTSNode(BaseNode):
                   output_key: str = None) -> str:
         text = self.graph_state.get_variable_by_str(input_variable)
         url = self._tts.synthesize_and_upload(text,cache=True)
-        url = replace_domain(url, settings.domain.web_domain)
+        url = replace_domain(url, settings.domain.web_domain,settings.domain.web_scheme)
         return url

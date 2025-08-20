@@ -84,6 +84,16 @@ class LLMNodeCallbackHandler(BaseCallbackHandler):
             return
 
         self.output_len += len(token)  # 判断是否已经流输出完成
+        from bisheng.worker import RedisCallback
+        if isinstance(self.callback_manager, RedisCallback):
+            unique_ids = self.callback_manager.get_chat_stop_unique_ids()
+            if self.unique_id in unique_ids:
+                return
+            chat_history = self.callback_manager.get_chat_history()
+            if chat_history.get('status') == 'stopped':
+                self.callback_manager.set_chat_stop_unique_id(self.unique_id)
+                return
+
         self.callback_manager.on_stream_msg(
             StreamMsgData(node_id=self.node_id,
                           msg=token,

@@ -224,6 +224,7 @@ class ChatManager:
         await self.accept_client(client_key, chat_client, websocket)
         logger.debug(
             f'act=accept_client client_key={client_key} client_id={client_id} chat_id={chat_id}')
+        exec_unique_id = generate_uuid()
         try:
             while True:
                 try:
@@ -235,6 +236,7 @@ class ChatManager:
                     payload = json.loads(json_payload_receive) if json_payload_receive else {}
                 except TypeError:
                     payload = json_payload_receive
+                payload['exec_unique_id'] = exec_unique_id
                 # client内部处理自己的业务逻辑
                 # TODO zgq：这里可以增加线程池防止阻塞
                 await chat_client.handle_message(payload)

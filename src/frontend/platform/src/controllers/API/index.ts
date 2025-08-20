@@ -161,6 +161,45 @@ export async function copyLibDatabase(knowledge_id) {
 }
 
 /**
+ * 获取解析策略列表
+ */
+export async function getParseStrategyList({ page, pageSize = 20, name = '' }) {
+  return await axios.get(`/api/v1/parse-strategy`, { params: {
+    keyword: name,
+    pageSize,
+    page,
+  }});
+}
+
+/**
+ * 删除某解析策略
+ */
+export async function deleteParseStrategy(id: string) {
+  return await axios.delete(`/api/v1/parse-strategy/${id}`);
+}
+
+/**
+ * 新建解析策略
+*/
+export async function createParseStrategy(params) {
+  return await axios.post(`/api/v1/parse-strategy/create`, params);
+}
+
+/**
+ * 修改解析策略
+*/
+export async function editParseStrategy(id, params) {
+  return await axios.put(`/api/v1/parse-strategy/${id}`, params);
+}
+
+/**
+ * 查看解析策略详情
+*/
+export async function getParseStrategy(id) {
+  return await axios.get(`/api/v1/parse-strategy/${id}`);
+}
+
+/**
  * 获取知识库下文件列表
  */
 export async function readFileByLibDatabase({ id, page, pageSize = 20, name = '', status, file_ids }) {
@@ -294,7 +333,8 @@ type KnowledgePutRequest = {
   file_id: number;
   chunk_index: number;
   text: string;
-  bbox: any
+  bbox: any;
+  chunk_chapter: string | undefined;
 }
 export async function updateChunkApi(data: KnowledgePutRequest) {
   return await axios.put(`/api/v1/knowledge/chunk`, data);

@@ -17,6 +17,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input, SearchInput } from "../../../components/bs-ui/input";
 import { useQuery } from "react-query";
+import { bsConfirm } from "@/components/bs-ui/alertDialog/useConfirm";
 
 /**
  * 
@@ -185,12 +186,6 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
     
     // 用户权限管理员
     const [adminsSelected, setAdminsSelected] = useState([])
-
-    // 审计员
-    const [auditorsSelected, setAuditorsSelected] = useState([])
-    
-    // 运营员
-    const [operatorsSelected, setOperatorsSelected] = useState([])
     
     const [lockOptions, setLockOptions] = useState([])
 
@@ -212,14 +207,41 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
             return toast({ title: t('prompt'), description: t('system.groupNameExists'), variant: 'error' });
         }
 
+        // 检查是否有新增管理员
+        const newAdmins = adminsSelected.filter(admin => 
+            !initialAdmins.some(initAdmin => initAdmin.value === admin.value)
+            && !lockOptions.includes(admin.value)
+        );
+
+        // 如果有新增管理员，显示确认弹窗
+        if (newAdmins.length > 0) {
+            const newAdminNames = newAdmins.map(admin => admin.label).join('、');
+            return bsConfirm({
+                title: t('prompt'),
+                desc: (
+                    <div>
+                        <span className="text-primary">{newAdminNames}</span> 无组织架构管理权限，添加组织管理权限，会记录"<strong>权限异常</strong>"操作，请确认是否添加。
+                    </div>
+                ),
+                onOk: async (next) => {
+                    await proceedSave();
+                    next();
+                }
+            });
+        }
+
+        // 没有新增管理员，直接保存
+        await proceedSave();
+    }
+
+    // 提取保存逻辑为单独的函数
+    const proceedSave = async () => {
         // 过滤系统管理员
         const users = selected.filter(item => !lockOptions.some(id => id === item.value))
         const admins = adminsSelected.filter(item => !lockOptions.some(id => id === item.value))
-        const auditors = auditorsSelected.filter(item => !lockOptions.some(id => id === item.value))
-        const operators = operatorsSelected.filter(item => !lockOptions.some(id => id === item.value))
 
-        const res: any = await (data.id ? updateUserGroup(data.id, form, admins, auditors, operators) : // 修改
-            saveUserGroup(form, admins, auditors, operators)) // 保存
+        const res: any = await (data.id ? updateUserGroup(data.id, form, admins) : // 修改
+            saveUserGroup(form, admins)) // 保存
 
         if (appConfig.isPro) {
             await captureAndAlertRequestErrorHoc(saveGroupApi({
@@ -227,13 +249,16 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
                 id: data.id || res.id, // 修改id:data.id， 创建id：res.id
                 adminUser: users.map(item => item.label).join(','),
                 adminUserId: users.map(item => item.value).join(','),
-                parent_id: form.department.id
+                parent_id: form.department?.id
+            }).then(() => {
+                toast({ title: t('prompt'), description: t('system.saveSuccess'), variant: 'success' });
             }))
         }
 
         onChange(true)
         refetchGroupTree()
     }
+    const [initialAdmins, setInitialAdmins] = useState([]);
 
     useEffect(() => { // 初始化数据
         setForm({
@@ -248,15 +273,23 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
             const users = data.group_admins?.map(d => ({ label: d.user_name, value: d.user_id })) || []
 
             const admins = data.group_admins?.map(d => ({ label: d.user_name, value: d.user_id })) || []
-            const auditors = data.group_audits?.map(d => ({ label: d.user_name, value: d.user_id })) || [];
-            const operators = data.group_operations?.map(d => ({ label: d.user_name, value: d.user_id })) || [];
-            
+            // const auditors = data.group_audits?.map(d => ({ label: d.user_name, value: d.user_id })) || [];
+            // const operators = data.group_operations?.map(d => ({ label: d.user_name, value: d.user_id })) || [];
+
             const defaultUsers = res.map(d => ({ label: d.user_name, value: d.user_id }))
-            setLockOptions(defaultUsers.map(el => el.value))
+            const groupAdmins = data.group_admins.reduce((pre, cur) => {
+                if (cur.is_from_position) {
+                    return [...pre, cur.user_id];
+                }
+                return pre;
+            }, [])
+
+            setLockOptions([...defaultUsers.map(el => el.value), ...groupAdmins])
 
             setAdminsSelected([...defaultUsers, ...admins]);
-            setAuditorsSelected([...defaultUsers, ...auditors]);
-            setOperatorsSelected([...defaultUsers, ...operators]);
+            setInitialAdmins([...defaultUsers, ...admins]); // 存储初始管理员
+            // setAuditorsSelected([...defaultUsers, ...auditors]);
+            // setOperatorsSelected([...defaultUsers, ...operators]);
 
             setSelected([...defaultUsers, ...users])
         }
@@ -269,21 +302,22 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
         queryFn: () => getUserGroupTreeApi()
     });
 
-
     return <div className="max-w-[630px] mx-auto pt-4 h-[calc(100vh-128px)] overflow-y-auto pb-10 scrollbar-hide">
         <div className="font-bold mt-4">
             <p className="text-xl mb-4">{t('system.groupName')}</p>
-            <Input placeholder={t('system.userGroupName')} required value={form.groupName} onChange={(e) => setForm({ ...form, groupName: e.target.value })}></Input>
+            <Input disabled placeholder={t('system.userGroupName')} required value={form.groupName} onChange={(e) => setForm({ ...form, groupName: e.target.value })}></Input>
         </div>
-        <div className="font-bold mt-4">
+        {/* 有group_name表示是修改页面 同时有上级用户组 才展示上级用户组 */}
+        {(data.group_name && form.department) && <div className="font-bold mt-4">
             <p className="text-xl mb-4">上级用户组</p>
             <SelectGroup
+                showFullPath
                 disabled={data.group_name}
                 value={form.department}
                 onChange={(department) => setForm({ ...form, department })}
                 options={options}
             />
-        </div>
+        </div>}
         <div className="font-bold mt-12">
             <p className="text-xl mb-4">{t('system.permissionsAdmins')}</p>
             <div className="">
@@ -295,7 +329,7 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
                 />
             </div>
         </div>
-        <div className="font-bold mt-12">
+        {/* <div className="font-bold mt-12">
             <p className="text-xl mb-4">{t('system.auditor')}</p>
             <div className="">
                 <UsersSelect
@@ -316,7 +350,7 @@ export default function EditUserGroup({ data, onBeforeChange, onChange }) {
                     onChange={setOperatorsSelected}
                 />
             </div>
-        </div>
+        </div> */}
         {appConfig.isPro && <>
             <div className="font-bold mt-12">
                 <p className="text-xl mb-4">{t('system.flowControl')}</p>

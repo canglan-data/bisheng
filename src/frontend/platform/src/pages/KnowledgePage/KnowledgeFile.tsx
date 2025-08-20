@@ -14,7 +14,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Textarea } from "../../components/bs-ui/input";
 import { userContext } from "../../contexts/userContext";
-import { copyLibDatabase, createFileLib, deleteFileLib, readFileLibDatabase } from "../../controllers/API";
+import { copyLibDatabase, createFileLib, deleteFileLib, getParseStrategyList, readFileLibDatabase } from "../../controllers/API";
 import { captureAndAlertRequestErrorHoc } from "../../controllers/request";
 // import PaginationComponent from "../../components/PaginationComponent";
 import { LoadIcon, LoadingIcon } from "@/components/bs-icons/loading";
@@ -25,6 +25,9 @@ import { useToast } from "@/components/bs-ui/toast/use-toast";
 import { getKnowledgeModelConfig, getModelListApi } from "@/controllers/API/finetune";
 import AutoPagination from "../../components/bs-ui/pagination/autoPagination";
 import { useTable } from "../../util/hook";
+import { SettingIcon } from "@/components/bs-icons";
+import { QuestionTooltip } from "@/components/bs-ui/tooltip";
+import FilterByParseStrategy from "@/components/bs-comp/filterTableDataComponent/FilterByParseStrategy";
 
 function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
     const { t } = useTranslation()
@@ -34,14 +37,17 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
     const descRef = useRef(null)
     const [modal, setModal] = useState(null)
     const [options, setOptions] = useState([])
+    const [parseStrategy, setParseStrategy] = useState([])
+    const [parseStrategyList, setParseStrategyList] = useState([])
     const [isSubmitting, setIsSubmitting] = useState(false) // 新增loading状态
 
     // Fetch model data
     useEffect(() => {
-        Promise.all([getKnowledgeModelConfig(), getModelListApi()]).then(([config, data]) => {
+        Promise.all([getKnowledgeModelConfig(), getModelListApi(), getParseStrategyList({})]).then(([config, data, parseStrategyList]) => {
             const { embedding_model_id } = config
             let embeddings = []
             let models = {}
+            let parseStrategyMap = {}
             let _model = []
             data.forEach(server => {
                 const serverItem = { value: server.id, label: server.name, children: [] }
@@ -57,9 +63,19 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
                 }, [])
                 if (serverItem.children.length) embeddings.push(serverItem)
             });
+            const newParseStrategyList = parseStrategyList.data.map((item) => {
+                return {
+                    ...item,
+                    value: item.id,
+                }
+            })
+            parseStrategyList.data.forEach(item => {
+                parseStrategyMap[item.id] = item.name
+            })
+            setParseStrategyList(newParseStrategyList);
             setOptions(embeddings)
             setModal(_model)
-            onLoadEnd(models)
+            onLoadEnd(models, parseStrategyMap)
         }).catch(error => {  // 添加错误处理
             toast({
                 variant: "error",
@@ -68,6 +84,15 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
         })
     }, [])
 
+    useEffect(() => {
+        const _parseStrategy = parseStrategyList.find(item => !!item.is_default)
+        setParseStrategy(_parseStrategy ? [{
+            value: _parseStrategy.id,
+            label: <div>{_parseStrategy.name}
+                {!!_parseStrategy.is_default && <label className="text-xm bg-[#E0E7F7] text-primary inline-block pl-1 pr-1 ml-2">默认</label>}
+            </div>
+        }] : []);
+    }, [open])
     const { toast } = useToast()
     const [error, setError] = useState({ name: false, desc: false })
 
@@ -92,10 +117,11 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
             name,
             description: desc,
             model: modal[1].value,
+            parse_strategy_id: parseStrategy?.[0]?.value,
             type: 0
         }).then(res => {
             // @ts-ignore
-            window.libname = [name, desc]
+            window.libname = [name, desc, parseStrategy?.[0]?.value]
             navigate(isImport
                 ? `/filelib/upload/${res.id}`  // 导入模式
                 : `/filelib/${res.id}`         // 普通模式
@@ -112,7 +138,6 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
             description: list
         });
     }
-
     return <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[625px]">
             <DialogHeader>
@@ -141,9 +166,20 @@ function CreateModal({ datalist, open, setOpen, onLoadEnd }) {
                             defaultValue={modal}
                             placholder="请在模型管理中配置 embedding 模型"
                             options={options}
-                            onChange={(a, val) => setModal(val)}
+                            onChange={(a, val) => {
+                                setModal(val)
+                            }}
                         />
                     }
+                </div>
+                <div className="">
+                    <label htmlFor="roleAndTasks" className="bisheng-label">知识库解析策略
+                        <QuestionTooltip content={'选择“自定义策略”，后续上传文件可以自定义解析策略；选择其他策略，后续上传文件将使用配置的策略进行解析。'} />
+                    </label>
+                    <FilterByParseStrategy value={parseStrategy} onChange={value => {
+                        setParseStrategy(value);
+                        console.log(value);
+                    }}/>
                 </div>
             </div>
             <DialogFooter>
@@ -178,7 +214,9 @@ export default function KnowledgeFile() {
     const [open, setOpen] = useState(false);
     const { user } = useContext(userContext);
     const [modelNameMap, setModelNameMap] = useState({})
+    const [parseStrategyNameMap, setParseStrategyNameMap] = useState(false)
     const { message } = useToast()
+    const navigate = useNavigate()
 
     const { page, pageSize, data: datalist, total, loading, setPage, search, reload } = useTable({ cancelLoadingWhenReload: true }, (param) =>
         readFileLibDatabase({ ...param, name: param.keyword })
@@ -258,6 +296,10 @@ export default function KnowledgeFile() {
             <div className="h-[calc(100vh-128px)] overflow-y-auto pb-20">
                 <div className="flex justify-end gap-4 items-center absolute right-0 top-[-44px]">
                     <SearchInput placeholder="知识库或文件名称" onChange={(e) => search(e.target.value)} />
+                    {user.role === 'admin' && <Button className="text-red-500" onClick={() => navigate('/filelib/parseSetting')} variant="secondary">
+                        <SettingIcon className="text-red-500" />
+                        {t('lib.libraryParseSetting')}
+                    </Button>}
                     <Button className="px-8 text-[#FFFFFF]" onClick={() => setOpen(true)}>{t('create')}</Button>
                 </div>
                 <Table>
@@ -266,6 +308,7 @@ export default function KnowledgeFile() {
                             <TableHead>{t('lib.knowledgeBaseId')}</TableHead>
                             <TableHead className="w-[200px]">{t('lib.libraryName')}</TableHead>
                             <TableHead>{t('lib.model')}</TableHead>
+                            <TableHead>{t('lib.defaultParseStrategy')}</TableHead>
                             <TableHead>{t('createTime')}</TableHead>
                             <TableHead>{t('updateTime')}</TableHead>
                             <TableHead>{t('lib.createUser')}</TableHead>
@@ -281,6 +324,7 @@ export default function KnowledgeFile() {
                                     <div className=" truncate-multiline">{el.name}</div>
                                 </TableCell>
                                 <TableCell>{modelNameMap[el.model] || '--'}</TableCell>
+                                <TableCell>{parseStrategyNameMap[el.parse_strategy_id] || '--'}</TableCell>
                                 <TableCell>{el.create_time.replace('T', ' ')}</TableCell>
                                 <TableCell>{el.update_time.replace('T', ' ')}</TableCell>
                                 <TableCell className="max-w-[300px] break-all">
@@ -288,7 +332,7 @@ export default function KnowledgeFile() {
                                 </TableCell>
                                 <TableCell className="text-right" onClick={() => {
                                     // @ts-ignore
-                                    window.libname = [el.name, el.description];
+                                    window.libname = [el.name, el.description, el.parse_strategy_id];
                                 }}>
                                     <Link to={`/filelib/${el.id}`} className="no-underline hover:underline text-primary" onClick={handleCachePage}>{t('lib.details')}</Link>
                                     {(el.copiable || user.role === 'admin') && (el.state === 1
@@ -315,7 +359,10 @@ export default function KnowledgeFile() {
                     />
                 </div>
             </div>
-            <CreateModal datalist={datalist} open={open} setOpen={setOpen} onLoadEnd={setModelNameMap}></CreateModal>
+            <CreateModal datalist={datalist} open={open} setOpen={setOpen} onLoadEnd={(modelMap, parseStrategyMap) => {
+                setModelNameMap(modelMap);
+                setParseStrategyNameMap(parseStrategyMap);
+            }}></CreateModal>
         </div>
     );
 }

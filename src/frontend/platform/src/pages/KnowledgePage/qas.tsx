@@ -435,7 +435,8 @@ export default function QasPage() {
                     </TableHeader>
                     <TableBody>
                         {datalist.map((el: any) => (
-                            <TableRow key={el.id}>
+                            // 防止问题不刷新
+                            <TableRow key={el.id + el.answers}>
                                 <TableCell className="font-medium">
                                     <Checkbox checked={selectedItems.includes(el.id)} onCheckedChange={() => handleCheckboxChange(el.id)} />
                                 </TableCell>

@@ -192,16 +192,19 @@ export function formatMilliseconds(ms: number, format: string): string {
 
 // Date转换为目标格式
 export function formatDate(date: Date, format: string): string {
-    const addZero = (num) => num < 10 ? `0${num}` : `${num}`
+  const addZero = (num) => num < 10 ? `0${num}` : `${num}`
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  const weekday = weekdays[date.getDay()];
     const replacements = {
         'yyyy': date.getFullYear(),
         'MM': addZero(date.getMonth() + 1),
         'dd': addZero(date.getDate()),
         'HH': addZero(date.getHours()),
         'mm': addZero(date.getMinutes()),
-        'ss': addZero(date.getSeconds())
+        'ss': addZero(date.getSeconds()),
+        'E': `周${weekday}`,
     }
-    return format.replace(/yyyy|MM|dd|HH|mm|ss/g, (match) => replacements[match])
+    return format.replace(/yyyy|MM|dd|HH|mm|ss|E/g, (match) => replacements[match])
 }
 
 // param time: yyyy-mm-ddTxxxx
@@ -554,3 +557,17 @@ export function truncateString(str, maxLength) {
     // 截取字符串并添加省略号
     return str.substring(0, maxLength) + '...';
 }
+
+export function removeLineBreaks(str) {
+  // 使用正则表达式替换所有换行符
+  return str.replace(/[\r\n]+/g, '');
+}
+
+export const processMarkdownImages = (text) => {
+  const baseUrlForRegex = String(__APP_ENV__.BASE_URL).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
+  return text.replaceAll(
+    new RegExp(`(!\\[[^\\]]*\\]\\()(?!https?:\\/\\/)(?!${baseUrlForRegex})(\\/[^)]*\\))`, 'g'),
+    `$1${__APP_ENV__.BASE_URL}$2`
+  );
+};

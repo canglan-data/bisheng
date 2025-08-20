@@ -8,7 +8,7 @@ import {
 } from "@/components/bs-ui/select";
 import { delChunkInPreviewApi, previewFileSplitApi, updatePreviewChunkApi } from "@/controllers/API";
 import { captureAndAlertRequestErrorHoc } from "@/controllers/request";
-import { cn } from "@/util/utils";
+import { cn, processMarkdownImages } from "@/util/utils";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import useKnowledgeStore from "../useKnowledgeStore";
@@ -34,11 +34,15 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
     const [selectId, setSelectId] = useState(''); // 当前选择文件id
     const [syncChunksSelectId, setSelectIdSyncChunks] = useState(''); // 当前选择文件id(与chunk更新保持同步)
     useEffect(() => {
-        const file = rules.fileList[0]
-        setSelectId(file.id)
-    }, [])
+        console.log('PreviewResult rules', rules);
+        
+        const file = rules?.fileList[0]
+        setSelectId(file?.id)
+    }, [rules])
+    console.log('rules', rules);
+    
     const currentFile = useMemo(() => {  // 当前选择文件
-        const _currentFile = rules.fileList.find(file => file.id === selectId)
+        const _currentFile = rules?.fileList?.find(file => file.id === selectId)
         // 触发keydown事件,切换tab
         if (_currentFile) {
             const dom = document.getElementById(_currentFile.fileType === 'table' ? 'knowledge_table_tab' : 'knowledge_file_tab')
@@ -67,7 +71,8 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
         setChunks([])
         // 合并配置
         const { fileList, pageHeaderFooter, chunkOverlap, chunkSize, enableFormula, forceOcr, knowledgeId
-            , retainImages, separator, separatorRule } = rules
+            , retainImages, separator, separatorRule, chunkByChapter, chunkLevel, chunkAddChapter, headerChunkSize } = rules;
+
         const currentFile = fileList.find(file => file.id === selectId)
         captureAndAlertRequestErrorHoc(previewFileSplitApi({
             // 缓存(修改规则后需要清空缓存, 切换文件使用缓存)
@@ -87,7 +92,11 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
             retain_images: retainImages,
             enable_formula: enableFormula,
             force_ocr: forceOcr,
-            fileter_page_header_footer: pageHeaderFooter
+            fileter_page_header_footer: pageHeaderFooter,
+            enable_header_split: chunkByChapter,
+            header_split_max_level: chunkLevel,
+            enable_header_split_chunk_chapter: chunkAddChapter,
+            header_split_chunk_size: headerChunkSize
 
         }), err => {
             // 解析失败时,使用支持的原文件预览
@@ -96,13 +105,14 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
         }).then(res => {
             if (!res) return setLoading(false)
             if (res === 'canceled') return
-            console.log("previewFileSplitApi:", res)
             res && setChunks(res.chunks.map(chunk => ({
                 bbox: chunk.metadata.bbox,
                 activeLabels: {},
                 chunkIndex: chunk.metadata.chunk_index,
                 page: chunk.metadata.page,
-                text: chunk.text
+                extra: chunk.metadata.extra ? JSON.parse(chunk.metadata.extra) : {},
+                // 替换掉markdown中图片的BASE_URL
+                text: processMarkdownImages(chunk.text)
             })))
             setSelectIdSyncChunks(selectId)
 
@@ -127,10 +137,10 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
 
     // 更新分段
     const selectedBbox = useKnowledgeStore((state) => state.selectedBbox);
-    const handleChunkChange = (chunkIndex, text) => {
+    const handleChunkChange = (chunkIndex, text, title = '') => {
         const bbox = { chunk_bboxes: selectedBbox }
         updatePreviewChunkApi({
-            knowledge_id: Number(id), file_path: currentFile.filePath, chunk_index: chunkIndex, text, bbox: JSON.stringify(bbox)
+            knowledge_id: Number(id), file_path: currentFile.filePath, chunk_index: chunkIndex, text, bbox: JSON.stringify(bbox), chunk_chapter: title
         })
         setChunks(chunks => chunks.map(chunk => chunk.chunkIndex === chunkIndex ? { ...chunk, text } : chunk))
     }
@@ -151,7 +161,7 @@ export default function PreviewResult({ previewCount, rules, step, applyEachCell
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        {rules.fileList.map((file, index) => (
+                        {rules?.fileList?.map((file, index) => (
                             <SelectItem key={file.id} value={file.id}>
                                 <div className="flex items-center gap-2">
                                     <FileIcon type={file.suffix} className="size-4 min-w-4" />

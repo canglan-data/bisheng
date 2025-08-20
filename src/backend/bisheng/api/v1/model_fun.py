@@ -13,6 +13,7 @@ from bisheng.cache.redis import redis_client
 from fastapi import (APIRouter, BackgroundTasks, Body, Depends, File, HTTPException, Query, Request,
                      UploadFile)
 from bisheng.cache.utils import save_uploaded_file
+from loguru import logger
 
 router = APIRouter(prefix='/model_fun', dependencies=[Depends(get_login_user)])
 
@@ -67,13 +68,20 @@ async def stt(*,
 @router.post('/upload_and_stt', response_model=UnifiedResponseModel)
 async def upload_file(*, file: UploadFile = File(...)):
     try:
+        contents = await file.read()
+        # 重置文件指针，以便后续保存文件
+        await file.seek(0)
+        md5 = hashlib.md5(contents)
+        md5.update(contents)
+        url_md5 = md5.hexdigest()
         file_name = file.filename
+        logger.info(f"上传文件: {file_name}")
         # 缓存本地
         url = save_uploaded_file(file.file, 'bisheng', file_name)
         if not isinstance(url, str):
             url = str(url)
         model_id = LLMService.get_default_stt_model_id()
-        url_md5 = md5_hash(url)
+
         value_key = f"stt_{url_md5}_{model_id}_text"
         lock_key = f"sttlock_{url_md5}_{model_id}"
         # 使用海象运算符在 if 语句中赋值并判断

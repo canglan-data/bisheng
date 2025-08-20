@@ -1,14 +1,17 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/bs-ui/tabs";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import AppUseLog from "./useAppLog";
 import { Button } from "@/components/bs-ui/button";
-import { TableIcon } from "lucide-react";
+import { PieChart, Shapes, TableIcon } from "lucide-react";
 import StatisticsReport from "./StatisticsReport";
+import StatFormReport from "./StatFormReport";
+import { userContext } from "@/contexts/userContext";
 
 export default function Index() {
     const { t } = useTranslation();
     const [showPage, setShowPage] = useState(null);
+     const { user } = useContext(userContext)
 
     const handleButtonClick = (page) => {
         setShowPage(page);
@@ -17,6 +20,10 @@ export default function Index() {
     const [reportFilter, setReportFilter] = useState(null)
     if (showPage === 'statisticsReport') {
         return <StatisticsReport onBack={() => setShowPage(null)} onJump={setReportFilter} />;
+    }
+
+    if (showPage === 'statFormReport') {
+        return <StatFormReport onBack={() => setShowPage(null)} onJump={setReportFilter} />;
     }
 
     return (
@@ -30,6 +37,14 @@ export default function Index() {
                 <TabsContent value="app">
                     {/* Buttons for page navigation */}
                     <div className="absolute top-4 right-4 space-x-4">
+                        {user.role === 'admin' &&<Button
+                            variant="outline"
+                            className="btn btn-primary"
+                            onClick={() => handleButtonClick('statFormReport')}
+                        >
+                            <PieChart className="size-4 mr-0.5"></PieChart>
+                            活力组织统计
+                        </Button>}
                         <Button
                             variant="outline"
                             className="btn btn-primary"

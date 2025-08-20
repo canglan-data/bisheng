@@ -39,6 +39,7 @@ import ResoucePage from "./pages/resoucePage";
 import { AppNumType } from "./types/app";
 import OperationPage from "./pages/OperationPage";
 import OperationAppChatDetail from "./pages/OperationPage/useAppLog/appChatDetail";
+import ParseSettingModelConfig from "./pages/KnowledgePage/ParseSettingModelConfig";
 
 // react 与 react router dom版本不匹配
 // const FileLibPage = lazy(() => import(/* webpackChunkName: "FileLibPage" */ "./pages/FileLibPage"));
@@ -70,6 +71,7 @@ const privateRouter = [
     children: [
       { path: "", element: <SkillChatPage />, },
       { path: "filelib", element: <KnowledgePage />, permission: 'knowledge', },
+      { path: "filelib/parseSetting", element: <ParseSettingModelConfig />, permission: 'knowledge', },
       { path: "filelib/:id", element: <FilesPage />, permission: 'knowledge', },
       { path: "filelib/upload/:id", element: <FilesUpload />, permission: 'knowledge', },
       { path: "filelib/qalib/:id", element: <QasPage />, permission: 'knowledge', },

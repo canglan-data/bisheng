@@ -1,11 +1,14 @@
 from typing import Any, Dict
 
+from bisheng_langchain.gpts.tools.sql_agent.tool import SqlAgentTool
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 from bisheng_langchain.gpts.assistant import ConfigurableAssistant
 from bisheng_langchain.gpts.load_tools import load_tools
 from langgraph.prebuilt import create_react_agent
 from loguru import logger
+from langchain_core.prompts import ChatPromptTemplate
+
 
 from bisheng.api.services.assistant_agent import AssistantAgent
 from bisheng.api.services.llm import LLMService
@@ -52,8 +55,10 @@ class AgentNode(BaseNode):
         self._chat_history_num = self.node_params['chat_history_flag']['value']
 
         self._enable_web_search = self.node_params.get('enable_web_search', False)
+        self._show_reason = self.node_params.get('show_reason', False)
 
         self._llm = LLMService.get_bisheng_llm(model_id=self.node_params['model_id'], enable_web_search=self._enable_web_search,
+                                               show_reason=self._show_reason,
                                                temperature=self.node_params.get(
                                                    'temperature', 0.3),
                                                cache=False)
@@ -74,10 +79,28 @@ class AgentNode(BaseNode):
 
         # 是否支持nl2sql
         self._sql_agent = self.node_params.get('sql_agent')
+        self.db_type = self._sql_agent.get('db_type', None)  # 默认仍支持 MySQL
+        self.db_open = self._sql_agent.get('open', False)
+        logger.info(f'agent node db_type: {self.db_type}')
         self._sql_address = ''
-        if self._sql_agent and self._sql_agent['open']:
-            self._sql_address = f'mysql+pymysql://{self._sql_agent["db_username"]}:{self._sql_agent["db_password"]}@{self._sql_agent["db_address"]}/{self._sql_agent["db_name"]}?charset=utf8mb4'
-
+        if self.db_open:
+            if self.db_type == 'DB2':
+                # DB2 连接格式（依赖 ibm_db 驱动）
+                # 格式：db2+ibm_db://用户名:密码@主机:端口/数据库名
+                self._sql_address = (
+                    f'db2+ibm_db://{self._sql_agent["db_username"]}:'
+                    f'{self._sql_agent["db_password"]}@'
+                    f'{self._sql_agent["db_address"]}/'
+                    f'{self._sql_agent["db_name"]}'
+                )
+            elif self.db_type == 'MYSQL':
+                # 保留原 MySQL 连接格式
+                self._sql_address = (
+                    f'mysql+pymysql://{self._sql_agent["db_username"]}:'
+                    f'{self._sql_agent["db_password"]}@'
+                    f'{self._sql_agent["db_address"]}/'
+                    f'{self._sql_agent["db_name"]}?charset=utf8mb4'
+                )
         # agent
         self._agent_executor_type = 'React'
         self._agent = None
@@ -124,13 +147,19 @@ class AgentNode(BaseNode):
     def init_sql_agent_tool(self):
         if not self._sql_address:
             return []
+        if not self.db_open:
+            return []
         tool_params = {
             'sql_agent': {
                 'llm': self._llm,
                 'sql_address': self._sql_address
             }
         }
-        return load_tools(tool_params=tool_params, llm=self._llm)
+        tools = load_tools(tool_params=tool_params, llm=self._llm)
+        # if self.db_type == 'db2':
+        #     for i in range(len(tools)):
+        #         tools[i].api_wrapper.query_check = self.init_db2_query_check(tools[i].api_wrapper)
+        return tools
 
     def _init_knowledge_tools(self, knowledge_retriever: dict):
         if not self._knowledge_ids:
@@ -377,3 +406,28 @@ class AgentNode(BaseNode):
             result = self._agent.invoke({'messages': chat_history}, config=config)
             result = result['messages']
             return result[-1].content, llm_callback.reasoning_content
+
+    def init_db2_query_check(self,tool):
+        query_check_system_db2 = """
+        You are a DB2 SQL expert with a strong attention to detail.
+        Double check the DB2 query for common mistakes, including:
+          - Using `NOT IN` when the subquery might yield NULL values (should use `NOT EXISTS` or filter out NULLs)
+          - Using `UNION` when `UNION ALL` should be used (DB2’s `UNION` removes duplicates and incurs extra cost) :contentReference[oaicite:1]{index=1}
+          - Using `BETWEEN` for exclusive ranges (DB2’s `BETWEEN` is inclusive; use `>`/`<` for exclusivity)
+          - Data type mismatches in predicates (e.g., comparing CHAR to VARCHAR, numeric to string)
+          - Proper quoting of identifiers (DB2 ordinary identifiers are upper‑cased; use double quotes for case‑sensitive or reserved words) :contentReference[oaicite:2]{index=2}
+          - Correct number and types of arguments for functions (e.g., `CAST`, `VARCHAR_FORMAT`)
+          - Casting to the correct data type before comparisons or joins (`CAST(... AS DECIMAL(10,2))` etc.)
+          - Using the proper columns in `JOIN` conditions (prevent unintended cross joins or lost rows)
+        If any issues are detected, rewrite the query in valid DB2 syntax with fixes.
+        If no issues are found, reproduce the original query.
+        After the check, you will call the appropriate tool to execute the query on DB2.
+        """
+
+        query_check_prompt = ChatPromptTemplate.from_messages(
+            [("system", query_check_system_db2), ("placeholder", "{messages}")]
+        )
+        query_check = query_check_prompt | tool.query_check_llm.bind_tools(
+            [tool.db_query_tool]
+        )
+        return query_check

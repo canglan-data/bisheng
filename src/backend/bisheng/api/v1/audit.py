@@ -23,6 +23,7 @@ router = APIRouter(prefix='/audit', tags=['Audit'])
 @router.get('')
 def get_audit_logs(*,
                    group_ids: Optional[List[str]] = Query(default=[], description='分组id列表'),
+                   monitor_result: Optional[List[str]] = Query(default=[], description='操作监测'),
                    operator_ids: Optional[List[int]] = Query(default=[], description='操作人id列表'),
                    start_time: Optional[datetime] = Query(default=None, description='开始时间'),
                    end_time: Optional[datetime] = Query(default=None, description='结束时间'),
@@ -30,11 +31,19 @@ def get_audit_logs(*,
                    event_type: Optional[str] = Query(default=None, description='操作行为'),
                    page: Optional[int] = Query(default=0, description='页码'),
                    limit: Optional[int] = Query(default=0, description='每页条数'),
+                   export: Optional[int] = Query(default=0, description='是否导出'),
                    login_user: UserPayload = Depends(get_login_user)):
     group_ids = [one for one in group_ids if one]
     operator_ids = [one for one in operator_ids if one]
-    return AuditLogService.get_audit_log(login_user, group_ids, operator_ids,
-                                         start_time, end_time, system_id, event_type, page, limit)
+
+    if export:
+        page = 0
+        limit = 0
+
+    result = AuditLogService.get_audit_log(login_user, group_ids, operator_ids,
+                                         start_time, end_time, system_id, event_type, page, limit, monitor_result=monitor_result, export=export)
+
+    return result
 
 
 @router.get('/operators')
@@ -146,6 +155,15 @@ async def review_session_list(request: Request, login_user: UserPayload = Depend
                                                               description='like：点赞；dislike：点踩；copied：复制'),
                               review_status: Optional[int] = Query(default=None, description='审查状态')):
     """ 按照筛选条件重新分析下所有会话 """
+    if not login_user.is_admin():
+        all_group = UserGroupDao.get_user_audit_or_admin_group(login_user.user_id)
+        all_group = [str(one.group_id) for one in all_group]
+    else:
+        all_group = [str(one.id) for one in GroupDao.get_all_group()]
+    if len(group_ids) == 0:
+        group_ids = all_group
+    else:
+        group_ids = list(set(group_ids) & set(all_group))
     review_status = [ReviewStatus(review_status)] if review_status else []
     data, total = AuditLogService.review_session_list(login_user, flow_ids, user_ids, group_ids, start_date, end_date,
                                                       feedback, review_status)
@@ -166,6 +184,15 @@ def export_session_messages(login_user: UserPayload = Depends(get_login_user),
                                                             description='like：点赞；dislike：点踩；copied：复制'),
                             sensitive_status: Optional[int] = Query(default=None, description='敏感词审查状态')):
     """ 导出会话详情列表的csv文件 """
+    if not login_user.is_admin():
+        all_group = UserGroupDao.get_user_audit_or_admin_group(login_user.user_id)
+        all_group = [str(one.group_id) for one in all_group]
+    else:
+        all_group = [str(one.id) for one in GroupDao.get_all_group()]
+    if len(group_ids) == 0:
+        group_ids = all_group
+    else:
+        group_ids = list(set(group_ids) & set(all_group))
     url = AuditLogService.export_session_messages(login_user, flow_ids, user_ids, group_ids, start_date, end_date,
                                                   feedback, sensitive_status)
     return resp_200(data={
@@ -241,6 +268,15 @@ def get_session_messages(login_user: UserPayload = Depends(get_login_user),
                                                          description='like：点赞；dislike：点踩；copied：复制'),
                          sensitive_status: Optional[int] = Query(default=None, description='敏感词审查状态')):
     """ 导出会话详情列表的数据 """
+    if not login_user.is_admin():
+        all_group = UserGroupDao.get_user_audit_or_admin_group(login_user.user_id)
+        all_group = [str(one.group_id) for one in all_group]
+    else:
+        all_group = [str(one.id) for one in GroupDao.get_all_group()]
+    if len(group_ids) == 0:
+        group_ids = all_group
+    else:
+        group_ids = list(set(group_ids) & set(all_group))
     result = AuditLogService.get_session_messages(user=login_user, flow_ids=flow_ids, user_ids=user_ids,
                                                   group_ids=group_ids, start_date=start_date, end_date=end_date,
                                                feedback=feedback, sensitive_status=sensitive_status)

@@ -12,9 +12,10 @@ from bisheng.database.models.base import SQLModelSerializable
 from bisheng.database.models.session import ReviewStatus
 from bisheng.database.models.user_group import UserGroup
 from bisheng.database.models.session import MessageSession
-from bisheng.database.models.assistant import AssistantDao
-from bisheng.database.models.flow import FlowDao
+from bisheng.database.models.assistant import AssistantDao, Assistant
+from bisheng.database.models.flow import FlowDao, Flow
 from bisheng.database.models.flow_version import FlowVersionDao
+from bisheng.utils.aliyun_text_moderation import AliyunTextModeration
 from bisheng.utils.sysloger import syslog_client
 
 
@@ -41,6 +42,7 @@ class MessageBase(SQLModelSerializable):
     category: str = Field(index=False, max_length=32, description='消息类别， question等')
     flow_id: str = Field(index=True, description='对应的技能id')
     chat_id: Optional[str] = Field(default=None, index=True, description='chat_id, 前端生成')
+    msg_id: Optional[str] = Field(default=None, description='每次对话生成一个msg_id')
     user_id: Optional[int] = Field(default=None, index=True, description='用户id')
     liked: Optional[int] = Field(index=False, default=0, description='用户是否喜欢 0未评价/1 喜欢/2 不喜欢')
     solved: Optional[int] = Field(index=False, default=0, description='用户是否喜欢 0未评价/1 解决/2 未解决')
@@ -236,6 +238,29 @@ class ChatMessageDao(MessageBase):
             return session.exec(statement).all()
 
     @classmethod
+    def get_first_message_by_chat_ids(cls,
+                                       chat_ids: list[str],
+                                       category: str = None,
+                                       exclude_category: str = None):
+        """
+        获取每个会话最早的一次消息内容
+        """
+        statement = select(ChatMessage.chat_id,
+                           func.min(ChatMessage.id)).where(ChatMessage.chat_id.in_(chat_ids))
+        if category:
+            statement = statement.where(ChatMessage.category == category)
+        if exclude_category:
+            statement = statement.where(ChatMessage.category != exclude_category)
+        statement = statement.group_by(ChatMessage.chat_id)
+        with session_getter() as session:
+            # 获取最新的id列表
+            res = session.exec(statement).all()
+            ids = [one[1] for one in res]
+            # 获取消息的具体内容
+            statement = select(ChatMessage).where(ChatMessage.id.in_(ids))
+            return session.exec(statement).all()
+
+    @classmethod
     def get_messages_by_chat_id(cls,
                                 chat_id: str,
                                 category_list: list = None,
@@ -278,6 +303,26 @@ class ChatMessageDao(MessageBase):
             st = select(ChatMessage.chat_id).where(ChatMessage.flow_id.in_(flow_id),
                                                    ChatMessage.is_delete == 0).group_by(
                 ChatMessage.chat_id)
+            return session.exec(st).all()
+
+    @classmethod
+    def get_msg_by_filter(cls, chat_ids: List[str] = None,
+                          flow_ids: List[str] = None,
+                          user_ids:list[int] = None,
+                          start_time: datetime = None,
+                          end_time:datetime = None) -> List[ChatMessage]:
+        with session_getter() as session:
+            st = select(ChatMessage).where(ChatMessage.is_delete == 0)
+            if chat_ids:
+                st = st.where(ChatMessage.chat_id.in_(chat_ids))
+            if flow_ids:
+                st = st.where(ChatMessage.flow_id.in_(flow_ids))
+            if user_ids:
+                st = st.where(ChatMessage.user_id.in_(user_ids))
+            if start_time:
+                st = st.where(ChatMessage.create_time >= start_time)
+            if end_time:
+                st = st.where(ChatMessage.create_time < end_time)
             return session.exec(st).all()
 
     @classmethod
@@ -334,6 +379,11 @@ class ChatMessageDao(MessageBase):
             session.commit()
             session.refresh(message)
             syslog_client.log_chat_message(message.to_dict())
+        if message.category == "question":
+            try:
+                AliyunTextModeration.moderate_text(str(message.message))
+            except Exception as e:
+                logger.error(e)
         return message
 
     @classmethod
@@ -342,6 +392,12 @@ class ChatMessageDao(MessageBase):
         statement = update(MessageSession).where(MessageSession.chat_id.in_(chat_ids)).values(
             update_time=datetime.now(),
         )
+        for message in messages:
+            if message.category == "question":
+                try:
+                    AliyunTextModeration.moderate_text(str(message.message))
+                except Exception as e:
+                    logger.error(e)
         with session_getter() as session:
             session.execute(statement)
             session.add_all(messages)
@@ -570,12 +626,21 @@ class ChatMessageDao(MessageBase):
         """ 获取会话的一些信息，根据技能来聚合 """
         count_stat = select(func.count(func.distinct(func.concat(ChatMessage.flow_id,UserGroup.group_id)))).select_from(ChatMessage
             ).join(UserGroup, ChatMessage.user_id == UserGroup.user_id)
+        stmt_assistant = select(Assistant.id)
+        stmt_flow = select(Flow.id)
+        with session_getter() as session:
+            assistant_id_list = session.scalars(stmt_assistant).all()
+            flow_id_list = session.scalars(stmt_flow).all()
+        all_ids = list(set(assistant_id_list) | set(flow_id_list))
+
         total_session_stat = select(
-            func.count(func.distinct(func.concat(ChatMessage.chat_id, "-", ChatMessage.flow_id)))
+            func.count(func.distinct(func.concat(ChatMessage.chat_id, ChatMessage.flow_id, UserGroup.group_id)))
         ).select_from(
             ChatMessage
         ).join(
             UserGroup, ChatMessage.user_id == UserGroup.user_id
+        ).where(
+            ChatMessage.flow_id.in_(all_ids)
         )
         # 构建主查询，明确指定连接的起始表和连接条件
         sql = select(
@@ -648,6 +713,8 @@ class ChatMessageDao(MessageBase):
         print("get_chat_info_group Compiled SQL:", sql.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
         print("get_chat_info_group Compiled SQL Count:",
               count_stat.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
+        print("get_chat_info_group Compiled SQL Count:",
+              total_session_stat.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
         with session_getter() as session:
             res_list = session.exec(sql).all()
             total = session.scalar(count_stat)

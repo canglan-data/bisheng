@@ -24,6 +24,7 @@ interface IProps {
     step: number
     resultFiles: FileItem[]
     isSubmitting: boolean
+    defaultParseStrategy: null | Object
     onNext: (step: number, config?: any) => void
     onPrev: () => void
 }
@@ -38,7 +39,7 @@ const initialStrategies = [
     { id: '2', regex: '\\n', position: 'after', rule: '单换行后切分，用于分隔普通换行' }
 ];
 
-export default function FileUploadStep2({ step, resultFiles, isSubmitting, onNext, onPrev }: IProps) {
+export default function FileUploadStep2({ step, resultFiles, isSubmitting, defaultParseStrategy, onNext, onPrev }: IProps) {
     const { id: kid } = useParams()
     const { t } = useTranslation('knowledge')
     const setSelectedChunkIndex = useKnowledgeStore((state) => state.setSelectedChunkIndex);
@@ -65,6 +66,50 @@ export default function FileUploadStep2({ step, resultFiles, isSubmitting, onNex
         strategies,
         setStrategies
     } = useFileProcessingRules(initialStrategies, resultFiles, kid);
+
+    useEffect(() => {
+        if (defaultParseStrategy) {
+            const { cellGeneralConfig, ..._rules } = defaultParseStrategy;
+            // PreviewResult
+            setCellGeneralConfig(cellGeneralConfig);
+            const rules = {
+                separator: _rules.separator,
+                separatorRule: _rules.separator_rule,
+                chunkSize: _rules.chunk_size,
+                chunkOverlap: _rules.chunk_overlap,
+                retainImages: _rules.retain_images,
+                enableFormula: _rules.enable_formula,
+                forceOcr: _rules.force_ocr,
+                pageHeaderFooter: _rules.fileter_page_header_footer,
+                // 是否按章节切分
+                chunkByChapter: _rules.enable_header_split,
+                // 切分层级
+                chunkLevel: _rules.header_split_max_level,
+                // 切片追加章节标题
+                chunkAddChapter: _rules.enable_header_split_chunk_chapter,
+                // 层级切分下的size
+                headerChunkSize: _rules.header_split_chunk_size,
+                knowledgeId: kid,
+                fileList: resultFiles.map(file => ({
+                    id: file.id,
+                    filePath: file.file_path,
+                    fileName: file.fileName,
+                    suffix: file.suffix,
+                    fileType: file.fileType,
+                    excelRule: file.fileType === 'table' ? {
+                        ...cellGeneralConfig
+                    } : {}
+                })),
+            };
+            setRules(rules);
+            setApplyRule({
+                applyEachCell,
+                cellGeneralConfig,
+                rules
+            })
+            
+        }
+    }, [defaultParseStrategy, resultFiles])
 
     // 起始行不能大于结束行校验
     const vildateCell = () => {
@@ -95,7 +140,7 @@ export default function FileUploadStep2({ step, resultFiles, isSubmitting, onNex
         }
         //  合并配置
         const { fileList, pageHeaderFooter, chunkOverlap, chunkSize, enableFormula, forceOcr
-            , retainImages, separator, separatorRule } = rules;
+            , retainImages, separator, separatorRule, chunkByChapter, chunkLevel, chunkAddChapter, headerChunkSize } = rules;
 
         const params = {
             knowledge_id: kid,
@@ -110,7 +155,11 @@ export default function FileUploadStep2({ step, resultFiles, isSubmitting, onNex
             retain_images: retainImages,
             enable_formula: enableFormula,
             force_ocr: forceOcr,
-            fileter_page_header_footer: pageHeaderFooter
+            fileter_page_header_footer: pageHeaderFooter,
+            enable_header_split: chunkByChapter,
+            header_split_max_level: chunkLevel,
+            enable_header_split_chunk_chapter: chunkAddChapter,
+            header_split_chunk_size: headerChunkSize
         }
 
         onNext(nextStep, params);
@@ -222,7 +271,26 @@ export default function FileUploadStep2({ step, resultFiles, isSubmitting, onNex
 
 
 const useFileProcessingRules = (initialStrategies, resultFiles, kid) => {
-    const [rules, setRules] = useState(null);
+    const [rules, setRules] = useState({
+        separator: ['\\n\\n', '\\n'],
+        separatorRule: ['after', 'after'],
+        chunkSize: "1000",
+        chunkOverlap: "0",
+        retainImages: true,
+        enableFormula: true,
+        forceOcr: true,
+        pageHeaderFooter: true,
+        // 是否按章节切分
+        chunkByChapter: false,
+        // 切分层级
+        chunkLevel: '3',
+        // 切片追加章节标题
+        chunkAddChapter: true,
+        // 层级切分下的size
+        headerChunkSize: "1000",
+        knowledgeId: kid,
+        fileList: [],
+    });
     const [applyEachCell, setApplyEachCell] = useState(false); // 为每个表格单独设置
     const [cellGeneralConfig, setCellGeneralConfig] = useState({
         slice_length: 10,
@@ -267,9 +335,33 @@ const useFileProcessingRules = (initialStrategies, resultFiles, kid) => {
             retainImages: true,
             enableFormula: true,
             forceOcr: true,
-            pageHeaderFooter: true
+            pageHeaderFooter: true,
+            // 是否按章节切分
+            chunkByChapter: false,
+            // 切分层级
+            chunkLevel: '3',
+            // 切片追加章节标题
+            chunkAddChapter: true,
+            // 层级切分下的size
+            headerChunkSize: "1000",
         });
-    }, [resultFiles, kid, cellGeneralConfig]);
+    }, [resultFiles, kid]);
+
+    useEffect(() => {
+        setRules({
+            ...rules,
+            fileList: resultFiles.map(file => ({
+                id: file.id,
+                filePath: file.file_path,
+                fileName: file.fileName,
+                suffix: file.suffix,
+                fileType: file.fileType,
+                excelRule: file.fileType === 'table' ? {
+                    ...cellGeneralConfig
+                } : {}
+            })),
+        })
+    }, [cellGeneralConfig])
 
     return {
         rules,

@@ -162,11 +162,14 @@ const MultiSelect = ({
 
     // search
     const handleSearch = useDebounce((e) => {
-        const newValues = options.filter((item) => {
-            return item.label.toLowerCase().indexOf(e.target.value.toLowerCase()) !== -1
-        })
-        setOptionFilter(newValues)
-        onSearch?.(inputRef.current?.value || '')
+        if (onSearch) {
+            onSearch?.(inputRef.current?.value || '')
+        } else {
+            const newValues = options.filter((item) => {
+                return item.label.toLowerCase().indexOf(e.target.value.toLowerCase()) !== -1
+            })
+            setOptionFilter(newValues)
+        }
     }, 500, false)
 
     // scroll laod
