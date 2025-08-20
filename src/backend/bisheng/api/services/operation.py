@@ -18,7 +18,7 @@ class OperationService:
             'minute': minute
         }
         beat_task = RedBeatSchedulerEntry(name='vital_org_stats',
-                                          task='bisheng.worker.audit.vital_org_stats.vital_org_stats_task',
+                                          task='bisheng.worker.send_mail.vital_org_stats.vital_org_stats_task',
                                           schedule=crontab(**schedule),
                                           app=bisheng_celery)
         beat_task.delete()
