@@ -20,7 +20,7 @@ export default function FilesPage() {
         <Tabs value={value} onValueChange={(v) => { setValue(v); setFileId('') }}>
             <div className="flex justify-between w-1/2">
                 {/* title */}
-                <Header />
+                <Header value={value} setValue={setValue} />
                 <TabsList>
                     <TabsTrigger value="file">
                         {t('fileManagement')}

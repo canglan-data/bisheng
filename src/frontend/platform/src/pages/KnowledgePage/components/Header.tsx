@@ -10,7 +10,7 @@ import { Button } from "../../../components/bs-ui/button";
 import ShadTooltip from "../../../components/ShadTooltipComponent";
 import KnowledgeBaseSettingsDialog from "./EditKnowledgeDialog";
 
-export default function Header() {
+export default function Header({ value, setValue }) {
     const [libInfo, setLibInfo] = useState({ name: '', desc: '' })
     const [open, setOpen] = useState(false)
     const { id } = useParams()
@@ -46,8 +46,14 @@ export default function Header() {
 
     return <div className="flex items-start h-14">
         <ShadTooltip content={t('back')} side="top">
-            <button className="extra-side-bar-buttons w-[36px]" onClick={() => { }} >
-                <Link to='/filelib'><ArrowLeft className="side-bar-button-size" /></Link>
+            <button className="extra-side-bar-buttons w-[36px]" onClick={() => {
+                if (value === 'chunk') {
+                    setValue('file');
+                } else {
+                    window.location.href = '/filelib';
+                }
+            }} >
+                <ArrowLeft className="side-bar-button-size" />
             </button>
         </ShadTooltip>
         <div>
