@@ -128,7 +128,7 @@ export default function UserGroups() {
                     setShowManage(true);
                 }} variant="secondary">
                     <SettingIcon className="text-red-500" />
-                    {'部门默认管理员'}
+                    {'部门管理员'}
                 </Button>}
                 {/* <Button className="flex justify-around" onClick={() => setUserGroup({})}>
                     <PlusIcon className="text-primary" />

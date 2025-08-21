@@ -73,7 +73,7 @@ export default function EditUserGroupManages({ onChange }) {
  
     return <div className="max-w-[630px] mx-auto pt-4 h-[calc(100vh-128px)] overflow-y-auto pb-10 scrollbar-hide">
         <div className="font-bold mt-4">
-            <p className="text-xl mb-4">部门默认管理员
+            <p className="text-xl mb-4">部门管理员
                 <QuestionTooltip
                     content={'选择对应“用户职位”成为部门默认管理员，则该用户职位自动管理本部门及其子部门的成员和数据。'}
                 />
