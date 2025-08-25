@@ -260,7 +260,7 @@ def process_file_task(
                 file.remark = str(e)[:500]
                 KnowledgeFileDao.update(file)
         logger.info("update files failed status over")
-        raise e
+        raise Exception("文件解析任务失败")
 
 
 def delete_vector_files(file_ids: List[int], knowledge: Knowledge) -> bool:
@@ -335,7 +335,8 @@ def decide_vectorstores(
         vector_config = settings.get_vectors_conf().elasticsearch.model_dump()
         if not vector_config:
             # 无相关配置
-            raise RuntimeError("vector_stores.elasticsearch not find in config.yaml")
+            logger.error("vector_stores.elasticsearch not find in config.yaml")
+            raise RuntimeError("vector_stores.elasticsearch 这个配置没有在 config.yaml 中被找到")
         param["index_name"] = collection_name
         if isinstance(vector_config["ssl_verify"], str):
             vector_config["ssl_verify"] = eval(vector_config["ssl_verify"])
@@ -344,12 +345,14 @@ def decide_vectorstores(
         vector_config = settings.get_vectors_conf().milvus.model_dump()
         if not vector_config:
             # 无相关配置
-            raise RuntimeError("vector_stores.milvus not find in config.yaml")
+            logger.error("vector_stores.milvus not find in config.yaml")
+            raise RuntimeError("vector_stores.milvus 这个配置没有在 config.yaml 中被找到")
         param["collection_name"] = collection_name
         vector_config.pop("partition_suffix", "")
         vector_config.pop("is_partition", "")
     else:
-        raise RuntimeError("unknown vector store type")
+        logger.error(f"向量库类型:{vector_store} 这个向量库类型没有被支持")
+        raise RuntimeError(f"向量库类型:{vector_store} 这个向量库类型没有被支持")
 
     param.update(vector_config)
     class_obj = import_vectorstore(vector_store)
@@ -521,9 +524,7 @@ def add_file_embedding(
                 metadatas.append(val["metadata"])
     for index, one in enumerate(texts):
         if len(one) > 10000:
-            raise ValueError(
-                "分段结果超长，请尝试在自定义策略中使用更多切分符（例如 \\n、。、\\.）进行切分"
-            )
+            raise ValueError("分段结果超长，请尝试在自定义策略中使用更多切分符（例如 \\n、。、\\.）进行切分")
         # 入库时 拼接文件名和文档摘要
         texts[index] = KnowledgeUtils.aggregate_chunk_metadata(one, metadatas[index])
 
@@ -685,10 +686,8 @@ def read_chunk_text(
         llm = decide_knowledge_llm()
         knowledge_llm = LLMService.get_knowledge_llm()
     except Exception as e:
-        logger.exception("knowledge_llm_error:")
-        raise Exception(
-            f"文档知识库总结模型已失效，请前往模型管理-系统模型设置中进行配置。{str(e)}"
-        )
+        logger.exception(f"knowledge_llm_error:{str(e)}")
+        raise Exception(f"文档知识库总结模型已失效，请前往模型管理-系统模型设置中进行配置。")
     text_splitter = ElemCharacterTextSplitter(
         separators=separator,
         separator_rule=separator_rule,
@@ -732,9 +731,8 @@ def read_chunk_text(
             # convert doc to docx
             input_file = convert_doc_to_docx(input_doc_path=input_file)
             if not input_file:
-                raise Exception(
-                    f"failed to convert {file_name} to docx, please check backend log"
-                )
+                logger.error(f"failed to convert {file_name} to docx, please check backend log")
+                raise Exception(f"转换 {file_name} 到 docx 格式失败，请检查后端日志")
 
         md_file_name, local_image_dir, doc_id = convert_file_to_md(
             file_name=file_name,
@@ -744,7 +742,8 @@ def read_chunk_text(
         )
 
         if not md_file_name:
-            raise Exception(f"failed to parse {file_name}, please check backend log")
+            logger.error(f"failed to parse {file_name}, please check backend log")
+            raise Exception (f"解析 {file_name} 失败，请检查后端日志")
 
         # save images to minio
         if local_image_dir and retain_images == 1:
@@ -775,7 +774,8 @@ def read_chunk_text(
             if file_extension_name in ["pdf"]:
                 # 判断文件是否损坏
                 if is_pdf_damaged(input_file):
-                    raise Exception('The file is damaged.')
+                    logger.error('The file is damaged.')
+                    raise Exception("文件已损坏，请重新上传")
             etl4lm_settings = settings.get_knowledge().get("etl4lm", {})
             loader = Etl4lmLoader(
                 file_name,
@@ -800,7 +800,7 @@ def read_chunk_text(
                     knowledge_id=knowledge_id,
                     retain_images=bool(retain_images),
                 )
-                if not md_file_name: raise Exception(f"failed to parse {file_name}, please check backend log")
+                if not md_file_name: raise Exception (f"解析 {file_name} 失败，请检查后端日志")
 
                 # save images to minio
                 if local_image_dir and retain_images == 1:
@@ -1075,7 +1075,8 @@ def QA_save_knowledge(db_knowledge: Knowledge, QA: QAKnowledge):
                     success = True
                     break  # 验证成功，跳出重试循环
             except Exception as e:
-                raise e
+                logger.error(f"插入向量库失败，第{attempt + 1}次重试")
+                continue
         if not success:
             raise ValueError("插入向量库失败")
 
@@ -1096,7 +1097,8 @@ def QA_save_knowledge(db_knowledge: Knowledge, QA: QAKnowledge):
 def add_qa(db_knowledge: Knowledge, data: QAKnowledgeUpsert) -> QAKnowledge:
     """使用text 导入QAknowledge"""
     if db_knowledge.type != 1:
-        raise Exception("knowledge type error")
+        logger.error("knowledge type error")
+        raise Exception("知识库类型错误")
     try:
         # 相似问统一插入
         questions = data.questions
@@ -1116,7 +1118,7 @@ def add_qa(db_knowledge: Knowledge, data: QAKnowledgeUpsert) -> QAKnowledge:
             return qa
     except Exception as e:
         logger.exception(e)
-        raise e
+        raise Exception("添加问答失败")
 
 def add_qa_batch(db_knowledge: Knowledge, data_list: List[QAKnowledgeUpsert]) -> List[QAKnowledge]:
     result = []
@@ -1288,7 +1290,9 @@ def recommend_question(question: str, answer: str, number: int = 3) -> List[str]
     """
     llm = LLMService.get_knowledge_similar_llm()
     if not llm:
-        raise KnowledgeSimilarError.http_exception()
+        # raise KnowledgeSimilarError.http_exception()
+        logger.error("KnowledgeSimilarError")
+        raise Exception("推荐问题失败")
 
     llm_chain = LLMChain(llm=llm, prompt=PromptTemplate.from_template(prompt))
     gen_question = llm_chain.predict(question=question, answer=answer, number=number)
@@ -1305,7 +1309,8 @@ def recommend_question(question: str, answer: str, number: int = 3) -> List[str]
         return []
     except Exception as exc:
         logger.error("recommend_question json.loads error:{}", gen_question)
-        raise ValueError(gen_question) from exc
+        # raise ValueError(gen_question) from exc
+        raise Exception("推荐问题失败")
 
 
 def extract_code_blocks(markdown_code_block: str):

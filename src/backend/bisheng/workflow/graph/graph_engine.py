@@ -80,8 +80,7 @@ class GraphEngine:
         source_node_ids = self.edges.get_source_node(node_instance.id)
         # 没有任何链接的节点报错
         if not target_node_ids and not source_node_ids:
-            raise Exception(
-                f'node {node_instance.name} {node_instance.id} must have at least one edge')
+            raise Exception(f'节点：{node_instance.name} {node_instance.id}错误，所有 节点必须至少有一条连线')
 
         # output 节点后跟一个fake 节点用来处理中断
         if node_instance.type == NodeType.OUTPUT.value:
@@ -108,7 +107,8 @@ class GraphEngine:
         # 链接到target节点
         for node_id in target_node_ids:
             if node_id not in self.nodes_map:
-                raise Exception(f'target node {node_id} not found')
+                logger.error(f'目标节点 {node_id} 不存在')
+                raise Exception(f'目标节点 {node_id} 不存在')
             if self.nodes_fan_in.get(node_id) and len(self.nodes_fan_in.get(node_id)) > 1:
                 # need wait all fan in node exec over
                 continue

@@ -45,5 +45,5 @@ class NodeFactory:
     def instance_node(cls, node_type: str, **kwargs) -> 'BaseNode':
         node_class = cls.get_node_class(node_type)
         if node_class is None:
-            raise Exception(f'未知的节点类型：{node_type}')
+            raise Exception(f'未知的节点类型：{node_type}，请检查节点类型是否正确')
         return node_class(**kwargs)

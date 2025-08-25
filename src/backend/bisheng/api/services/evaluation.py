@@ -133,7 +133,8 @@ class EvaluationService:
     def delete_evaluation(cls, evaluation_id: int, user_payload: UserPayload) -> UnifiedResponseModel:
         evaluation = EvaluationDao.get_user_one_evaluation(user_payload.user_id, evaluation_id)
         if not evaluation:
-            raise HTTPException(status_code=404, detail='Evaluation not found')
+            logger.error(f"用户 {user_payload.user_name} 没有权限删除测评任务 {evaluation_id}")
+            raise Exception(f"用户 {user_payload.user_name} 没有权限删除测评任务 {evaluation_id}")
 
         EvaluationDao.delete_evaluation(evaluation)
         return resp_200()
@@ -197,10 +198,11 @@ class EvaluationService:
         df = pd.read_csv(file_data)
         df = df.dropna(axis=0, how='all').dropna(axis=1, how='all')
         if df.shape[1] < 2:
-            raise ValueError("CSV file must have at least two columns")
+            logger.error("CSV 文件必须有至少两列")
+            raise ValueError("CSV 文件必须有至少两列")
         if df.columns[0] != 'question' or df.columns[1] != 'ground_truth':
-            raise ValueError(
-                "CSV file must have 'question' as the first column and 'ground_truth' as the second column")
+            logger.error("CSV 文件必须有 'question' 作为第一列和 'ground_truth' 作为第二列")
+            raise ValueError("CSV 文件必须有 'question' 作为第一列和 'ground_truth' 作为第二列")
         formatted_data = [{"question": row[0], "ground_truth": row[1]} for row in df.values]
         return formatted_data
 
@@ -272,7 +274,8 @@ def add_evaluation_task(evaluation_id: int):
         if evaluation.exec_type == ExecType.FLOW.value:
             flow_version = FlowVersionDao.get_version_by_id(version_id=evaluation.version)
             if not flow_version:
-                raise Exception("Flow version not found")
+                logger.error("没有找到技能版本")
+                raise Exception("没有找到技能版本")
             input_keys = asyncio.run(EvaluationService.get_input_keys(flow_id=evaluation.unique_id,
                                                                       version_id=evaluation.version))
             first_key = list(input_keys.keys())[0]
@@ -299,7 +302,8 @@ def add_evaluation_task(evaluation_id: int):
         if evaluation.exec_type == ExecType.ASSISTANT.value:
             assistant = AssistantDao.get_one_assistant(evaluation.unique_id)
             if not assistant:
-                raise Exception("Assistant not found")
+                logger.error("没有找到助手")
+                raise Exception("没有找到助手")
             gpts_agent = AssistantAgent(assistant_info=assistant, chat_id="")
             asyncio.run(gpts_agent.init_assistant())
             for index, one in enumerate(csv_data):
@@ -391,7 +395,8 @@ def add_evaluation_task(evaluation_id: int):
             e = ""
             for e in error_info:
                 e += f'{e}:{error_info.get(e)}\n'
-            raise Exception(e)
+            logger.error(f'evaluation task failed id={evaluation_id} {e}')
+            raise Exception("评估任务失败")
         EvaluationDao.update_evaluation(evaluation=evaluation)
         redis_client.delete(redis_key)
         logger.info(f'evaluation task success id={evaluation_id}')

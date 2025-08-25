@@ -1,5 +1,5 @@
 from typing import Any
-
+from loguru import logger
 from bisheng.workflow.nodes.base import BaseNode
 from bisheng.workflow.nodes.code.code_parse import CodeParser
 
@@ -26,7 +26,8 @@ class CodeNode(BaseNode):
         try:
             self._code_parser.parse_code()
         except Exception as e:
-            raise Exception(f"CodeNode {self.name} exec code error: " + str(e))
+            logger.error(f"代码节点 {self.name} 执行代码出错:" + str (e))
+            raise Exception (f"代码节点 {self.name} 执行代码出错:")
 
     def _run(self, unique_id: str):
         main_params = self._parse_code_input()
@@ -53,10 +54,12 @@ class CodeNode(BaseNode):
 
     def _parse_code_output(self, result: dict) -> dict:
         if not isinstance(result, dict):
-            raise Exception(f"CodeNode {self.name} main function output must be dict")
+            logger.error(f"代码节点 {self.name} 执行代码出错: 代码节点 {self.name} main 函数输出必须是 dict")
+            raise Exception(f"代码节点 {self.name} 执行代码出错: 代码节点 {self.name} main 函数输出必须是 dict")
         ret = {}
         for one in self._code_output:
             if one["key"] not in result:
-                raise Exception(f"CodeNode {self.name} main function output must have key {one['key']}")
+                logger.error(f"代码节点 {self.name} 执行代码出错: 代码节点 {self.name} main 函数输出必须有 key {one['key']}")
+                raise Exception(f"代码节点 {self.name} 执行代码出错: 代码节点 {self.name} main 函数输出必须有 key {one['key']}")
             ret[one['key']] = result.get(one['key'])
         return ret

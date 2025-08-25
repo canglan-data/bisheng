@@ -156,7 +156,7 @@ class ChatClient:
         except IgnoreException as e:
             logger.exception("get assistant info error")
             await self.websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason=str(e))
-            raise IgnoreException(f'get assistant info error: {str(e)}')
+            raise IgnoreException('获取助手信息失败')
         try:
             if self.chat_id and self.gpts_agent is None:
                 self.db_assistant = assistant
@@ -170,7 +170,7 @@ class ChatClient:
                 await self.gpts_agent.init_assistant(self.gpts_async_callback)
         except Exception as e:
             logger.exception("agent init error")
-            raise Exception(f'agent init error: {str(e)}')
+            raise Exception (f'初始化错误')
 
     async def init_chat_history(self):
         # 初始化历史记录，不为空则不用重新初始化

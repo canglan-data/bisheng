@@ -702,7 +702,8 @@ class AuditLogService:
             user_groups = UserGroupDao.get_user_power_group(user.user_id)
             # 不是用户组管理员，没有权限
             if not user_groups:
-                raise UnAuthorizedError.http_exception()
+                logger.error(f"用户 {user.user_name} 没有权限")
+                raise Exception(f"用户 {user.user_name} 没有权限")
             group_admins = [one.group_id for one in user_groups]
         # 分组id做交集
         if group_ids:
